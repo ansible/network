@@ -1,3 +1,4 @@
+import re
 from copy import deepcopy
 
 from ansible.module_utils.six import iteritems
@@ -6,6 +7,7 @@ from ansible.module_utils.six import iteritems
 class FactsBase(object):
 
     generated_spec = {}
+    ansible_facts = {'ansible_net_configuration': {}}
     data = None
 
     def __init__(self, data, argspec, subspec=None, options=None):
@@ -23,6 +25,13 @@ class FactsBase(object):
         generate_spec = self.generate_dict(facts_argument_spec)
 
     def generate_dict(self, spec):
+        """
+        Generate dictionary which is in sync with argspec
+
+        :param spec: A dictionary which the argspec of module
+        :rtype: A dictionary
+        :returns: A dictionary in sync with argspec with default value
+        """
         obj = {}
         if not spec:
             return obj
@@ -35,3 +44,36 @@ class FactsBase(object):
             obj.update(d)
 
         return obj
+
+    def parse_conf_arg(self, cfg, arg):
+        """
+        Parse config based on argument
+
+        :param cfg: A text string which is a line of configuration.
+        :param arg: A text string which is to be matched.
+        :rtype: A text string
+        :returns: A text string if match is found
+        """
+        match = re.search(r'%s (.+)(\n|$)' % arg, cfg, re.M)
+        if match:
+            return match.group(1).strip()
+
+    def parse_conf_cmd_arg(self, cfg, cmd, res1, res2=None):
+        """
+        Parse config based on command
+
+        :param cfg: A text string which is a line of configuration.
+        :param cmd: A text string which is the command to be matched
+        :param res1: A text string to be returned if the command is present
+        :param res2: A text string to be returned if the negate command is present
+        :rtype: A text string
+        :returns: A text string if match is found
+        """
+        match = re.search(r'\n\s+%s(\n|$)' % cmd, cfg)
+        if match:
+            return res1
+        else:
+            if res2 is not None:
+                match = re.search(r'\n\s+no %s(\n|$)' % cmd, cfg)
+                if match:
+                    return res2
