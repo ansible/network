@@ -77,3 +77,21 @@ class FactsBase(object):
                 match = re.search(r'\n\s+no %s(\n|$)' % cmd, cfg)
                 if match:
                     return res2
+
+    def generate_final_config(self, cfg_dict):
+        """
+        Generate final config dictionary
+
+        :param cfg_dict: A dictionary parsed in the facts system
+        :rtype: A dictionary
+        :returns: A dictionary by elimating keys that have null values
+        """
+        final_cfg = {}
+        if not cfg_dict:
+            return final_cfg
+
+        for k, v in iteritems(cfg_dict):
+            if v is not None:
+                final_cfg.update({k:v})
+
+        return final_cfg

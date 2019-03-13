@@ -8,7 +8,7 @@ from ansible.module_utils.six import iteritems
 
 class Interface(ConfigBase):
 
-    self.argument_spec = InterfaceArgs.argument_spec
+    argument_spec = InterfaceArgs.argument_spec
 
     def set_config(self, module):
         want = self._config_map_params_to_obj(module)
@@ -23,7 +23,7 @@ class Interface(ConfigBase):
         collection = module.params['config']
         for config in collection:
             obj = {
-                'name': self.normalize_interface(config['name']),
+                'name': normalize_interface(config['name']),
                 'description': config['description'],
                 'enable': config['enable'],
                 'speed': config['speed'],
@@ -46,7 +46,7 @@ class Interface(ConfigBase):
         else:
             for w in want:
                 name = w['name']
-                interface_type = self.get_interface_type(name)
+                interface_type = get_interface_type(name)
                 obj_in_have = self.search_obj_in_list(name, have)
                 if operation == 'delete' and obj_in_have:
                     commands.append('no interface {0}'.format(w['name']))
@@ -81,7 +81,7 @@ class Interface(ConfigBase):
             name = h['name']
             obj_in_want = self.search_obj_in_list(name, want)
             if not obj_in_want:
-                interface_type = self.get_interface_type(name)
+                interface_type = get_interface_type(name)
 
                 # Remove logical interfaces
                 if interface_type in ('loopback', 'portchannel', 'svi'):
@@ -104,7 +104,7 @@ class Interface(ConfigBase):
 
         for w in want:
             name = w['name']
-            interface_type = self.get_interface_type(name)
+            interface_type = get_interface_type(name)
             obj_in_have = self.search_obj_in_list(name, have)
             commands.extend(self._operation_merge( w, obj_in_have, interface_type))
 
