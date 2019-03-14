@@ -16,6 +16,6 @@ class InterfaceArgs(ArgspecBase):
     }
 
     argument_spec = {
-        'operation': dict(default='merge', choices=['merge', 'replace', 'override', 'delete']),
+        'state': dict(default='merged', choices=['merged', 'replaced', 'overriden', 'deleted']),
         'config': dict(type='list', elements='dict', options=config_spec)
     }

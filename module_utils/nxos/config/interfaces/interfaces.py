@@ -15,7 +15,7 @@ class Interface(ConfigBase):
         data = get_config(module, ['| section ^interface'])
         facts = NxosInterfacesFacts(data, self.argument_spec, 'config', 'options').populate_facts()
         have = facts['ansible_net_configuration'].get('interfaces')
-        resp = self.set_operation(want, have)
+        resp = self.set_state(want, have)
         return to_list(resp)
 
     def _config_map_params_to_obj(self, module):
@@ -37,41 +37,41 @@ class Interface(ConfigBase):
 
         return objs
 
-    def set_operation(self, want, have):
+    def set_state(self, want, have):
         commands = list()
 
-        operation = self.operation
-        if operation == 'override':
-            commands.extend(self._operation_override(want, have))
+        state = self.state
+        if state == 'overriden':
+            commands.extend(self._state_overriden(want, have))
         else:
             for w in want:
                 name = w['name']
                 interface_type = get_interface_type(name)
                 obj_in_have = self.search_obj_in_list(name, have)
-                if operation == 'delete' and obj_in_have:
+                if state == 'deleted' and obj_in_have:
                     commands.append('no interface {0}'.format(w['name']))
 
-                if operation == 'merge':
-                    commands.extend(self._operation_merge(w, obj_in_have, interface_type))
+                if state == 'merged':
+                    commands.extend(self._state_merged(w, obj_in_have, interface_type))
 
-                if operation == 'replace':
-                    commands.extend(self._operation_replace(w, obj_in_have, interface_type))
+                if state == 'replaced':
+                    commands.extend(self._state_replaced(w, obj_in_have, interface_type))
 
         return commands
 
-    def _operation_replace(self, w, obj_in_have, interface_type):
+    def _state_replaced(self, w, obj_in_have, interface_type):
         commands = list()
 
         if interface_type in ('loopback', 'portchannel', 'svi'):
             commands.append('no interface {0}'. format(w['name']))
-            commands.extend(self._operation_merge(w, obj_in_have, interface_type))
+            commands.extend(self._state_merged(w, obj_in_have, interface_type))
         else:
             commands.append('default interface {0}'.format(w['name']))
-            commands.extend(self._operation_merge(w, obj_in_have, interface_type))
+            commands.extend(self._state_merged(w, obj_in_have, interface_type))
 
         return commands
 
-    def _operation_override(self, want, have):
+    def _state_overriden(self, want, have):
         """
         purge interfaces
         """
@@ -106,11 +106,11 @@ class Interface(ConfigBase):
             name = w['name']
             interface_type = get_interface_type(name)
             obj_in_have = self.search_obj_in_list(name, have)
-            commands.extend(self._operation_merge( w, obj_in_have, interface_type))
+            commands.extend(self._state_merged( w, obj_in_have, interface_type))
 
         return commands
 
-    def _operation_merge(self, w, obj_in_have, interface_type):
+    def _state_merged(self, w, obj_in_have, interface_type):
         commands = list()
 
         args = ('speed', 'description', 'duplex', 'mtu')
