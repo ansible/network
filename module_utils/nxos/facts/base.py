@@ -7,11 +7,11 @@ from ansible.module_utils.six import iteritems
 class FactsBase(object):
 
     generated_spec = {}
-    ansible_facts = {'ansible_net_configuration': {}}
-    data = None
+    ansible_facts = {'net_configuration': {}}
 
-    def __init__(self, data, argspec, subspec=None, options=None):
-        self.data = data
+    def __init__(self, argspec, data=None, subspec=None, options=None):
+        if data:
+            self.data = data
 
         spec = deepcopy(argspec)
         if subspec:

@@ -25,7 +25,7 @@ class NxosInterfacesFacts(FactsBase):
         facts = {}
         if objs:
             facts['interfaces'] = objs
-        self.ansible_facts['ansible_net_configuration'].update(facts)
+        self.ansible_facts['net_configuration'].update(facts)
         return self.ansible_facts
 
     def render_config(self, spec, conf):

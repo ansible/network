@@ -13,8 +13,8 @@ class Interface(ConfigBase):
     def set_config(self, module):
         want = self._config_map_params_to_obj(module)
         data = get_config(module, ['| section ^interface'])
-        facts = NxosInterfacesFacts(data, self.argument_spec, 'config', 'options').populate_facts()
-        have = facts['ansible_net_configuration'].get('interfaces')
+        facts = NxosInterfacesFacts(self.argument_spec, data, 'config', 'options').populate_facts()
+        have = facts['net_configuration'].get('interfaces')
         resp = self.set_state(want, have)
         return to_list(resp)
 
