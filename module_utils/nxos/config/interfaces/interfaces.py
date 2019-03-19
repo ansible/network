@@ -1,19 +1,15 @@
 from ansible.module_utils.network.common.utils import to_list
 from ansible.module_utils.argspec.nxos.interfaces.interfaces import InterfaceArgs
-from ansible.module_utils.network.nxos.nxos import get_config, get_interface_type, normalize_interface
-from ansible.module_utils.nxos.config.base import ConfigBase
-from ansible.module_utils.nxos.facts.interfaces.interfaces import NxosInterfacesFacts
+from ansible.module_utils.nxos.facts.facts import NxosFacts
+from ansible.module_utils.nxos.utils.utils import get_interface_type, normalize_interface, search_obj_in_list
 from ansible.module_utils.six import iteritems
 
 
-class Interface(ConfigBase):
-
-    argument_spec = InterfaceArgs.argument_spec
+class Interface(InterfaceArgs):
 
     def set_config(self, module):
         want = self._config_map_params_to_obj(module)
-        data = get_config(module, ['| section ^interface'])
-        facts = NxosInterfacesFacts(self.argument_spec, data, 'config', 'options').populate_facts()
+        facts = NxosFacts().get_facts(module, gather_subset=['net_configuration_interfaces'])
         have = facts['net_configuration'].get('interfaces')
         resp = self.set_state(want, have)
         return to_list(resp)
@@ -47,7 +43,7 @@ class Interface(ConfigBase):
             for w in want:
                 name = w['name']
                 interface_type = get_interface_type(name)
-                obj_in_have = self.search_obj_in_list(name, have)
+                obj_in_have = search_obj_in_list(name, have)
                 if state == 'deleted' and obj_in_have:
                     commands.append('no interface {0}'.format(w['name']))
 
@@ -79,7 +75,7 @@ class Interface(ConfigBase):
 
         for h in have:
             name = h['name']
-            obj_in_want = self.search_obj_in_list(name, want)
+            obj_in_want = search_obj_in_list(name, want)
             if not obj_in_want:
                 interface_type = get_interface_type(name)
 
@@ -105,7 +101,7 @@ class Interface(ConfigBase):
         for w in want:
             name = w['name']
             interface_type = get_interface_type(name)
-            obj_in_have = self.search_obj_in_list(name, have)
+            obj_in_have = search_obj_in_list(name, have)
             commands.extend(self._state_merged( w, obj_in_have, interface_type))
 
         return commands

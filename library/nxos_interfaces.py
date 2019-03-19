@@ -52,6 +52,7 @@ def main():
     """
     module = AnsibleModule(argument_spec=Interface.argument_spec,
                            supports_check_mode=True)
+
     result = {'changed': False}
     commands = list()
 

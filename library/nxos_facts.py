@@ -68,15 +68,16 @@ ansible_net_gather_subset:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.nxos.facts.facts import Facts
+from ansible.module_utils.nxos.facts.facts import NxosFacts
 
 
 def main():
-    module = AnsibleModule(argument_spec=Facts.argument_spec, supports_check_mode=True)
+    module = AnsibleModule(argument_spec=NxosFacts.argument_spec, supports_check_mode=True)
     warnings = list()
 
-    facts = Facts(**module.params)
-    ansible_facts = facts.get_facts(module)
+    gather_subset = module.params['gather_subset']
+    facts = NxosFacts(**module.params)
+    ansible_facts = facts.get_facts(module, gather_subset)
 
     module.exit_json(ansible_facts=ansible_facts, warnings=warnings)
 

@@ -9,10 +9,7 @@ class FactsBase(object):
     generated_spec = {}
     ansible_facts = {'net_configuration': {}}
 
-    def __init__(self, argspec, data=None, subspec=None, options=None):
-        if data:
-            self.data = data
-
+    def __init__(self, argspec, subspec=None, options=None):
         spec = deepcopy(argspec)
         if subspec:
             if options:

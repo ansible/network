@@ -2,20 +2,21 @@ import re
 
 from copy import deepcopy
 
-from ansible.module_utils.network.nxos.nxos import get_interface_type, normalize_interface
+from ansible.module_utils.network.nxos.nxos import get_config, get_interface_type, normalize_interface
 from ansible.module_utils.nxos.facts.base import FactsBase
 
 
 class NxosInterfacesFacts(FactsBase):
 
-    def populate_facts(self):
+    def populate_facts(self, module, data=None):
         """
         Populate nxos interfaces facts
         """
         objs = []
-        if self.data is None:
-            return {}
-        config = self.data.split('interface ')
+        if not data:
+           data = get_config(module, ['| section ^interface'])
+
+        config = data.split('interface ')
         for conf in config:
             if conf:
                 obj = self.render_config(self.generated_spec, conf)
