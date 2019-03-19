@@ -68,6 +68,7 @@ ansible_net_gather_subset:
 
 
 from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.connection import Connection
 from ansible.module_utils.nxos.facts.facts import NxosFacts
 
 
@@ -75,9 +76,10 @@ def main():
     module = AnsibleModule(argument_spec=NxosFacts.argument_spec, supports_check_mode=True)
     warnings = list()
 
+    connection = Connection(module._socket_path)
     gather_subset = module.params['gather_subset']
     facts = NxosFacts(**module.params)
-    ansible_facts = facts.get_facts(module, gather_subset)
+    ansible_facts = facts.get_facts(module, connection, gather_subset)
 
     module.exit_json(ansible_facts=ansible_facts, warnings=warnings)
 

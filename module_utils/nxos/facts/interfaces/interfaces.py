@@ -2,19 +2,20 @@ import re
 
 from copy import deepcopy
 
-from ansible.module_utils.network.nxos.nxos import get_config, get_interface_type, normalize_interface
+from ansible.module_utils.nxos.utils.utils import get_interface_type, normalize_interface
 from ansible.module_utils.nxos.facts.base import FactsBase
 
 
 class NxosInterfacesFacts(FactsBase):
 
-    def populate_facts(self, module, data=None):
+    def populate_facts(self, module, connection, data=None):
         """
         Populate nxos interfaces facts
         """
         objs = []
+
         if not data:
-           data = get_config(module, ['| section ^interface'])
+           data = connection.get('show running-config | section ^interface')
 
         config = data.split('interface ')
         for conf in config:
@@ -46,7 +47,8 @@ class NxosInterfacesFacts(FactsBase):
         config['mtu'] = self.parse_conf_arg(conf, 'mtu')
         config['duplex'] = self.parse_conf_arg(conf, 'duplex')
         config['mode'] = self.parse_conf_cmd_arg(conf, 'switchport', 'layer2', res2='layer3')
-        config['enable'] = self.parse_conf_cmd_arg(conf, 'shutdown', False)
+        enable = self.parse_conf_cmd_arg(conf, 'shutdown', False)
+        config['enable'] = enable if enable is not None else config['enable']
         config['fabric_forwarding_anycast_gateway'] = self.parse_conf_cmd_arg(conf, 'fabric forwarding mode anycast-gateway', True, res2=False)
         config['ip_forward'] = self.parse_conf_cmd_arg(conf, 'ip forward', 'enable', res2='disable')
 

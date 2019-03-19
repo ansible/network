@@ -1,15 +1,44 @@
+from ansible.module_utils.six import iteritems
+
 from ansible.module_utils.network.common.utils import to_list
+
 from ansible.module_utils.argspec.nxos.interfaces.interfaces import InterfaceArgs
 from ansible.module_utils.nxos.facts.facts import NxosFacts
 from ansible.module_utils.nxos.utils.utils import get_interface_type, normalize_interface, search_obj_in_list
-from ansible.module_utils.six import iteritems
 
 
 class Interface(InterfaceArgs):
 
-    def set_config(self, module):
+    gather_subset = [
+        'net_configuration_interfaces',
+    ]
+
+    def execute_module(self, module, connection):
+        result = {'changed': False}
+        commands = list()
+        warnings = list()
+
+        commands.extend(self.set_config(module, connection))
+        if commands:
+            if not module.check_mode:
+                connection.edit_config(commands)
+            result['changed'] = True
+        result['commands'] = commands
+
+        facts = NxosFacts().get_facts(module, connection, self.gather_subset)
+        interfaces_facts = facts['net_configuration'].get('interfaces')
+
+        if result['changed'] == False:
+            result['before'] = interfaces_facts
+        elif result['changed'] == True:
+            result['after'] = interfaces_facts
+
+        result['warnings'] = warnings
+        return result
+
+    def set_config(self, module, connection):
         want = self._config_map_params_to_obj(module)
-        facts = NxosFacts().get_facts(module, gather_subset=['net_configuration_interfaces'])
+        facts = NxosFacts().get_facts(module, connection, self.gather_subset)
         have = facts['net_configuration'].get('interfaces')
         resp = self.set_state(want, have)
         return to_list(resp)

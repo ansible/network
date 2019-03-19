@@ -1,4 +1,5 @@
 import re
+
 from copy import deepcopy
 
 from ansible.module_utils.six import iteritems
@@ -19,7 +20,7 @@ class FactsBase(object):
         else:
             facts_argument_spec = spec
 
-        generate_spec = self.generate_dict(facts_argument_spec)
+        self.generated_spec = self.generate_dict(facts_argument_spec)
 
     def generate_dict(self, spec):
         """

@@ -1,6 +1,5 @@
 from ansible.module_utils.argspec.nxos.facts.facts import FactsArgs
 from ansible.module_utils.argspec.nxos.interfaces.interfaces import InterfaceArgs
-from ansible.module_utils.network.nxos.nxos import get_config
 from ansible.module_utils.nxos.facts.base import FactsBase
 from ansible.module_utils.nxos.facts.interfaces.interfaces import NxosInterfacesFacts
 
@@ -11,7 +10,7 @@ class NxosFacts(FactsArgs, FactsBase):
         'net_configuration_interfaces',
     ]
 
-    def get_facts(self, module, gather_subset=['all']):
+    def get_facts(self, module, connection, gather_subset=['all']):
         runable_subsets = set()
         exclude_subsets = set()
 
@@ -43,9 +42,9 @@ class NxosFacts(FactsArgs, FactsBase):
         self.ansible_facts['gather_subset'] = list(runable_subsets)
 
         for attr in runable_subsets:
-            getattr(self, '_get_%s' % attr, {})(module)
+            getattr(self, '_get_%s' % attr, {})(module, connection)
 
         return self.ansible_facts
 
-    def _get_net_configuration_interfaces(self, module):
-        return NxosInterfacesFacts(InterfaceArgs.argument_spec, 'config', 'options').populate_facts(module)
+    def _get_net_configuration_interfaces(self, module, connection):
+        return NxosInterfacesFacts(InterfaceArgs.argument_spec, 'config', 'options').populate_facts(module, connection)

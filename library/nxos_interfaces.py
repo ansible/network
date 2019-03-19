@@ -43,7 +43,7 @@ RETURN = """
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.network.nxos.nxos import load_config
+from ansible.module_utils.connection import Connection
 from ansible.module_utils.nxos.config.interfaces.interfaces import Interface
 
 
@@ -53,17 +53,9 @@ def main():
     module = AnsibleModule(argument_spec=Interface.argument_spec,
                            supports_check_mode=True)
 
-    result = {'changed': False}
-    commands = list()
-
+    connection = Connection(module._socket_path)
     intf = Interface(**module.params)
-    commands.extend(intf.set_config(module))
-    if commands:
-        if not module.check_mode:
-            load_config(module, commands)
-        result['changed'] = True
-
-    result['commands'] = commands
+    result = intf.execute_module(module, connection)
     module.exit_json(**result)
 
 
