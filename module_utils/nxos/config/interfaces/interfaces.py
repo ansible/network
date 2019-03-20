@@ -13,6 +13,13 @@ class Interface(InterfaceArgs):
         'net_configuration_interfaces',
     ]
 
+    def get_interface_facts(self, module, connection):
+        facts = NxosFacts().get_facts(module, connection, self.gather_subset)
+        interface_facts = facts['net_configuration'].get('interfaces')
+        if not interface_facts:
+            return []
+        return interface_facts
+
     def execute_module(self, module, connection):
         result = {'changed': False}
         commands = list()
@@ -25,22 +32,20 @@ class Interface(InterfaceArgs):
             result['changed'] = True
         result['commands'] = commands
 
-        facts = NxosFacts().get_facts(module, connection, self.gather_subset)
-        interfaces_facts = facts['net_configuration'].get('interfaces')
+        interface_facts = self.get_interface_facts(module, connection)
 
         if result['changed'] == False:
-            result['before'] = interfaces_facts
+            result['before'] = interface_facts
         elif result['changed'] == True:
-            result['after'] = interfaces_facts
+            result['after'] = interface_facts
 
         result['warnings'] = warnings
         return result
 
     def set_config(self, module, connection):
         want = self._config_map_params_to_obj(module)
-        facts = NxosFacts().get_facts(module, connection, self.gather_subset)
-        have = facts['net_configuration'].get('interfaces')
-        resp = self.set_state(want, have)
+        have = self.get_interface_facts(module, connection)
+        resp = self.set_state(module, want, have)
         return to_list(resp)
 
     def _config_map_params_to_obj(self, module):
@@ -62,10 +67,10 @@ class Interface(InterfaceArgs):
 
         return objs
 
-    def set_state(self, want, have):
+    def set_state(self, module, want, have):
         commands = list()
 
-        state = self.state
+        state = module.params['state']
         if state == 'overriden':
             commands.extend(self._state_overriden(want, have))
         else:
@@ -179,31 +184,31 @@ class Interface(InterfaceArgs):
         else:
             if interface_type in ('ethernet', 'portchannel'):
                 if mode == 'layer2' and mode != obj_in_have.get('mode'):
-                    self.add_command_to_interface(interface, 'switchport', commands)
+                    self._add_command_to_interface(interface, 'switchport', commands)
                 elif mode == 'layer3' and mode != obj_in_have.get('mode'):
-                    self.add_command_to_interface(interface, 'no switchport', commands)
+                    self._add_command_to_interface(interface, 'no switchport', commands)
 
             if enable is True and enable != obj_in_have.get('enable'):
-                self.add_command_to_interface(interface, 'no shutdown', commands)
+                self._add_command_to_interface(interface, 'no shutdown', commands)
             elif enable is False and enable != obj_in_have.get('enable'):
-                self.add_command_to_interface(interface, 'shutdown', commands)
+                self._add_command_to_interface(interface, 'shutdown', commands)
 
             if ip_forward == 'enable' and ip_forward != obj_in_have.get('ip_forward'):
-                self.add_command_to_interface(interface, 'ip forward', commands)
+                self._add_command_to_interface(interface, 'ip forward', commands)
             elif ip_forward == 'disable' and ip_forward != obj_in_have.get('ip forward'):
-                self.add_command_to_interface(interface, 'no ip forward', commands)
+                self._add_command_to_interface(interface, 'no ip forward', commands)
 
             if (fabric_forwarding_anycast_gateway is True and obj_in_have.get('fabric_forwarding_anycast_gateway') is False):
-                self.add_command_to_interface(interface, 'fabric forwarding mode anycast-gateway', commands)
+                self._add_command_to_interface(interface, 'fabric forwarding mode anycast-gateway', commands)
 
             elif (fabric_forwarding_anycast_gateway is False and obj_in_have.get('fabric_forwarding_anycast_gateway') is True):
-                self.add_command_to_interface(interface, 'no fabric forwarding mode anycast-gateway', commands)
+                self._add_command_to_interface(interface, 'no fabric forwarding mode anycast-gateway', commands)
 
             for item in args:
                 candidate = w.get(item)
                 if candidate and candidate != obj_in_have.get(item):
                     cmd = item + ' ' + str(candidate)
-                    self.add_command_to_interface(interface, cmd, commands)
+                    self._add_command_to_interface(interface, cmd, commands)
 
             # if the mode changes from L2 to L3, the admin state
             # seems to change after the API call, so adding a second API
@@ -224,7 +229,7 @@ class Interface(InterfaceArgs):
             command = 'shutdown'
         return command
 
-    def add_command_to_interface(self, interface, cmd, commands):
+    def _add_command_to_interface(self, interface, cmd, commands):
         if interface not in commands:
             commands.append(interface)
         commands.append(cmd)
