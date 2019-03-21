@@ -43,7 +43,6 @@ RETURN = """
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.connection import Connection
 from ansible.module_utils.nxos.config.interfaces.interfaces import Interface
 
 
@@ -53,9 +52,7 @@ def main():
     module = AnsibleModule(argument_spec=Interface.argument_spec,
                            supports_check_mode=True)
 
-    connection = Connection(module._socket_path)
-    intf = Interface(**module.params)
-    result = intf.execute_module(module, connection)
+    result = Interface(module).execute_module()
     module.exit_json(**result)
 
 

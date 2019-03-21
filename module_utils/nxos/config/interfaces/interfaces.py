@@ -1,38 +1,38 @@
 from ansible.module_utils.six import iteritems
-
 from ansible.module_utils.network.common.utils import to_list
 
 from ansible.module_utils.argspec.nxos.interfaces.interfaces import InterfaceArgs
+from ansible.module_utils.nxos.config.base import ConfigBase
 from ansible.module_utils.nxos.facts.facts import NxosFacts
 from ansible.module_utils.nxos.utils.utils import get_interface_type, normalize_interface, search_obj_in_list
 
 
-class Interface(InterfaceArgs):
+class Interface(ConfigBase, InterfaceArgs):
 
     gather_subset = [
         'net_configuration_interfaces',
     ]
 
-    def get_interface_facts(self, module, connection):
-        facts = NxosFacts().get_facts(module, connection, self.gather_subset)
+    def get_interface_facts(self):
+        facts = NxosFacts().get_facts(self._module, self._connection, self.gather_subset)
         interface_facts = facts['net_configuration'].get('interfaces')
         if not interface_facts:
             return []
         return interface_facts
 
-    def execute_module(self, module, connection):
+    def execute_module(self):
         result = {'changed': False}
         commands = list()
         warnings = list()
 
-        commands.extend(self.set_config(module, connection))
+        commands.extend(self.set_config())
         if commands:
-            if not module.check_mode:
-                connection.edit_config(commands)
+            if not self._module.check_mode:
+                self._connection.edit_config(commands)
             result['changed'] = True
         result['commands'] = commands
 
-        interface_facts = self.get_interface_facts(module, connection)
+        interface_facts = self.get_interface_facts()
 
         if result['changed'] == False:
             result['before'] = interface_facts
@@ -42,15 +42,15 @@ class Interface(InterfaceArgs):
         result['warnings'] = warnings
         return result
 
-    def set_config(self, module, connection):
-        want = self._config_map_params_to_obj(module)
-        have = self.get_interface_facts(module, connection)
-        resp = self.set_state(module, want, have)
+    def set_config(self):
+        want = self._config_map_params_to_obj()
+        have = self.get_interface_facts()
+        resp = self.set_state(want, have)
         return to_list(resp)
 
-    def _config_map_params_to_obj(self, module):
+    def _config_map_params_to_obj(self):
         objs = []
-        collection = module.params['config']
+        collection = self._module.params['config']
         for config in collection:
             obj = {
                 'name': normalize_interface(config['name']),
@@ -67,10 +67,10 @@ class Interface(InterfaceArgs):
 
         return objs
 
-    def set_state(self, module, want, have):
+    def set_state(self, want, have):
         commands = list()
 
-        state = module.params['state']
+        state = self._module.params['state']
         if state == 'overriden':
             commands.extend(self._state_overriden(want, have))
         else:

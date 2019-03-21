@@ -2,8 +2,8 @@ import re
 
 from copy import deepcopy
 
-from ansible.module_utils.nxos.utils.utils import get_interface_type, normalize_interface
 from ansible.module_utils.nxos.facts.base import FactsBase
+from ansible.module_utils.nxos.utils.utils import get_interface_type, normalize_interface
 
 
 class NxosInterfacesFacts(FactsBase):
