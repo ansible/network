@@ -78,8 +78,9 @@ class Interface(ConfigBase, InterfaceArgs):
                 name = w['name']
                 interface_type = get_interface_type(name)
                 obj_in_have = search_obj_in_list(name, have)
-                if state == 'deleted' and obj_in_have:
-                    commands.append('no interface {0}'.format(w['name']))
+
+                if state == 'deleted':
+                    commands.extend(self._state_deleted(w, obj_in_have, interface_type))
 
                 if state == 'merged':
                     commands.extend(self._state_merged(w, obj_in_have, interface_type))
@@ -119,7 +120,7 @@ class Interface(ConfigBase, InterfaceArgs):
                 elif interface_type == 'ethernet':
                     default = True
                     if h['enable'] is True:
-                        keys = ('description', 'mode', 'mtu', 'speed', 'duplex', 'ip_forward','fabric_forwarding_anycast_gateway')
+                        keys = ('description', 'mode', 'mtu', 'speed', 'duplex', 'ip_forward', 'fabric_forwarding_anycast_gateway')
                         for k, v in iteritems(h):
                             if k in keys:
                                 if h[k] is not None:
@@ -221,6 +222,47 @@ class Interface(ConfigBase, InterfaceArgs):
 
         return commands
 
+    def _state_deleted(self, w, obj_in_have, interface_type):
+        commands = []
+        if not obj_in_have or interface_type == 'unknown':
+            return commands
+
+        interface = 'interface ' + w['name']
+
+        if 'description' in obj_in_have:
+            self._remove_command_from_interface(interface, 'description', commands)
+        if 'enable' in obj_in_have and obj_in_have['enable'] is False:
+            # if enable is False set enable as True which is the default behavior
+            self._remove_command_from_interface(interface, 'shutdown', commands)
+
+        if interface_type == 'ethernet':
+            if 'mode' in obj_in_have and obj_in_have['mode'] != 'layer2':
+                # if mode is not layer2 set mode as layer2 which is the default behavior
+                self._remove_command_from_interface(interface, 'switchport', commands)
+
+            if 'speed' in obj_in_have:
+                self._remove_command_from_interface(interface, 'speed', commands)
+            if 'duplex' in obj_in_have:
+                self._remote_command_from_interface(interface, 'duplex', commands)
+
+        if interface_type in ('ethernet', 'portchannel', 'svi'):
+            if 'mtu' in obj_in_have:
+                self._remove_command_from_interface(interface, 'mtu', commands)
+
+        if interface_type in ('ethernet', 'svi'):
+            if 'ip_forward' in obj_in_have:
+                self._remove_command_from_interface(interface, 'ip forward', commands)
+            if 'fabric_forwarding_anycast_gateway' in obj_in_have:
+                self._remove_command_from_interface(interface, 'fabric forwarding anycast gateway', commands)
+
+        return commands
+
+    def _remove_command_from_interface(self, interface, cmd, commands):
+        if interface not in commands:
+            commands.insert(0, interface)
+        commands.append('no %s' % cmd)
+        return commands
+
     def _get_admin_state(self, enable):
         command = ''
         if enable is True:
@@ -231,5 +273,5 @@ class Interface(ConfigBase, InterfaceArgs):
 
     def _add_command_to_interface(self, interface, cmd, commands):
         if interface not in commands:
-            commands.append(interface)
+            commands.insert(0, interface)
         commands.append(cmd)
