@@ -1,7 +1,7 @@
 from ansible.module_utils.six import iteritems
 from ansible.module_utils.network.common.utils import to_list
 
-from ansible.module_utils.argspec.nxos.interfaces.interfaces import InterfaceArgs
+from ansible.module_utils.nxos.argspec.interfaces.interfaces import InterfaceArgs
 from ansible.module_utils.nxos.config.base import ConfigBase
 from ansible.module_utils.nxos.facts.facts import NxosFacts
 from ansible.module_utils.nxos.utils.utils import get_interface_type, normalize_interface, search_obj_in_list

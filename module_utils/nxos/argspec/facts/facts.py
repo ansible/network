@@ -1,4 +1,4 @@
-from ansible.module_utils.argspec.base import ArgspecBase
+from ansible.module_utils.network.argspec.base import ArgspecBase
 
 class FactsArgs(ArgspecBase):
 

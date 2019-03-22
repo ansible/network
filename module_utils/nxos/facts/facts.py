@@ -1,5 +1,5 @@
-from ansible.module_utils.argspec.nxos.facts.facts import FactsArgs
-from ansible.module_utils.argspec.nxos.interfaces.interfaces import InterfaceArgs
+from ansible.module_utils.nxos.argspec.facts.facts import FactsArgs
+from ansible.module_utils.nxos.argspec.interfaces.interfaces import InterfaceArgs
 from ansible.module_utils.nxos.facts.base import FactsBase
 from ansible.module_utils.nxos.facts.interfaces.interfaces import NxosInterfacesFacts
 

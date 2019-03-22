@@ -1,4 +1,4 @@
-from ansible.module_utils.argspec.base import ArgspecBase
+from ansible.module_utils.network.argspec.base import ArgspecBase
 
 class InterfaceArgs(ArgspecBase):
 
@@ -10,7 +10,6 @@ class InterfaceArgs(ArgspecBase):
         'mode': dict(choices=['layer2', 'layer3']),
         'mtu': dict(),
         'duplex': dict(choices=['full', 'half', 'auto']),
-        'mode': dict(choices=['layer2', 'layer3']),
         'ip_forward': dict(choices=['enable', 'disable']),
         'fabric_forwarding_anycast_gateway': dict(type='bool'),
     }
