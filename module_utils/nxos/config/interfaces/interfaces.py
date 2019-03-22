@@ -43,29 +43,13 @@ class Interfaces(ConfigBase, InterfaceArgs):
         return result
 
     def set_config(self):
-        want = self._config_map_params_to_obj()
+        want = self._module.params['config']
+        for w in want:
+            if 'name' in w:
+                w.update({'name': normalize_interface(w['name'])})
         have = self.get_interface_facts()
         resp = self.set_state(want, have)
         return to_list(resp)
-
-    def _config_map_params_to_obj(self):
-        objs = []
-        collection = self._module.params['config']
-        for config in collection:
-            obj = {
-                'name': normalize_interface(config['name']),
-                'description': config['description'],
-                'enable': config['enable'],
-                'speed': config['speed'],
-                'mtu': config['mtu'],
-                'duplex': config['duplex'],
-                'mode': config['mode'],
-                'ip_forward': config['ip_forward'],
-                'fabric_forwarding_anycast_gateway': config['fabric_forwarding_anycast_gateway'],
-            }
-            objs.append(obj)
-
-        return objs
 
     def set_state(self, want, have):
         commands = list()
