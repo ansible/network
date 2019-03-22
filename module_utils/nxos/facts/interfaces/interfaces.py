@@ -6,7 +6,7 @@ from ansible.module_utils.nxos.facts.base import FactsBase
 from ansible.module_utils.nxos.utils.utils import get_interface_type, normalize_interface
 
 
-class NxosInterfacesFacts(FactsBase):
+class InterfacesFacts(FactsBase):
 
     def populate_facts(self, module, connection, data=None):
         """

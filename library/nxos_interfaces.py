@@ -43,16 +43,16 @@ RETURN = """
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.nxos.config.interfaces.interfaces import Interface
+from ansible.module_utils.nxos.config.interfaces.interfaces import Interfaces
 
 
 def main():
     """ main entry point for module execution
     """
-    module = AnsibleModule(argument_spec=Interface.argument_spec,
+    module = AnsibleModule(argument_spec=Interfaces.argument_spec,
                            supports_check_mode=True)
 
-    result = Interface(module).execute_module()
+    result = Interfaces(module).execute_module()
     module.exit_json(**result)
 
 

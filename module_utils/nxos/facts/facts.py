@@ -1,10 +1,10 @@
 from ansible.module_utils.nxos.argspec.facts.facts import FactsArgs
 from ansible.module_utils.nxos.argspec.interfaces.interfaces import InterfaceArgs
 from ansible.module_utils.nxos.facts.base import FactsBase
-from ansible.module_utils.nxos.facts.interfaces.interfaces import NxosInterfacesFacts
+from ansible.module_utils.nxos.facts.interfaces.interfaces import InterfacesFacts
 
 
-class NxosFacts(FactsArgs, FactsBase):
+class Facts(FactsArgs, FactsBase):
 
     VALID_SUBSETS = [
         'net_configuration_interfaces',
@@ -47,4 +47,4 @@ class NxosFacts(FactsArgs, FactsBase):
         return self.ansible_facts
 
     def _get_net_configuration_interfaces(self, module, connection):
-        return NxosInterfacesFacts(InterfaceArgs.argument_spec, 'config', 'options').populate_facts(module, connection)
+        return InterfacesFacts(InterfaceArgs.argument_spec, 'config', 'options').populate_facts(module, connection)

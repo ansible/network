@@ -3,18 +3,18 @@ from ansible.module_utils.network.common.utils import to_list
 
 from ansible.module_utils.nxos.argspec.interfaces.interfaces import InterfaceArgs
 from ansible.module_utils.nxos.config.base import ConfigBase
-from ansible.module_utils.nxos.facts.facts import NxosFacts
+from ansible.module_utils.nxos.facts.facts import Facts
 from ansible.module_utils.nxos.utils.utils import get_interface_type, normalize_interface, search_obj_in_list
 
 
-class Interface(ConfigBase, InterfaceArgs):
+class Interfaces(ConfigBase, InterfaceArgs):
 
     gather_subset = [
         'net_configuration_interfaces',
     ]
 
     def get_interface_facts(self):
-        facts = NxosFacts().get_facts(self._module, self._connection, self.gather_subset)
+        facts = Facts().get_facts(self._module, self._connection, self.gather_subset)
         interface_facts = facts['net_configuration'].get('interfaces')
         if not interface_facts:
             return []
