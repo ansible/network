@@ -1,6 +1,7 @@
-from ansible.module_utils.network.argspec.base import ArgspecBase
+class FactsArgs(object):
 
-class FactsArgs(ArgspecBase):
+    def __init__(self, **kwargs):
+        pass
 
     choices = [
         'all',

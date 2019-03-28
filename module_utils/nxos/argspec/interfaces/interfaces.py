@@ -1,6 +1,7 @@
-from ansible.module_utils.network.argspec.base import ArgspecBase
+class InterfaceArgs(object):
 
-class InterfaceArgs(ArgspecBase):
+    def __init__(self, **kwargs):
+        pass
 
     config_spec = {
         'name': dict(type='str', required=True),
