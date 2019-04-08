@@ -25,28 +25,28 @@ class Interfaces(ConfigBase, InterfaceArgs):
         commands = list()
         warnings = list()
 
-        commands.extend(self.set_config())
+        existing_interface_facts = self.get_interface_facts()
+        commands.extend(self.set_config(existing_interface_facts))
         if commands:
             if not self._module.check_mode:
                 self._connection.edit_config(commands)
             result['changed'] = True
         result['commands'] = commands
 
-        interface_facts = self.get_interface_facts()
+        changed_interface_facts = self.get_interface_facts()
 
-        if result['changed'] == False:
-            result['before'] = interface_facts
-        elif result['changed'] == True:
-            result['after'] = interface_facts
+        result['before'] = existing_interface_facts
+        if result['changed'] == True:
+            result['after'] = changed_interface_facts
 
         result['warnings'] = warnings
         return result
 
-    def set_config(self):
+    def set_config(self, existing_interface_facts):
         want = self._module.params['config']
         for w in want:
             w.update({'name': normalize_interface(w['name'])})
-        have = self.get_interface_facts()
+        have = existing_interface_facts
         resp = self.set_state(want, have)
         return to_list(resp)
 
@@ -128,6 +128,7 @@ class Interfaces(ConfigBase, InterfaceArgs):
         commands = list()
 
         args = ('speed', 'description', 'duplex', 'mtu')
+        name = w['name']
         mode = w.get('mode')
         ip_forward = w.get('ip_forward')
         fabric_forwarding_anycast_gateway = w.get('fabric_forwarding_anycast_gateway')
