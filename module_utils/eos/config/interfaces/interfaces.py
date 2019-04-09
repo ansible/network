@@ -106,21 +106,16 @@ class Interfaces(ConfigBase, InterfacesArgs):
         :returns: the commands necessary to migrate the current configuration
                   to the desired configuration
         """
-        replace, remove = _param_diff(want, have, replace=True, remove=True)
+        commands = _param_diff(want, have, replace=True, remove=True)
 
-        commands_by_interface = _replace_config(replace)
-        remove_by_interface = _remove_config(remove)
-        for interface, commands in remove_by_interface.items():
-            current_commands = commands_by_interface.get(interface, [])
-            current_commands.extend(commands)
-            commands_by_interface[interface] = current_commands
+        replace = commands['replace']
+        remove = commands['remove']
 
-        commands = []
-        for interface, interface_commands in commands_by_interface.items():
-            commands.append('interface {}'.format(interface))
-            commands.extend(interface_commands)
+        commands_by_interface = replace
+        for interface, commands in remove.items():
+            commands_by_interface[interface] = replace.get(interface, []) + commands
 
-        return commands
+        return _flatten_commands(commands_by_interface)
 
     @staticmethod
     def _state_overridden(want, have):
@@ -130,35 +125,17 @@ class Interfaces(ConfigBase, InterfacesArgs):
         :returns: the commands necessary to migrate the current configuration
                   to the desired configuration
         """
-        replace = {}
-        remove = {}
-        for extant in have:
-            key = extant['name']
-            for config in want:
-                if config['name'] == key:
+        # Add empty desired state for unspecified interfaces
+        for params in have:
+            name = params['name']
+            for desired in want:
+                if desired['name'] == name:
                     break
             else:
-                config = {}
+                want.append({'name': name})
 
-            replace[key] = dict(set(config.items()).difference(extant.items()))
-            remove[key] = dict(
-                (k, v) for k, v in set(extant.items()).difference(config.items())
-                if k not in replace[key]
-            )
-
-        commands_by_interface = _replace_config(replace)
-        remove_by_interface = _remove_config(remove)
-        for interface, commands in remove_by_interface.items():
-            current_commands = commands_by_interface.get(interface, [])
-            current_commands.extend(commands)
-            commands_by_interface[interface] = current_commands
-
-        commands = []
-        for interface, interface_commands in commands_by_interface.items():
-            commands.append('interface {}'.format(interface))
-            commands.extend(interface_commands)
-
-        return commands
+        # Otherwise it's the same as replaced
+        return Interfaces._state_replaced(want, have)
 
     @staticmethod
     def _state_merged(want, have):
@@ -168,16 +145,8 @@ class Interfaces(ConfigBase, InterfacesArgs):
         :returns: the commands necessary to merge the provided into
                   the current configuration
         """
-        replace, = _param_diff(want, have, replace=True)
-
-        commands_by_interface = _replace_config(replace)
-
-        commands = []
-        for interface, interface_commands in commands_by_interface.items():
-            commands.append('interface {}'.format(interface))
-            commands.extend(interface_commands)
-
-        return commands
+        commands = _param_diff(want, have, replace=True)
+        return _flatten_commands(commands['replace'])
 
     @staticmethod
     def _state_deleted(want, have):
@@ -187,16 +156,8 @@ class Interfaces(ConfigBase, InterfacesArgs):
         :returns: the commands necessary to remove the current configuration
                   of the provided objects
         """
-        remove, = _param_diff(want, have, remove=True)
-
-        commands_by_interface = _remove_config(remove)
-
-        commands = []
-        for interface, interface_commands in commands_by_interface.items():
-            commands.append('interface {}'.format(interface))
-            commands.extend(interface_commands)
-
-        return commands
+        commands = _param_diff(want, have, remove=True)
+        return _flatten_commands(commands['remove'])
 
 
 def _param_diff(want, have, replace=False, remove=False):
@@ -220,11 +181,11 @@ def _param_diff(want, have, replace=False, remove=False):
                 for param in replace_params[key]:
                     remove_params[key].pop(param, None)
 
-    returns = []
+    returns = {}
     if replace:
-        returns.append(replace_params)
+        returns['replace'] = _replace_config(replace_params)
     if remove:
-        returns.append(remove_params)
+        returns['remove'] = _remove_config(remove_params)
 
     return returns
 
@@ -261,5 +222,14 @@ def _replace_config(params):
                 interface_commands.append('   {}shutdown'.format('no ' if state else ''))
         if interface_commands:
             commands[interface] = interface_commands
+
+    return commands
+
+
+def _flatten_commands(command_dict):
+    commands = []
+    for interface, interface_commands in command_dict.items():
+        commands.append('interface {}'.format(interface))
+        commands.extend(interface_commands)
 
     return commands
