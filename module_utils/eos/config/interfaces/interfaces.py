@@ -219,9 +219,9 @@ def _replace_config(params):
         interface_commands = []
         for param, state in config.items():
             if param == 'description':
-                interface_commands.append('   description "{}"'.format(state))
+                interface_commands.append('   description "{0}"'.format(state))
             elif param == 'enable':
-                interface_commands.append('   {}shutdown'.format('no ' if state else ''))
+                interface_commands.append('   {0}shutdown'.format('no ' if state else ''))
         if interface_commands:
             commands[interface] = interface_commands
 
@@ -231,7 +231,7 @@ def _replace_config(params):
 def _flatten_commands(command_dict):
     commands = []
     for interface, interface_commands in command_dict.items():
-        commands.append('interface {}'.format(interface))
+        commands.append('interface {0}'.format(interface))
         commands.extend(interface_commands)
 
     return commands
