@@ -108,7 +108,7 @@ class Interfaces(ConfigBase, InterfacesArgs):
         :returns: the commands necessary to migrate the current configuration
                   to the desired configuration
         """
-        commands = _param_diff(want, have, replace=True, remove=True)
+        commands = _compute_commands(want, have, replace=True, remove=True)
 
         replace = commands['replace']
         remove = commands['remove']
@@ -143,7 +143,7 @@ class Interfaces(ConfigBase, InterfacesArgs):
         :returns: the commands necessary to merge the provided into
                   the current configuration
         """
-        commands = _param_diff(want, have, replace=True)
+        commands = _compute_commands(want, have, replace=True)
         return _flatten_commands(commands['replace'])
 
     @staticmethod
@@ -154,7 +154,7 @@ class Interfaces(ConfigBase, InterfacesArgs):
         :returns: the commands necessary to remove the current configuration
                   of the provided objects
         """
-        commands = _param_diff(want, have, remove=True)
+        commands = _compute_commands(want, have, remove=True)
         return _flatten_commands(commands['remove'])
 
 
@@ -167,7 +167,7 @@ def _param_list_to_dict(param_list):
     return param_dict
 
 
-def _param_diff(want, have, replace=False, remove=False):
+def _compute_commands(want, have, replace=False, remove=False):
     replace_params = {}
     remove_params = {}
     for name, config in want.items():
