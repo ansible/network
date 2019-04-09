@@ -200,10 +200,10 @@ def _remove_config(params):
     for interface, config in params.items():
         interface_commands = []
         for param in config:
-            if param == 'description':
-                interface_commands.append('   no description')
-            elif param == 'enable':
+            if param == 'enable':
                 interface_commands.append('   no shutdown')
+            elif param in ('description', 'mtu'):
+                interface_commands.append('   no {0}'.format(param))
         if interface_commands:
             commands[interface] = interface_commands
 
@@ -222,6 +222,8 @@ def _replace_config(params):
                 interface_commands.append('   description "{0}"'.format(state))
             elif param == 'enable':
                 interface_commands.append('   {0}shutdown'.format('no ' if state else ''))
+            elif param == 'mtu':
+                interface_commands.append('   mtu {0}'.format(state))
         if interface_commands:
             commands[interface] = interface_commands
 

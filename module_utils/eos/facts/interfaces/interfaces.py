@@ -59,6 +59,8 @@ class InterfacesFacts(FactsBase):
         for line in config_lines[1:]:
             if line.strip().startswith('description'):
                 config['description'] = line.split(None, 1)[1].replace('"', '')
+            if line.strip().startswith('mtu'):
+                config['mtu'] = int(line.split(None, 1)[1])
             elif 'shutdown' in line:
                 config['enable'] = line.strip().startswith('no')
             elif line in ('', '!'):
