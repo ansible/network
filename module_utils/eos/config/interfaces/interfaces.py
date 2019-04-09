@@ -87,6 +87,8 @@ class Interfaces(ConfigBase, InterfacesArgs):
         :returns: the commands necessary to migrate the current configuration
                   to the desired configuration
         """
+        want = _param_list_to_dict(want)
+        have = _param_list_to_dict(have)
         state = self._module.params['state']
         if state == 'overridden':
             commands = self._state_overridden(want, have)
@@ -126,13 +128,9 @@ class Interfaces(ConfigBase, InterfacesArgs):
                   to the desired configuration
         """
         # Add empty desired state for unspecified interfaces
-        for params in have:
-            name = params['name']
-            for desired in want:
-                if desired['name'] == name:
-                    break
-            else:
-                want.append({'name': name})
+        for key in have:
+            if key not in want:
+                want[key] = {}
 
         # Otherwise it's the same as replaced
         return Interfaces._state_replaced(want, have)
@@ -160,26 +158,30 @@ class Interfaces(ConfigBase, InterfacesArgs):
         return _flatten_commands(commands['remove'])
 
 
+def _param_list_to_dict(param_list):
+    param_dict = {}
+    for params in param_list:
+        name = params.pop('name')
+        param_dict[name] = params
+
+    return param_dict
+
+
 def _param_diff(want, have, replace=False, remove=False):
     replace_params = {}
     remove_params = {}
-    for config in want:
-        key = config['name']
-        for extant in have:
-            if extant['name'] == key:
-                break
-        else:
-            extant = {}
+    for name, config in want.items():
+        extant = have.get(name, {})
 
         if remove:
-            remove_params[key] = dict(set(extant.items()).difference(config.items()))
+            remove_params[name] = dict(set(extant.items()).difference(config.items()))
         if replace:
-            replace_params[key] = dict(set(config.items()).difference(extant.items()))
+            replace_params[name] = dict(set(config.items()).difference(extant.items()))
             if remove:
                 # We won't need to also clear the configuration if we've
                 # already set it to something
-                for param in replace_params[key]:
-                    remove_params[key].pop(param, None)
+                for param in replace_params[name]:
+                    remove_params[name].pop(param, None)
 
     returns = {}
     if replace:
