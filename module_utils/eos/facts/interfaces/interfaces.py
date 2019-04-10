@@ -57,13 +57,28 @@ class InterfacesFacts(FactsBase):
 
         config['name'] = config_lines[0]
         for line in config_lines[1:]:
-            if line.strip().startswith('description'):
+            line = line.strip()
+
+            if line.startswith('description'):
                 config['description'] = line.split(None, 1)[1].replace('"', '')
-            if line.strip().startswith('mtu'):
+            elif line.startswith('mtu'):
                 config['mtu'] = int(line.split(None, 1)[1])
+            elif line.startswith('speed'):
+                state = line.split()[1:]
+                if state[0] == 'forced':
+                    state = state[1]
+                else:
+                    state = state[0]
+
+                if state == 'auto':
+                    # Auto speed/duplex
+                    continue
+
+                # remaining options are all e.g., 10half or 40gfull
+                config['speed'] = state[:-4]
+                config['duplex'] = state[-4:]
+
             elif 'shutdown' in line:
-                config['enable'] = line.strip().startswith('no')
-            elif line in ('', '!'):
-                continue
+                config['enable'] = line.startswith('no')
 
         return self.generate_final_config(config)

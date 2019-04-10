@@ -114,7 +114,7 @@ EXAMPLES = """
       - name: Ethernet2
         description: 'Configured by Ansible'
         enable: False
-    operation: merged
+    state: merged
 
 # After state:
 # ------------
@@ -156,7 +156,7 @@ EXAMPLES = """
       - name: Ethernet2
         description: 'Configured by Ansible'
         enable: False
-    operation: replaced
+    state: replaced
 
 # After state:
 # ------------
@@ -197,7 +197,7 @@ EXAMPLES = """
       - name: Ethernet2
         description: 'Configured by Ansible'
         enable: False
-    operation: overridden
+    state: overridden
 
 # After state:
 # ------------
