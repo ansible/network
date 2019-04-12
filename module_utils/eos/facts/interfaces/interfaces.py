@@ -9,6 +9,8 @@ for a given resource, parsed, and the facts tree is populated
 based on the configuration.
 """
 from copy import deepcopy
+import re
+
 from ansible.module_utils.eos.facts.base import FactsBase
 
 
@@ -26,7 +28,7 @@ class InterfacesFacts(FactsBase):
         :returns: facts
         """
         if not data:
-            data = connection.get('show running-config | section interface')
+            data = connection.get('show running-config | section ^interface')
 
         # operate on a collection of resource x
         config = data.split('interface ')
@@ -52,33 +54,29 @@ class InterfacesFacts(FactsBase):
         :returns: The generated config
         """
         config = deepcopy(spec)
+
         # populate the facts from the configuration
-        config_lines = conf.split('\n')
+        config['name'] = re.match(r'(\S+)', conf).group(1).replace('"', '')
+        description = self.parse_conf_arg(conf, 'description')
+        if description is not None:
+            config['description'] = description.replace('"', '')
+        shutdown = self.parse_conf_cmd_arg(conf, 'shutdown', False)
+        config['enable'] = shutdown if shutdown is False else True
+        config['mtu'] = self.parse_conf_arg(conf, 'mtu')
 
-        config['name'] = config_lines[0]
-        for line in config_lines[1:]:
-            line = line.strip()
+        speed_pair = self.parse_conf_arg(conf, 'speed')
+        if speed_pair:
+            state = speed_pair.split()
+            if state[0] == 'forced':
+                state = state[1]
+            else:
+                state = state[0]
 
-            if line.startswith('description'):
-                config['description'] = line.split(None, 1)[1].replace('"', '')
-            elif line.startswith('mtu'):
-                config['mtu'] = int(line.split(None, 1)[1])
-            elif line.startswith('speed'):
-                state = line.split()[1:]
-                if state[0] == 'forced':
-                    state = state[1]
-                else:
-                    state = state[0]
-
-                if state == 'auto':
-                    # Auto speed/duplex
-                    continue
-
+            if state == 'auto':
+                config['duplex'] = state
+            else:
                 # remaining options are all e.g., 10half or 40gfull
                 config['speed'] = state[:-4]
                 config['duplex'] = state[-4:]
-
-            elif 'shutdown' in line:
-                config['enable'] = line.startswith('no')
 
         return self.generate_final_config(config)
