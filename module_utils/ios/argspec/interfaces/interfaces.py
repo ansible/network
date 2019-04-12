@@ -41,7 +41,7 @@ class InterfacesArgs(object):
     }
 
     argument_spec = {
-        'state': dict(default='merged', choices=['merged', 'replaced', 'overriden', 'deleted']),
+        'state': dict(default='merged', choices=['merged', 'replaced', 'overridden', 'deleted']),
         'config': dict(type='list', elements='dict', options=config_spec)
     }
 
