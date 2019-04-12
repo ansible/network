@@ -5,6 +5,7 @@
 
 # utils
 
+
 def search_obj_in_list(name, lst):
     for o in lst:
         if o['name'] == name:
@@ -32,6 +33,8 @@ def normalize_interface(name):
         if_type = 'FastEthernet'
     elif name.lower().startswith('fo'):
         if_type = 'FortyGigabitEthernet'
+    elif name.lower().startswith('long'):
+        if_type = 'LongReachEthernet'
     elif name.lower().startswith('et'):
         if_type = 'Ethernet'
     elif name.lower().startswith('vl'):
@@ -74,6 +77,8 @@ def get_interface_type(interface):
         return 'FastEthernet'
     elif interface.upper().startswith('FO'):
         return 'FortyGigabitEthernet'
+    elif interface.upper().startswith('LON'):
+        return 'LongReachEthernet'
     elif interface.upper().startswith('ET'):
         return 'Ethernet'
     elif interface.upper().startswith('VL'):
