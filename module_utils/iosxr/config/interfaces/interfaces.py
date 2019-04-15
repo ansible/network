@@ -13,7 +13,7 @@ created
 from ansible.module_utils.six import iteritems
 from ansible.module_utils.network.common.utils import to_list
 
-from ansible.module_utils.iosxr.argspec.interfaces.interfaces import InterfaceArgs
+from ansible.module_utils.iosxr.argspec.interfaces.interfaces import InterfacesArgs
 from ansible.module_utils.iosxr.config.base import ConfigBase
 from ansible.module_utils.iosxr.facts.facts import Facts
 from ansible.module_utils.iosxr.utils.utils import get_interface_type, normalize_interface, search_obj_in_list
@@ -27,6 +27,7 @@ class Interfaces(ConfigBase, InterfacesArgs):
     gather_subset = [
         'net_configuration_interfaces',
     ]
+    params = ('description', 'mtu', 'speed', 'duplex')
 
     def get_interfaces_facts(self):
         """ Get the 'facts' (the current configuration)
@@ -76,8 +77,15 @@ class Interfaces(ConfigBase, InterfacesArgs):
                   to the desired configuration
         """
         want = self._module.params['config']
+        for w in want:
+            if len(w['name'].split(' ')) > 1 and w['name'].split(' ')[0] == "preconfigure":
+                name = "preconfigure " + normalize_interface(w['name'].split(' ')[1])
+                w.update({'name': name})
+            else:
+                w.update({'name': normalize_interface(w['name'])})
         have = existing_interfaces_facts
         resp = self.set_state(want, have)
+
         return to_list(resp)
 
     def set_state(self, want, have):
@@ -89,19 +97,29 @@ class Interfaces(ConfigBase, InterfacesArgs):
         :returns: the commands necessary to migrate the current configuration
                   to the desired configuration
         """
+        commands = []
         state = self._module.params['state']
+
         if state == 'overridden':
-            kwargs = {}
+            kwargs = {'want': want, 'have': have}
             commands = self._state_overridden(**kwargs)
-        elif state == 'deleted':
-            kwargs = {}
-            commands = self._state_deleted(**kwargs)
-        elif state == 'merged':
-            kwargs = {}
-            commands = self._state_merged(**kwargs)
-        elif state == 'replaced':
-            kwargs = {}
-            commands = self._state_replaced(**kwargs)
+        else:
+            for w in want:
+                # get the interface type
+                name = w['name']
+                if len(name.split(' ')) > 1 and name.split(' ')[0] == "preconfigure":
+                    interface_type = get_interface_type(name.split(' ')[1])
+                else:
+                    interface_type = get_interface_type(name)
+                obj_in_have = search_obj_in_list(name, have)
+                kwargs = {'want': w, 'have': obj_in_have, 'type': interface_type}
+                if state == 'deleted':
+                    commands.extend(Interfaces._state_deleted(**kwargs))
+                elif state == 'merged':
+                    commands.extend(Interfaces._state_merged(**kwargs))
+                elif state == 'replaced':
+                    commands.extend(Interfaces._state_replaced(**kwargs))
+
         return commands
 
     @staticmethod
@@ -113,6 +131,24 @@ class Interfaces(ConfigBase, InterfacesArgs):
                   to the desired configuration
         """
         commands = []
+        want = kwargs['want']
+        obj_in_have = kwargs['have']
+        interface_type = kwargs['type']
+
+        if want['name']:
+            interface = 'interface ' + want['name']
+
+        if obj_in_have:
+            if interface_type.lower() == 'loopback':
+                commands.extend(Interfaces._state_merged(want, obj_in_have))
+            elif interface_type.lower() == 'gigabitethernet' or interface_type.lower() == "preconfigure":
+                for item in Interfaces.params:
+                    value = obj_in_have.get(item)
+                    if value and want[item] != value and value != 'auto':
+                        Interfaces._remove_command_from_interface(interface, item, commands)
+        kwargs = {'want': want, 'have': obj_in_have}
+        commands.extend(Interfaces._state_merged(**kwargs))
+
         return commands
 
     @staticmethod
@@ -124,6 +160,43 @@ class Interfaces(ConfigBase, InterfacesArgs):
                   to the desired configuration
         """
         commands = []
+        want = kwargs['want']
+        obj_in_have = kwargs['have']
+
+        for have in obj_in_have:
+
+            name = have['name']
+            obj_in_want = search_obj_in_list(name, want)
+            if not obj_in_want:
+                interface_type = get_interface_type(name)
+                if interface_type.lower() == 'loopback':
+                    interface = 'interface ' + name
+                    Interfaces._remove_command_from_interface(interface, 'description', commands)
+                elif interface_type.lower() == 'gigabitethernet' or interface_type.lower() == "preconfigure":
+                    default = True
+                    if have['enabled'] is True:
+                        for k, v in iteritems(have):
+                            if k in Interfaces.params:
+                                if have[k] is not None:
+                                    default = False
+                                    break
+                    else:
+                        default = False
+
+                    if default is False:
+                        if name not in commands:
+                            commands.append('interface {0}'.format(name))
+                        commands.append('no description')
+                        commands.append('no mtu')
+                        commands.append('no speed')
+                        commands.append('no duplex')
+
+        for w in want:
+            name = w['name']
+            obj_in_have = search_obj_in_list(name, obj_in_have)
+            kwargs = {'want': w, 'have': have}
+            commands.extend(Interfaces._state_merged(**kwargs))
+
         return commands
 
     @staticmethod
@@ -135,6 +208,32 @@ class Interfaces(ConfigBase, InterfacesArgs):
                   the current configuration
         """
         commands = []
+        want = kwargs['want']
+        obj_in_have = kwargs['have']
+        name = want['name']
+        enabled = want.get('enabled')
+
+        if name:
+            interface = 'interface ' + name
+        if not obj_in_have:
+            commands.append(interface)
+            commands.append('no shutdown') if enabled else commands.append('shutdown')
+
+            for item in Interfaces.params:
+                candidate = want.get(item)
+                if candidate:
+                    commands.append(item + ' ' + str(candidate))
+        else:
+            if enabled is True and enabled != obj_in_have.get('enabled'):
+                Interfaces._add_command_to_interface(interface, 'no shutdown', commands)
+            elif enabled is False and enabled != obj_in_have.get('enabled'):
+                Interfaces._add_command_to_interface(interface, 'shutdown', commands)
+            for item in Interfaces.params:
+                candidate = want.get(item)
+                if candidate and candidate != obj_in_have.get(item):
+                    cmd = item + ' ' + str(candidate)
+                    Interfaces._add_command_to_interface(interface, cmd, commands)
+
         return commands
 
     @staticmethod
@@ -146,4 +245,38 @@ class Interfaces(ConfigBase, InterfacesArgs):
                   of the provided objects
         """
         commands = []
+        want = kwargs['want']
+        obj_in_have = kwargs['have']
+        interface_type = kwargs['type']
+        if not obj_in_have or interface_type == 'unknown':
+            return commands
+
+        interface = 'interface ' + want['name']
+        if 'description' in obj_in_have:
+            Interfaces._remove_command_from_interface(interface, 'description', commands)
+        if 'enabled' in obj_in_have and obj_in_have['enabled'] is False:
+            # if enable is False set enable as True which is the default behavior
+            Interfaces._remove_command_from_interface(interface, 'shutdown', commands)
+
+        if interface_type.lower() == 'gigabitethernet':
+            if 'speed' in obj_in_have and obj_in_have['speed'] != 'auto':
+                Interfaces._remove_command_from_interface(interface, 'speed', commands)
+            if 'duplex' in obj_in_have and obj_in_have['duplex'] != 'auto':
+                Interfaces._remove_command_from_interface(interface, 'duplex', commands)
+            if 'mtu' in obj_in_have:
+                Interfaces._remove_command_from_interface(interface, 'mtu', commands)
+
         return commands
+
+    @staticmethod
+    def _remove_command_from_interface(interface, cmd, commands):
+        if interface not in commands:
+            commands.insert(0, interface)
+        commands.append('no %s' % cmd)
+        return commands
+
+    @staticmethod
+    def _add_command_to_interface(interface, cmd, commands):
+        if interface not in commands:
+            commands.insert(0, interface)
+        commands.append(cmd)
