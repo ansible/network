@@ -26,12 +26,10 @@ def normalize_interface(name):
 
     if name.lower().startswith('gi'):
         if_type = 'GigabitEthernet'
-    elif name.lower().startswith('te'):
-        if_type = 'TenGigabitEthernet'
     elif name.lower().startswith('fa'):
         if_type = 'FastEthernet'
     elif name.lower().startswith('fo'):
-        if_type = 'FortyGigabitEthernet'
+        if_type = 'FortyGigE'
     elif name.lower().startswith('et'):
         if_type = 'Ethernet'
     elif name.lower().startswith('vl'):
@@ -68,12 +66,10 @@ def get_interface_type(interface):
 
     if interface.upper().startswith('GI'):
         return 'GigabitEthernet'
-    elif interface.upper().startswith('TE'):
-        return 'TenGigabitEthernet'
     elif interface.upper().startswith('FA'):
         return 'FastEthernet'
     elif interface.upper().startswith('FO'):
-        return 'FortyGigabitEthernet'
+        return 'FortyGigE'
     elif interface.upper().startswith('ET'):
         return 'Ethernet'
     elif interface.upper().startswith('VL'):
@@ -88,5 +84,7 @@ def get_interface_type(interface):
         return 'TwentyFiveGigE'
     elif interface.upper().startswith('HU'):
         return 'HundredGigE'
+    elif interface.upper().startswith('PRE'):
+        return 'preconfigure'
     else:
         return 'unknown'
