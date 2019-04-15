@@ -14,7 +14,7 @@ from copy import deepcopy
 
 from ansible.module_utils.iosxr.facts.base import FactsBase
 from ansible.module_utils.iosxr.utils.utils import get_interface_type, normalize_interface
-import q
+
 
 class InterfacesFacts(FactsBase):
     """ The iosxr interfaces fact class
@@ -39,7 +39,6 @@ class InterfacesFacts(FactsBase):
 
         # operate on a collection of resource x
         config = data.split('interface ')
-        q(config)
         for conf in config:
             if conf:
                 obj = self.render_config(self.generated_spec, conf)
@@ -63,8 +62,9 @@ class InterfacesFacts(FactsBase):
 
         config = deepcopy(spec)
         match = re.search(r'^(\S+)', conf)
+        if match.group(1).lower() == "preconfigure":
+            match = re.search(r'^(\S+ \S+)', conf)
         intf = match.group(1)
-
         if get_interface_type(intf) == 'unknown':
             return {}
         # populate the facts from the configuration
