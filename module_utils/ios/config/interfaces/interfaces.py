@@ -100,26 +100,27 @@ class Interfaces(ConfigBase, InterfacesArgs):
         state = self._module.params['state']
 
         if state == 'overridden':
-            commands = Interfaces._state_overridden(want, have)
+            kwargs = {'want': want, 'have': have}
+            commands = Interfaces._state_overridden(**kwargs)
         else:
             for w in want:
                 name = w['name']
                 interface_type = get_interface_type(name)
                 obj_in_have = search_obj_in_list(name, have)
-
+                kwargs = {'want': w, 'have': obj_in_have, 'type': interface_type}
                 if state == 'deleted':
-                    commands.extend(Interfaces._state_deleted(w, obj_in_have, interface_type))
+                    commands.extend(Interfaces._state_deleted(**kwargs))
 
                 if state == 'merged':
-                    commands.extend(Interfaces._state_merged(w, obj_in_have))
+                    commands.extend(Interfaces._state_merged(**kwargs))
 
                 if state == 'replaced':
-                    commands.extend(Interfaces._state_replaced(w, obj_in_have, interface_type))
+                    commands.extend(Interfaces._state_replaced(**kwargs))
 
         return commands
 
     @staticmethod
-    def _state_replaced(want, obj_in_have, interface_type):
+    def _state_replaced(**kwargs):
         """ The command generator when state is replaced
 
         :param want: the desired configuration as a dictionary
@@ -130,6 +131,9 @@ class Interfaces(ConfigBase, InterfacesArgs):
                   to the deisred configuration
         """
         commands = []
+        want = kwargs['want']
+        obj_in_have = kwargs['have']
+        interface_type = kwargs['type']
 
         if want['name']:
             interface = 'interface ' + want['name']
@@ -142,12 +146,13 @@ class Interfaces(ConfigBase, InterfacesArgs):
                     value = obj_in_have.get(item)
                     if value and want[item] != value and value != 'auto':
                         Interfaces._remove_command_from_interface(interface, item, commands)
-        commands.extend(Interfaces._state_merged(want, obj_in_have))
+        kwargs = {'want': want, 'have': obj_in_have}
+        commands.extend(Interfaces._state_merged(**kwargs))
 
         return commands
 
     @staticmethod
-    def _state_overridden(want, obj_in_have):
+    def _state_overridden(**kwargs):
         """ The command generator when state is overridden
 
         :param want: the desired configuration as a dictionary
@@ -157,7 +162,9 @@ class Interfaces(ConfigBase, InterfacesArgs):
                   to the desired configuration
         """
         commands = []
-        interface = 'interface ' + want['name']
+        want = kwargs['want']
+        obj_in_have = kwargs['have']
+        interface_want = 'interface ' + want[0]['name']
 
         for have in obj_in_have:
             name = have['name']
@@ -165,7 +172,8 @@ class Interfaces(ConfigBase, InterfacesArgs):
             if not obj_in_want:
                 interface_type = get_interface_type(name)
                 if interface_type.lower() == 'loopback':
-                    Interfaces._remove_command_from_interface(interface, 'description', commands)
+                    commands.append('interface ' + name)
+                    commands.append('no description')
                 elif interface_type.lower() == 'gigabitethernet':
                     default = True
                     if have['enabled'] is True:
@@ -176,23 +184,40 @@ class Interfaces(ConfigBase, InterfacesArgs):
                                     break
                     else:
                         default = False
-
                     if default is False:
                         # Delete the configurable params by interface module
-                        commands.append('no description {0}'.format(name))
-                        commands.append('no mtu {0}'.format(name))
-                        commands.append('no speed {0}'.format(name))
-                        commands.append('no duplex {0}'.format(name))
+                        interface = 'interface ' + name
+                        for each in Interfaces.params:
+                            if interface not in commands:
+                                commands.append(interface)
+                            commands.append('no {0}'.format(each))
+            else:
+                changed = False
+                # Delete the wanted interface to be replaced with provided values
+                for k, v in iteritems(have):
+                    if obj_in_want[k] != have[k] and have[k] != "auto":
+                        if interface_want not in commands:
+                            changed = True
+                            commands.append(interface_want)
+                        commands.append('no {0}'.format(k))
+                if not changed:
+                    break
 
-        for w in want:
-            name = w['name']
-            obj_in_have = search_obj_in_list(name, obj_in_have)
-            commands.extend(Interfaces._state_merged(w, obj_in_have))
+        if interface_want in commands:
+            # if there's change in interface_want then extend the commands
+            for w in want:
+                name = w['name']
+                have = search_obj_in_list(name, obj_in_have)
+                kwargs = {'want': w, 'have': have}
+                commands.extend(Interfaces._state_merged(**kwargs))
+        else:
+            # if there's no change in inteface_want then maintain idempotency
+            commands = []
 
         return commands
 
     @staticmethod
-    def _state_merged(want, obj_in_have):
+    def _state_merged(**kwargs):
         """ The command generator when state is merged
 
         :param want: the additive configuration as a dictionary
@@ -202,6 +227,8 @@ class Interfaces(ConfigBase, InterfacesArgs):
                   the current configuration
         """
         commands = []
+        want = kwargs['want']
+        obj_in_have = kwargs['have']
         name = want['name']
         enabled = want.get('enabled')
 
@@ -229,7 +256,7 @@ class Interfaces(ConfigBase, InterfacesArgs):
         return commands
 
     @staticmethod
-    def _state_deleted(want, obj_in_have, interface_type):
+    def _state_deleted(**kwargs):
         """ The command generator when state is deleted
 
         :param want: the objects from which the configuration should be removed
@@ -240,6 +267,9 @@ class Interfaces(ConfigBase, InterfacesArgs):
                   of the provided objects
         """
         commands = []
+        want = kwargs['want']
+        obj_in_have = kwargs['have']
+        interface_type = kwargs['type']
         if not obj_in_have or interface_type == 'unknown':
             return commands
 
@@ -263,6 +293,7 @@ class Interfaces(ConfigBase, InterfacesArgs):
 
     @staticmethod
     def _remove_command_from_interface(interface, cmd, commands):
+        #print interface, cmd, commands
         if interface not in commands:
             commands.insert(0, interface)
         commands.append('no %s' % cmd)
@@ -273,5 +304,3 @@ class Interfaces(ConfigBase, InterfacesArgs):
         if interface not in commands:
             commands.insert(0, interface)
         commands.append(cmd)
-
-
