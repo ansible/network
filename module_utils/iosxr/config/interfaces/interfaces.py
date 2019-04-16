@@ -162,16 +162,16 @@ class Interfaces(ConfigBase, InterfacesArgs):
         commands = []
         want = kwargs['want']
         obj_in_have = kwargs['have']
+        interface_want = 'interface ' + want[0]['name']
 
         for have in obj_in_have:
-
             name = have['name']
             obj_in_want = search_obj_in_list(name, want)
             if not obj_in_want:
                 interface_type = get_interface_type(name)
                 if interface_type.lower() == 'loopback':
-                    interface = 'interface ' + name
-                    Interfaces._remove_command_from_interface(interface, 'description', commands)
+                    commands.append('interface ' + name)
+                    commands.append('no description')
                 elif interface_type.lower() == 'gigabitethernet' or interface_type.lower() == "preconfigure":
                     default = True
                     if have['enabled'] is True:
@@ -182,20 +182,35 @@ class Interfaces(ConfigBase, InterfacesArgs):
                                     break
                     else:
                         default = False
-
                     if default is False:
-                        if name not in commands:
-                            commands.append('interface {0}'.format(name))
-                        commands.append('no description')
-                        commands.append('no mtu')
-                        commands.append('no speed')
-                        commands.append('no duplex')
+                        # Delete the configurable params by interface module
+                        interface = 'interface ' + name
+                        for each in Interfaces.params:
+                            if interface not in commands:
+                                commands.append(interface)
+                            commands.append('no {0}'.format(each))
+            elif name == want[0]['name']:
+                changed = False
+                # Delete the wanted interface to be replaced with provided values
+                for k, v in iteritems(have):
+                    if obj_in_want[k] != have[k] and have[k] != "auto":
+                        if interface_want not in commands:
+                            changed = True
+                            commands.append(interface_want)
+                        commands.append('no {0}'.format(k))
+                if not changed:
+                    break
 
-        for w in want:
-            name = w['name']
-            obj_in_have = search_obj_in_list(name, obj_in_have)
-            kwargs = {'want': w, 'have': have}
-            commands.extend(Interfaces._state_merged(**kwargs))
+        if interface_want in commands:
+            # if there's change in interface_want then extend the commands
+            for w in want:
+                name = w['name']
+                have = search_obj_in_list(name, obj_in_have)
+                kwargs = {'want': w, 'have': have}
+                commands.extend(Interfaces._state_merged(**kwargs))
+        else:
+            # if there's no change in inteface_want then maintain idempotency
+            commands = []
 
         return commands
 
