@@ -5,11 +5,13 @@
 
 # utils
 
+
 def search_obj_in_list(name, lst):
     for o in lst:
         if o['name'] == name:
             return o
     return None
+
 
 def normalize_interface(name):
     """Return the normalized interface name
@@ -59,6 +61,7 @@ def normalize_interface(name):
         proper_interface = name
 
     return proper_interface
+
 
 def get_interface_type(interface):
     """Gets the type of interface
