@@ -93,6 +93,26 @@ EXAMPLES = """
 
 # Using merged
 
+# Before state:
+# -------------
+#
+# viosxr#show running-config interface
+# interface GigabitEthernet0/0/0/1
+#  shutdown
+# !
+# interface GigabitEthernet0/0/0/2
+#  vrf custB
+#  ipv4 address 178.18.169.23 255.255.255.0
+#  dot1q native vlan 30
+# !
+# interface GigabitEthernet0/0/0/3
+#  description Replaced by Ansible Team
+#  mtu 2000
+#  vrf custB
+#  ipv4 address 10.10.0.2 255.255.255.0
+#  dot1q native vlan 1021
+# !
+
 - name: Configure Ethernet interfaces
   iosxr_interfaces:
     config:
@@ -105,7 +125,50 @@ EXAMPLES = """
         duplex: full
     operation: merged
 
+# After state:
+# ------------
+#
+# viosxr#show running-config interface
+# interface GigabitEthernet0/0/0/1
+#  shutdown
+# !
+# interface GigabitEthernet0/0/0/2
+#  description Configured and Merged by Ansible Network
+#  vrf custB
+#  ipv4 address 178.18.169.23 255.255.255.0
+#  dot1q native vlan 30
+# !
+# interface GigabitEthernet0/0/0/3
+#  description Configured and Merged by Ansible Network
+#  mtu 2600
+#  vrf custB
+#  ipv4 address 10.10.0.2 255.255.255.0
+#  duplex full
+#  shutdown
+#  dot1q native vlan 1021
+# !
+
 # Using replaced
+
+# Before state:
+# -------------
+#
+# viosxr#show running-config interface
+# interface GigabitEthernet0/0/0/1
+#  description Configured by Ansible
+#  shutdown
+# !
+# interface GigabitEthernet0/0/0/2
+#  description Test
+#  vrf custB
+#  ipv4 address 178.18.169.23 255.255.255.0
+#  dot1q native vlan 30
+# !
+# interface GigabitEthernet0/0/0/3
+#  vrf custB
+#  ipv4 address 10.10.0.2 255.255.255.0
+#  dot1q native vlan 1021
+# !
 
 - name: Configure following interfaces and replace their existing config
   iosxr_interfaces:
@@ -120,7 +183,54 @@ EXAMPLES = """
         duplex: auto
     operation: replaced
 
+# After state:
+# -------------
+#
+# viosxr#show running-config interface
+# interface GigabitEthernet0/0/0/1
+#  description Configured by Ansible
+#  shutdown
+# !
+# interface GigabitEthernet0/0/0/2
+#  description Configured and Replaced by Ansible
+#  mtu 2000
+#  vrf custB
+#  ipv4 address 178.18.169.23 255.255.255.0
+#  dot1q native vlan 30
+# !
+# interface GigabitEthernet0/0/0/3
+#  description Configured and Replaced by Ansible Network
+#  vrf custB
+#  ipv4 address 10.10.0.2 255.255.255.0
+#  duplex half
+#  shutdown
+#  dot1q native vlan 1021
+# !
+
 # Using overridden
+
+# Before state:
+# -------------
+#
+# viosxr#show running-config interface
+# interface GigabitEthernet0/0/0/1
+#  shutdown
+# !
+# interface GigabitEthernet0/0/0/2
+#  description Configured by Ansible
+#  vrf custB
+#  ipv4 address 178.18.169.23 255.255.255.0
+#  dot1q native vlan 30
+# !
+# interface GigabitEthernet0/0/0/3
+#  description Configured by Ansible
+#  mtu 2600
+#  vrf custB
+#  ipv4 address 10.10.0.2 255.255.255.0
+#  duplex full
+#  shutdown
+#  dot1q native vlan 1021
+# !
 
 - name: Override interfaces
   iosxr_interfaces:
@@ -135,7 +245,55 @@ EXAMPLES = """
         speed: 1000
     operation: overridden
 
+# After state:
+# -------------
+#
+# viosxr#show running-config interface
+# interface GigabitEthernet0/0/0/1
+#  shutdown
+# !
+# interface GigabitEthernet0/0/0/2
+#  description Configured and Overridden by Ansible Network
+#  vrf custB
+#  ipv4 address 178.18.169.23 255.255.255.0
+#  speed 1000
+#  dot1q native vlan 30
+# !
+# interface GigabitEthernet0/0/0/3
+#  description Configured and Overridden by Ansible Network
+#  mtu 2000
+#  vrf custB
+#  ipv4 address 10.10.0.2 255.255.255.0
+#  duplex full
+#  shutdown
+#  dot1q native vlan 1021
+# !
+
 # Using deleted
+
+# Before state:
+# -------------
+#
+# viosxr#show running-config interface
+# interface GigabitEthernet0/0/0/1
+#  shutdown
+# !
+# interface GigabitEthernet0/0/0/2
+#  description Configured and Overridden by Ansible Network
+#  vrf custB
+#  ipv4 address 178.18.169.23 255.255.255.0
+#  speed 1000
+#  dot1q native vlan 30
+# !
+# interface GigabitEthernet0/0/0/3
+#  description Configured and Overridden by Ansible Network
+#  mtu 2000
+#  vrf custB
+#  ipv4 address 10.10.0.2 255.255.255.0
+#  duplex full
+#  shutdown
+#  dot1q native vlan 1021
+# !
 
 - name: Delete IOSXR interfaces as in given arguments
   iosxr_interfaces:
@@ -143,6 +301,24 @@ EXAMPLES = """
       - name: GigabitEthernet0/0/0/2
       - name: GigabitEthernet0/0/0/3
     operation: deleted
+
+# After state:
+# -------------
+#
+# viosxr#show running-config interface
+# interface GigabitEthernet0/0/0/1
+#  shutdown
+# !
+# interface GigabitEthernet0/0/0/2
+#  vrf custB
+#  ipv4 address 178.18.169.23 255.255.255.0
+#  dot1q native vlan 30
+# !
+# interface GigabitEthernet0/0/0/3
+#  vrf custB
+#  ipv4 address 10.10.0.2 255.255.255.0
+#  dot1q native vlan 1021
+# !
 
 """
 
