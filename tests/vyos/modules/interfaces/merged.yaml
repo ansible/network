@@ -1,0 +1,52 @@
+--- 
+- debug: 
+      msg: "START vyos_interfaces merged integration tests on connection={{ ansible_connection }}"
+
+- include_tasks: remove_config.yaml
+
+- name: Merge the provided configuration with the exisiting running configuration
+  vyos_interfaces: &merged
+    config:
+      - name: eth1
+        description: "Configured by Ansible - Interface 1"
+        mtu: 1200
+        speed: auto
+        duplex: auto
+
+      - name: eth2
+        description: "Configured by Ansible - Interface 2 (ADMIN DOWN)"
+        mtu: 600
+        enable: False
+
+      - name: eth3
+        description: "Configured by Ansible - Interface 3"
+        speed: 100
+        duplex: full
+    state: merged
+  register: result
+
+- debug:
+    var: result
+
+- assert:
+    that:
+      - "'set interfaces ethernet eth1 description \\'Configured by Ansible - Interface 1\\'' in result.commands"
+      - "'set interfaces ethernet eth1 mtu \\'1200\\'' in result.commands"
+      - "'set interfaces ethernet eth1 duplex \\'auto\\'' in result.commands"
+      - "'set interfaces ethernet eth1 speed \\'auto\\'' in result.commands"
+      - "'set interfaces ethernet eth2 description \\'Configured by Ansible - Interface 2 (ADMIN DOWN)\\'' in result.commands"
+      - "'set interfaces ethernet eth2 mtu \\'600\\'' in result.commands"
+      - "'set interfaces ethernet eth2 disable' in result.commands"
+      - "'set interfaces ethernet eth3 description \\'Configured by Ansible - Interface 3\\'' in result.commands"
+      - "'set interfaces ethernet eth3 speed \\'100\\'' in result.commands"
+      - "'set interfaces ethernet eth3 duplex \\'full\\'' in result.commands"
+
+- name: Merge the provided configuration with the existing running configuration (IDEMPOTENT)
+  vyos_interfaces: *merged
+  register: result
+
+- assert:
+    that:
+      - 'result.changed == false'
+
+- include_tasks: remove_config.yaml

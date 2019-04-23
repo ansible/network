@@ -1,0 +1,36 @@
+--- 
+- debug:
+      msg: "START vyos_interfaces merged integration tests on connection={{ ansible_connection }}"
+
+- include_tasks: populate.yaml
+
+- name: Overrides all device configuration with provided configuration
+  vyos_interfaces: &overridden
+    config:
+      - name: eth2
+        description: "Overridden by Ansible"
+        mtu: 1500
+    state: overridden
+  register: result
+
+- assert:
+    that:
+      - "'delete interfaces ethernet {{ item }} description' in result.commands"
+      - "'delete interfaces ethernet {{ item }} speed' in result.commands"
+      - "'delete interfaces ethernet {{ item }} duplex' in result.commands"
+      - "'delete interfaces ethernet {{ item }} mtu' in result.commands"
+      - "'set interfaces ethernet eth2 description \\'Overridden by Ansible\\'' in result.commands"
+      - "'set interfaces ethernet eth2 mtu \\'1500\\'' in result.commands"
+  loop:
+    - eth1
+    - eth3
+  
+- name: Overrides all device configuration with provided configurations (IDEMPOTENT)
+  vyos_interfaces: *overridden
+  register: result
+
+- assert:
+    that:
+      - "result.changed == false"
+
+- include_tasks: remove_config.yaml

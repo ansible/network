@@ -141,8 +141,8 @@ class Interfaces(ConfigBase, InterfacesArgs):
         if obj_in_have:
             for item in Interfaces.params:
                 value = obj_in_have.get(item)
-                if value and w[item] != value:
-                    commands.append(delete_interface + ' ' + item + " '" + value + "'")
+                if value and not w[item]:
+                    commands.append(delete_interface + ' ' + item)
             if obj_in_have['enable'] != w['enable']:
                 commands.append(delete_interface + ' disable')
 
