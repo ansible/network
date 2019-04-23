@@ -203,15 +203,17 @@ class Interfaces(ConfigBase, InterfacesArgs):
                 if not changed:
                     break
 
-        if interface_want in commands:
-            # if there's change in interface_want then extend the commands
-            for w in want:
-                name = w['name']
-                have = search_obj_in_list(name, obj_in_have)
-                kwargs = {'want': w, 'have': have}
-                commands.extend(Interfaces._state_merged(**kwargs))
-        else:
-            # if there's no change in inteface_want then maintain idempotency
+        extend = False
+        for w in want:
+            name = w['name']
+            have = search_obj_in_list(name, obj_in_have)
+            kwargs = {'want': w, 'have': have}
+            merge_cmd = Interfaces._state_merged(**kwargs)
+            if len(merge_cmd) > 0:
+                # check for the change and extend the cmds
+                extend = True
+                commands.extend(merge_cmd)
+        if not extend:
             commands = []
 
         return commands
