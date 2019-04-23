@@ -227,7 +227,7 @@ def _replace_config(params):
             elif param == 'mtu':
                 interface_commands.append('   mtu {0}'.format(state))
         if 'speed' in config:
-            interface_commands.append('   speed forced {0}{1}'.format(config['speed'], config['duplex']))
+            interface_commands.append('   speed {0}{1}'.format(config['speed'], config['duplex']))
         if interface_commands:
             commands[interface] = interface_commands
 

@@ -41,8 +41,8 @@ DOCUMENTATION = """
 ---
 module: eos_interfaces
 version_added: 2.9
-short_description: Manages interface attributes of Arista EOS interfaces.
-description: ['Manages interface attributes of Arista EOS interfaces.']
+short_description: Manages interface attributes of Arista EOS interfaces
+description: ['This module manages the interface attributes of Arista EOS interfaces.']
 author: ['Nathaniel Case (@qalthos)']
 options:
   config:
@@ -55,24 +55,29 @@ options:
       duplex:
         default: auto
         description:
-        - Interface link status. Applicable for ethernet interface only.
+        - Interface link status. Applicable for Ethernet interfaces only.
+        - Values other than C(auto) must also set I(speed).
+        - Ignored when I(speed) is set above C(1000).
         type: str
       enable:
         default: true
-        description: Administrative state of the interface.
+        description:
+        - Administrative state of the interface.
+        - Set the value to C(true) to administratively enable the interface or C(false)
+          to disable it.
         type: bool
       mtu:
         description:
         - MTU for a specific interface. Must be an even number between 576 and 9216.
-          Applicable for Ethernet interface only.
+          Applicable for Ethernet interfaces only.
         type: str
       name:
         description:
-        - Full name of the interface, i.e. GigabitEthernet1
+        - Full name of the interface, e.g. GigabitEthernet1.
         type: str
       speed:
         description:
-        - Interface link speed. Applicable for ethernet interface only.
+        - Interface link speed. Applicable for Ethernet interfaces only.
         type: str
   state:
     choices:
@@ -82,7 +87,7 @@ options:
     - deleted
     default: merged
     description:
-    - The state the configuration should be left in
+    - The state the configuration should be left in.
     type: str
 
 """
@@ -189,7 +194,7 @@ EXAMPLES = """
 #    ip address dhcp
 # !
 
-- name: Replaces device configuration of all interfaces with provided configuration
+- name: Overrides all device configuration with provided configuration
   eos_interfaces:
     config:
       - name: Ethernet1
@@ -229,11 +234,11 @@ EXAMPLES = """
 #    ip address dhcp
 # !
 
-- name: Returns interfaces to default parameters
+- name: Delete or return interface parameters to default settings
   eos_interfaces:
     config:
       - name: Ethernet1
-    operation: deleted
+    state: deleted
 
 # After state:
 # ------------
