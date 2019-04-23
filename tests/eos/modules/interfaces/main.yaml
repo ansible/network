@@ -1,0 +1,15 @@
+---
+- hosts: eos
+  gather_subset:
+    - net_configuration_interfaces
+
+  tasks:
+    - import_role:
+        name: ~/collections/network
+
+    - include_tasks: "{{ item }}.yaml"
+      loop:
+        - merged
+        - replaced
+        - overridden
+        - deleted

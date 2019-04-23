@@ -1,0 +1,31 @@
+---
+- include_tasks: reset_config.yaml
+
+- name: Returns interfaces to default parameters
+  eos_interfaces:
+    config:
+      - name: Ethernet1
+    state: deleted
+
+- eos_facts:
+    gather_subset: net_configuration_interfaces
+
+- set_fact:
+    expected_output:
+      - name: Ethernet1
+        duplex: auto
+        enable: True
+      - name: Ethernet2
+        duplex: auto
+        enable: True
+        mtu: "3000"
+      - name: Management1
+        description: Management interface
+        duplex: auto
+        enable: True
+
+- assert:
+    that:
+      - "ansible_facts.net_configuration.interfaces == expected_output"
+
+- include_tasks: reset_config.yaml

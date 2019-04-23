@@ -1,0 +1,41 @@
+---
+- name: Reset initial config
+  cli_config:
+    config: |
+      interface Ethernet1
+         description "Interface 1"
+         no shutdown
+         no mtu
+         speed forced 40gfull
+      interface Ethernet2
+         no description
+         no shutdown
+         mtu 3000
+         speed auto
+      interface Management1
+         description "Management interface"
+         no shutdown
+         no mtu
+
+- eos_facts:
+    gather_subset: net_configuration_interfaces
+
+- set_fact:
+    expected_output:
+      - name: Ethernet1
+        description: Interface 1
+        speed: 40g
+        duplex: full
+        enable: True
+      - name: Ethernet2
+        duplex: auto
+        enable: True
+        mtu: "3000"
+      - name: Management1
+        description: Management interface
+        duplex: auto
+        enable: True
+
+- assert:
+    that:
+      - "ansible_facts.net_configuration.interfaces == expected_output"

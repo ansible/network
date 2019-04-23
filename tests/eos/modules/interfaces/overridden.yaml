@@ -1,0 +1,34 @@
+---
+- include_tasks: reset_config.yaml
+
+- name: Replaces device configuration of all interfaces with provided configuration
+  eos_interfaces:
+    config:
+      - name: Ethernet1
+        enable: True
+      - name: Ethernet2
+        description: 'Configured by Ansible'
+        enable: False
+    state: overridden
+
+- eos_facts:
+    gather_subset: net_configuration_interfaces
+
+- set_fact:
+    expected_output:
+      - name: Ethernet1
+        duplex: auto
+        enable: True
+      - name: Ethernet2
+        description: 'Configured by Ansible'
+        duplex: auto
+        enable: False
+      - name: Management1
+        duplex: auto
+        enable: True
+
+- assert:
+    that:
+      - "ansible_facts.net_configuration.interfaces == expected_output"
+
+- include_tasks: reset_config.yaml
