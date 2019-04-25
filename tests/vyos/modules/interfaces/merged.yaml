@@ -1,6 +1,6 @@
---- 
-- debug: 
-      msg: "START vyos_interfaces merged integration tests on connection={{ ansible_connection }}"
+---
+- debug:
+    msg: "START vyos_interfaces merged integration tests on connection={{ ansible_connection }}"
 
 - include_tasks: remove_config.yaml
 
@@ -16,7 +16,7 @@
       - name: eth2
         description: "Configured by Ansible - Interface 2 (ADMIN DOWN)"
         mtu: 600
-        enable: False
+        enable: false
 
       - name: eth3
         description: "Configured by Ansible - Interface 3"

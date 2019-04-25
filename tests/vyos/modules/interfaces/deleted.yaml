@@ -3,12 +3,12 @@
     msg: "Start vyos_interfaces deleted integration tests ansible_connection={{ ansible_connection }}"
 
 - include_tasks: populate.yaml
- 
+
 - name: Delete attributes of given interfaces
   vyos_interfaces: &deleted
     config:
       - name: eth1
-        
+
       - name: eth2
     state: deleted
   register: result

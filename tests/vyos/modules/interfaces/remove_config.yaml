@@ -1,8 +1,8 @@
 ---
 - name: Remove Config
-  cli_config: 
+  cli_config:
     config: "{{ lines }}"
-  vars: 
+  vars:
     lines: |
       delete interfaces ethernet "{{ intf }}" description
       delete interfaces ethernet "{{ intf }}" speed

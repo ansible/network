@@ -1,6 +1,6 @@
 ---
-- hosts: vyos-appliance
-  gather_facts: yes
+- hosts: appliance
+  gather_facts: true
   gather_subset:
     - net_configuration_interfaces
   tasks:

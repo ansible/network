@@ -1,6 +1,6 @@
---- 
-- debug: 
-      msg: START vyos_interfaces replaced integration tests on connection={{ ansible_connection }}
+---
+- debug:
+    msg: START vyos_interfaces replaced integration tests on connection={{ ansible_connection }}
 
 - include_tasks: populate.yaml
 
@@ -34,5 +34,5 @@
 - assert:
     that:
       - "result.changed == false"
-      
+
 - include_tasks: remove_config.yaml
