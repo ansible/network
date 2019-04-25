@@ -17,11 +17,6 @@
         description: "Configured by Ansible - Interface 2 (ADMIN DOWN)"
         mtu: 600
         enable: false
-
-      - name: eth3
-        description: "Configured by Ansible - Interface 3"
-        speed: 100
-        duplex: full
     state: merged
   register: result
 
@@ -37,9 +32,6 @@
       - "'set interfaces ethernet eth2 description \\'Configured by Ansible - Interface 2 (ADMIN DOWN)\\'' in result.commands"
       - "'set interfaces ethernet eth2 mtu \\'600\\'' in result.commands"
       - "'set interfaces ethernet eth2 disable' in result.commands"
-      - "'set interfaces ethernet eth3 description \\'Configured by Ansible - Interface 3\\'' in result.commands"
-      - "'set interfaces ethernet eth3 speed \\'100\\'' in result.commands"
-      - "'set interfaces ethernet eth3 duplex \\'full\\'' in result.commands"
 
 - name: Merge the provided configuration with the existing running configuration (IDEMPOTENT)
   vyos_interfaces: *merged

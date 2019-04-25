@@ -1,11 +1,9 @@
 ---
 - hosts: appliance
   gather_facts: true
-  gather_subset:
-    - net_configuration_interfaces
   tasks:
     - import_role:
-        name: ~/collections/network
+        name: network
 
     - include_tasks: "{{ item }}.yaml"
       loop:

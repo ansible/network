@@ -12,7 +12,7 @@ from copy import deepcopy
 from ansible.module_utils. \
      vyos.facts.base import FactsBase
 from re import findall, M
-import q
+
 
 class InterfacesFacts(FactsBase):
     """ The vyos interfaces fact class

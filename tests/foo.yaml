@@ -1,0 +1,7 @@
+- hosts: controller
+  tasks:
+    - name: Setup tox role
+      include_role:
+        name: tox
+      vars:
+        tox_extra_args: -- ansible-playbook -v -c network_cli tests/vyos/modules/interfaces/main.yaml

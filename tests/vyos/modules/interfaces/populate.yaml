@@ -11,6 +11,5 @@
   loop:
     - eth1
     - eth2
-    - eth3
   loop_control:
     loop_var: intf

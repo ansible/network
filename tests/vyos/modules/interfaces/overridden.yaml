@@ -23,7 +23,6 @@
       - "'set interfaces ethernet eth2 mtu \\'1500\\'' in result.commands"
   loop:
     - eth1
-    - eth3
 
 - name: Overrides all device configuration with provided configurations (IDEMPOTENT)
   vyos_interfaces: *overridden
