@@ -10,12 +10,17 @@ from ansible.module_utils.nxos.utils.utils import get_interface_type, normalize_
 class Interfaces(ConfigBase, InterfaceArgs):
 
     gather_subset = [
-        'net_configuration_interfaces',
+        '!all',
+        '!min',
+    ]
+
+    gather_network_resources = [
+        'interfaces',
     ]
 
     def get_interface_facts(self):
-        facts = Facts().get_facts(self._module, self._connection, self.gather_subset)
-        interface_facts = facts['net_configuration'].get('interfaces')
+        facts = Facts().get_facts(self._module, self._connection, self.gather_subset, self.gather_network_resources)
+        interface_facts = facts['network_resources'].get('interfaces')
         if not interface_facts:
             return []
         return interface_facts
@@ -30,15 +35,12 @@ class Interfaces(ConfigBase, InterfaceArgs):
         if commands:
             if not self._module.check_mode:
                 self._connection.edit_config(commands)
+                changed_interface_facts = self.get_interface_facts()
+                result['after'] = changed_interface_facts
             result['changed'] = True
+
         result['commands'] = commands
-
-        changed_interface_facts = self.get_interface_facts()
-
         result['before'] = existing_interface_facts
-        if result['changed'] == True:
-            result['after'] = changed_interface_facts
-
         result['warnings'] = warnings
         return result
 

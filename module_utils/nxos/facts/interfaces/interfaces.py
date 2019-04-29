@@ -27,7 +27,8 @@ class InterfacesFacts(FactsBase):
         facts = {}
         if objs:
             facts['interfaces'] = objs
-        self.ansible_facts['net_configuration'].update(facts)
+
+        self.ansible_facts['network_resources'].update(facts)
         return self.ansible_facts
 
     def render_config(self, spec, conf):

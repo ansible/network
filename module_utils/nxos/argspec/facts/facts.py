@@ -5,9 +5,10 @@ class FactsArgs(object):
 
     choices = [
         'all',
-        'net_configuration_interfaces',
+        'interfaces',
     ]
 
     argument_spec = {
-        'gather_subset': dict(default=['all'], choices=choices, type='list')
+        'gather_subset': dict(default=['!config'], type='list'),
+        'gather_network_resources': dict(default=['all'], choices=choices, type='list'),
     }
