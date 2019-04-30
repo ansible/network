@@ -1,0 +1,36 @@
+---
+- debug:
+    msg: "Start vyos_interfaces deleted integration tests ansible_connection={{ ansible_connection }}"
+
+- include_tasks: populate.yaml
+
+- name: Delete attributes of given interfaces
+  vyos_interfaces: &deleted
+    config:
+      - name: eth1
+
+      - name: eth2
+    state: deleted
+  register: result
+
+- assert:
+    that:
+      - "'delete interfaces ethernet {{ intf }} description' in result.commands"
+      - "'delete interfaces ethernet {{ intf }} speed' in result.commands"
+      - "'delete interfaces ethernet {{ intf }} duplex' in result.commands"
+      - "'delete interfaces ethernet {{ intf }} mtu' in result.commands"
+  loop:
+    - eth1
+    - eth2
+  loop_control:
+    loop_var: intf
+
+- name: Delete attributes of given interfaces (IDEMPOTENT)
+  vyos_interfaces: *deleted
+  register: result
+
+- assert:
+    that:
+      - "result.changed == false"
+
+- include_tasks: remove_config.yaml

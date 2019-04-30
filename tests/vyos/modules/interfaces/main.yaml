@@ -1,0 +1,13 @@
+---
+- hosts: appliance
+  gather_facts: true
+  tasks:
+    - import_role:
+        name: network
+
+    - include_tasks: "{{ item }}.yaml"
+      loop:
+        - merged
+        - replaced
+        - overridden
+        - deleted

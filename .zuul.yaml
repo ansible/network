@@ -1,0 +1,11 @@
+- job:
+    name: network-vyos-test
+    parent: ansible-network-vyos-base
+    run: tests/foo.yaml
+    required-projects:
+      - name: github.com/ansible/ansible
+
+- project:
+    check:
+      jobs:
+        - network-vyos-test
