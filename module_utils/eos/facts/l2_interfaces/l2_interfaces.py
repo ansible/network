@@ -25,16 +25,11 @@ class L2_interfacesFacts(FactsBase):
         :rtype: dictionary
         :returns: facts
         """
-        if module: #just for linting purposes
-            pass
-        if connection:  #just for linting purposes
-            pass
-
         if not data:
-            data = "foo" # connection.get('show running-config | section ^interface')
+            data = connection.get('show running-config | section ^interface')
 
         # operate on a collection of resource x
-        config = [data] # data.split('interface ')
+        config = data.split('interface ')
         objs = []
         for conf in config:
             if conf:
