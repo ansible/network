@@ -78,12 +78,39 @@ class Interfaces(ConfigBase, InterfaceArgs):
     def _state_replaced(self, w, obj_in_have, interface_type):
         commands = list()
 
-        if interface_type in ('loopback', 'portchannel', 'svi'):
-            commands.append('no interface {0}'. format(w['name']))
-            commands.extend(self._state_merged(w, obj_in_have, interface_type))
-        else:
-            commands.append('default interface {0}'.format(w['name']))
-            commands.extend(self._state_merged(w, obj_in_have, interface_type))
+        merged_commands = self._state_merged(w, obj_in_have, interface_type)
+        commands.extend(self._replace_config(w, obj_in_have, interface_type))
+        if commands:
+            commands.insert(0, 'interface ' + w['name'])
+        cmds = set(commands).intersection(set(merged_commands))
+        for cmd in cmds:
+            merged_commands.remove(cmd)
+
+        commands.extend(merged_commands)
+        return commands
+
+    def _replace_config(self, w, obj_in_have, interface_type):
+        commands = []
+        for key, value in w.items():
+            if key == 'enable' and obj_in_have.get('enable') == False:
+                commands.append('no shutdown')
+            if key == 'description' and ('description' in obj_in_have and value != obj_in_have['description']):
+                commands.append('no description')
+            if interface_type == 'ethernet':
+                if key == 'mode' and obj_in_have.get('mode'):
+                    commands.append('switchport')
+                if key == 'speed' and obj_in_have.get('speed'):
+                    commands.append('no speed')
+                if key == 'duplex' and obj_in_have.get('duplex'):
+                    commands.append('no duplex')
+            if interface_type in ('ethernet', 'portchannel', 'svi'):
+                if key == 'mtu' and obj_in_have.get('mtu'):
+                    commands.append('no mtu')
+            if interface_type in ('ethernet', 'svi'):
+                if key == 'ip_forward':
+                    commands.append('no ip forward')
+                if key == 'fabric_forwarding_anycast_gateway':
+                    commands.append('no fabric forwarding anycast gateway')
 
         return commands
 
@@ -212,40 +239,42 @@ class Interfaces(ConfigBase, InterfaceArgs):
         if not obj_in_have or interface_type == 'unknown':
             return commands
 
-        interface = 'interface ' + w['name']
+        commands.append('interface ' + w['name'])
+        commands.extend(self._default_attributes(self, interface_type, obj_in_have))
+        return commands
 
+    def _remove_command_from_interface(self, cmd):
+        commands = 'no %s' % cmd
+        return commands
+
+    def _default_attributes(self, interface_type, obj_in_have):
+        commands = []
         if 'description' in obj_in_have:
-            self._remove_command_from_interface(interface, 'description', commands)
+            commands.append(self._remove_command_from_interface('description'))
         if 'enable' in obj_in_have and obj_in_have['enable'] is False:
             # if enable is False set enable as True which is the default behavior
-            self._remove_command_from_interface(interface, 'shutdown', commands)
+            commands.append(self._remove_command_from_interface('shutdown'))
 
         if interface_type == 'ethernet':
             if 'mode' in obj_in_have and obj_in_have['mode'] != 'layer2':
                 # if mode is not layer2 set mode as layer2 which is the default behavior
-                self._remove_command_from_interface(interface, 'switchport', commands)
+                commands.append(self._remove_command_from_interface('switchport'))
 
             if 'speed' in obj_in_have:
-                self._remove_command_from_interface(interface, 'speed', commands)
+                commands.append(self._remove_command_from_interface('speed'))
             if 'duplex' in obj_in_have:
-                self._remote_command_from_interface(interface, 'duplex', commands)
+                commands.append(self._remove_command_from_interface('duplex'))
 
         if interface_type in ('ethernet', 'portchannel', 'svi'):
             if 'mtu' in obj_in_have:
-                self._remove_command_from_interface(interface, 'mtu', commands)
+                commands.append(self._remove_command_from_interface('mtu'))
 
         if interface_type in ('ethernet', 'svi'):
             if 'ip_forward' in obj_in_have:
-                self._remove_command_from_interface(interface, 'ip forward', commands)
+                commands.append(self._remove_command_from_interface('ip forward'))
             if 'fabric_forwarding_anycast_gateway' in obj_in_have:
-                self._remove_command_from_interface(interface, 'fabric forwarding anycast gateway', commands)
+                commands.append(self._remove_command_from_interface('fabric forwarding anycast gateway'))
 
-        return commands
-
-    def _remove_command_from_interface(self, interface, cmd, commands):
-        if interface not in commands:
-            commands.insert(0, interface)
-        commands.append('no %s' % cmd)
         return commands
 
     def _get_admin_state(self, enable):
