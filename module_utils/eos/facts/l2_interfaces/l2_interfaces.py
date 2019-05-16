@@ -53,9 +53,29 @@ class L2_interfacesFacts(FactsBase):
         :rtype: dictionary
         :returns: The generated config
         """
-        if conf:
-            pass
         config = deepcopy(spec)
+
         # populate the facts from the configuration
-        config = {"some": "value"}
+        config['name'] = re.match(r'(\S+)', conf).group(1).replace('"', '')
+
+        has_access = re.search(r"switchport access vlan (\d+)", conf)
+        if has_access:
+            config["access"] = {"vlan": int(has_access.group(1))}
+
+        has_trunk = re.findall(r"switchport trunk (.+)", conf)
+        if has_trunk:
+            trunk = {}
+            for match in has_trunk:
+                has_native = re.match(r"native vlan (\d+)", match)
+                if has_native:
+                    trunk["native_vlan"] = int(has_native.group(1))
+                    continue
+
+                has_allowed = re.match(r"allowed vlan (\S+)", match)
+                if has_allowed:
+                    # TODO: listify?
+                    trunk["trunk_allowed_vlans"] = has_allowed.group(1)
+                    continue
+            config['trunk'] = trunk
+
         return self.generate_final_config(config)
