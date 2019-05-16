@@ -8,14 +8,10 @@ this file validates each subset of facts and selectively
 calls the appropriate facts gathering function
 """
 
-from ansible.module_utils. \
-     eos.argspec.facts.facts import FactsArgs
-from ansible.module_utils. \
-     eos.argspec.interfaces.interfaces import L2_interfacesArgs
-from ansible.module_utils. \
-     eos.facts.base import FactsBase
-from ansible.module_utils. \
-     eos.facts.l2_interfaces.l2_interfaces import L2_interfacesFacts
+from ansible.module_utils.eos.argspec.facts.facts import FactsArgs
+from ansible.module_utils.eos.argspec.l2_interfaces.l2_interfaces import L2_interfacesArgs
+from ansible.module_utils.eos.facts.base import FactsBase
+from ansible.module_utils.eos.facts.l2_interfaces.l2_interfaces import L2_interfacesFacts
 
 class Facts(FactsArgs, FactsBase): #pylint: disable=R0903
     """ The fact class for eos

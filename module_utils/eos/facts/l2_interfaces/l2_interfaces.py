@@ -9,8 +9,10 @@ for a given resource, parsed, and the facts tree is populated
 based on the configuration.
 """
 from copy import deepcopy
-from ansible.module_utils. \
-     eos.facts.base import FactsBase
+import re
+
+from ansible.module_utils.eos.facts.base import FactsBase
+
 
 class L2_interfacesFacts(FactsBase):
     """ The eos l2_interfaces fact class
