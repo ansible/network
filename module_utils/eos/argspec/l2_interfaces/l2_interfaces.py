@@ -36,11 +36,13 @@ class L2_interfacesArgs(object):  # pylint: disable=R0903
 
     argument_spec = \
     {'config': {'elements': 'dict',
-            'options': {'access': {'options': {'vlan': {'type': 'str'}}},
+            'options': {'access': {'options': {'vlan': {'type': 'str'}},
+                                   'type': 'dict'},
                         'name': {'required': True, 'type': 'str'},
                         'trunk': {'options': {'native_vlan': {'type': 'str'},
                                               'trunk_allowed_vlans': {'type': 'list'},
-                                              'vlans': {'type': 'list'}}}},
+                                              'vlans': {'type': 'list'}},
+                                  'type': 'dict'}},
             'type': 'list'},
  'state': {'choices': ['merged', 'replaced', 'overridden', 'deleted'],
            'default': 'merged',

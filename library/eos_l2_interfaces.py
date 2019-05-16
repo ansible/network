@@ -57,6 +57,7 @@ options:
       access:
         description:
         - Switchport mode access command to configure the interface as a layer 2 access.
+        type: dict
         suboptions:
           vlan:
             description:
@@ -65,6 +66,7 @@ options:
       trunk:
         description:
         - Switchport mode trunk command to configure the interface as a Layer 2 trunk.
+        type: dict
         suboptions:
           vlans:
             description:
