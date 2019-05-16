@@ -129,6 +129,34 @@ class L2_interfaces(ConfigBase, L2_interfacesArgs):
                   the current configuration
         """
         commands = []
+        for interface in want:
+            for extant in have:
+                if extant['name'] == interface['name']:
+                    break
+            else:
+                continue
+
+            intf_commands = []
+            wants_access = interface["access"]
+            if wants_access:
+                access_vlan = wants_access.get("vlan")
+                if access_vlan and access_vlan != extant["access"]["vlan"]:
+                    intf_commands.append("switchport access vlan {0}".format(access_vlan))
+
+            wants_trunk = interface["trunk"]
+            if wants_trunk:
+                native_vlan = wants_trunk.get("native_vlan")
+                if native_vlan and native_vlan != extant["trunk"]["native_vlan"]:
+                    intf_commands.append("switchport trunk native vlan {0}".format(native_vlan))
+
+                allowed_vlans = interface['trunk'].get("trunk_allowed_vlans")
+                if allowed_vlans and allowed_vlans != extant["trunk"]["trunk_allowed_vlans"]:
+                    intf_commands.append("switchport trunk allowed vlan {0}".format(allowed_vlans))
+
+            if intf_commands:
+                intf_commands.insert(0, "interface {0}".format(interface['name']))
+                commands.extend(intf_commands)
+
         return commands
 
     @staticmethod
