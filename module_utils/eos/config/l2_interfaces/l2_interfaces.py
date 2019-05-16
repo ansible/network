@@ -12,13 +12,10 @@ created
 
 from ansible.module_utils.network.common.utils import to_list
 
-from ansible.module_utils. \
-     eos.argspec.l2_interfaces.l2_interfaces import L2_interfacesArgs
-from ansible.module_utils. \
-     eos. \
-     config.base import ConfigBase
-from ansible.module_utils. \
-     eos.facts.facts import Facts
+from ansible.module_utils.eos.argspec.l2_interfaces.l2_interfaces import L2_interfacesArgs
+from ansible.module_utils.eos.config.base import ConfigBase
+from ansible.module_utils.eos.facts.facts import Facts
+
 
 class L2_interfaces(ConfigBase, L2_interfacesArgs):
     """
@@ -92,21 +89,17 @@ class L2_interfaces(ConfigBase, L2_interfacesArgs):
         """
         state = self._module.params['state']
         if state == 'overridden':
-            kwargs = {}
-            commands = self._state_overridden(**kwargs)
+            commands = self._state_overridden(want, have)
         elif state == 'deleted':
-            kwargs = {}
-            commands = self._state_deleted(**kwargs)
+            commands = self._state_deleted(want, have)
         elif state == 'merged':
-            kwargs = {}
-            commands = self._state_merged(**kwargs)
+            commands = self._state_merged(want, have)
         elif state == 'replaced':
-            kwargs = {}
-            commands = self._state_replaced(**kwargs)
+            commands = self._state_replaced(want, have)
         return commands
 
     @staticmethod
-    def _state_replaced(**kwargs):
+    def _state_replaced(want, have):
         """ The command generator when state is replaced
 
         :rtype: A list
@@ -117,7 +110,7 @@ class L2_interfaces(ConfigBase, L2_interfacesArgs):
         return commands
 
     @staticmethod
-    def _state_overridden(**kwargs):
+    def _state_overridden(want, have):
         """ The command generator when state is overridden
 
         :rtype: A list
@@ -128,7 +121,7 @@ class L2_interfaces(ConfigBase, L2_interfacesArgs):
         return commands
 
     @staticmethod
-    def _state_merged(**kwargs):
+    def _state_merged(want, have):
         """ The command generator when state is merged
 
         :rtype: A list
@@ -139,7 +132,7 @@ class L2_interfaces(ConfigBase, L2_interfacesArgs):
         return commands
 
     @staticmethod
-    def _state_deleted(**kwargs):
+    def _state_deleted(want, have):
         """ The command generator when state is deleted
 
         :rtype: A list
@@ -147,4 +140,25 @@ class L2_interfaces(ConfigBase, L2_interfacesArgs):
                   of the provided objects
         """
         commands = []
+        for interface in want:
+            for extant in have:
+                if extant['name'] == interface['name']:
+                    break
+            else:
+                continue
+
+            intf_commands = []
+            if "access" in extant:
+                intf_commands.append("no switchport access vlan")
+
+            trunk = extant.get("trunk", {})
+            if "trunk_allowed_vlans" in trunk:
+                intf_commands.append("no switchport trunk allowed vlan")
+            if "native_vlan" in trunk:
+                intf_commands.append("no switchport trunk native vlan")
+
+            if intf_commands:
+                intf_commands.insert(0, "interface {}".format(interface["name"]))
+                commands.extend(intf_commands)
+
         return commands
