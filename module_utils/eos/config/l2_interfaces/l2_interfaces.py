@@ -118,6 +118,19 @@ class L2_interfaces(ConfigBase, L2_interfacesArgs):
                   to the desired configuration
         """
         commands = []
+        for extant in have:
+            for interface in want:
+                if extant['name'] == interface['name']:
+                    break
+            else:
+                # We didn't find a matching desired state, which means we can
+                # pretend we recieved an empty desired state.
+                interface = dict(name=extant['name'])
+                commands.extend(clear_interface(interface, extant))
+                continue
+
+            commands.extend(clear_interface(interface, extant))
+            commands.extend(set_interface(interface, extant))
         return commands
 
     @staticmethod
@@ -136,26 +149,7 @@ class L2_interfaces(ConfigBase, L2_interfacesArgs):
             else:
                 continue
 
-            intf_commands = []
-            wants_access = interface["access"]
-            if wants_access:
-                access_vlan = wants_access.get("vlan")
-                if access_vlan and access_vlan != extant["access"]["vlan"]:
-                    intf_commands.append("switchport access vlan {0}".format(access_vlan))
-
-            wants_trunk = interface["trunk"]
-            if wants_trunk:
-                native_vlan = wants_trunk.get("native_vlan")
-                if native_vlan and native_vlan != extant["trunk"]["native_vlan"]:
-                    intf_commands.append("switchport trunk native vlan {0}".format(native_vlan))
-
-                allowed_vlans = interface['trunk'].get("trunk_allowed_vlans")
-                if allowed_vlans and allowed_vlans != extant["trunk"]["trunk_allowed_vlans"]:
-                    intf_commands.append("switchport trunk allowed vlan {0}".format(allowed_vlans))
-
-            if intf_commands:
-                intf_commands.insert(0, "interface {0}".format(interface['name']))
-                commands.extend(intf_commands)
+            commands.extend(set_interface(interface, extant))
 
         return commands
 
@@ -175,18 +169,49 @@ class L2_interfaces(ConfigBase, L2_interfacesArgs):
             else:
                 continue
 
-            intf_commands = []
-            if "access" in extant:
-                intf_commands.append("no switchport access vlan")
-
-            trunk = extant.get("trunk", {})
-            if "trunk_allowed_vlans" in trunk:
-                intf_commands.append("no switchport trunk allowed vlan")
-            if "native_vlan" in trunk:
-                intf_commands.append("no switchport trunk native vlan")
-
-            if intf_commands:
-                intf_commands.insert(0, "interface {}".format(interface["name"]))
-                commands.extend(intf_commands)
+            # Use an empty configuration, just in case
+            interface = dict(name=interface['name'])
+            commands.extend(clear_interface(interface, extant))
 
         return commands
+
+
+def set_interface(want, have):
+    commands = []
+    wants_access = want["access"]
+    if wants_access:
+        access_vlan = wants_access.get("vlan")
+        if access_vlan and access_vlan != have.get("access", {}).get("vlan"):
+            commands.append("switchport access vlan {0}".format(access_vlan))
+
+    wants_trunk = want["trunk"]
+    if wants_trunk:
+        has_trunk = have.get("trunk", {})
+        native_vlan = wants_trunk.get("native_vlan")
+        if native_vlan and native_vlan != has_trunk.get("native_vlan"):
+            commands.append("switchport trunk native vlan {0}".format(native_vlan))
+
+        allowed_vlans = want['trunk'].get("trunk_allowed_vlans")
+        if allowed_vlans and allowed_vlans != has_trunk.get("trunk_allowed_vlans"):
+            commands.append("switchport trunk allowed vlan {0}".format(allowed_vlans))
+
+    if commands:
+        commands.insert(0, "interface {0}".format(want['name']))
+    return commands
+
+
+def clear_interface(want, have):
+    commands = []
+    if "access" in have and not want.get('access'):
+        commands.append("no switchport access vlan")
+
+    has_trunk = have.get("trunk") or {}
+    wants_trunk = want.get("trunk") or {}
+    if "trunk_allowed_vlans" in has_trunk and "trunk_allowed_vlans" not in wants_trunk:
+        commands.append("no switchport trunk allowed vlan")
+    if "native_vlan" in has_trunk and "native_vlan" not in wants_trunk:
+        commands.append("no switchport trunk native vlan")
+
+    if commands:
+        commands.insert(0, "interface {}".format(want["name"]))
+    return commands
