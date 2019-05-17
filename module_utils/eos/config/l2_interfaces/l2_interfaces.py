@@ -107,6 +107,15 @@ class L2_interfaces(ConfigBase, L2_interfacesArgs):
                   to the desired configuration
         """
         commands = []
+        for interface in want:
+            for extant in have:
+                if extant['name'] == interface['name']:
+                    break
+            else:
+                continue
+
+            commands.extend(clear_interface(interface, extant))
+            commands.extend(set_interface(interface, extant))
         return commands
 
     @staticmethod
@@ -192,7 +201,9 @@ def set_interface(want, have):
             commands.append("switchport trunk native vlan {0}".format(native_vlan))
 
         allowed_vlans = want['trunk'].get("trunk_allowed_vlans")
-        if allowed_vlans and allowed_vlans != has_trunk.get("trunk_allowed_vlans"):
+        has_allowed = has_trunk.get("trunk_allowed_vlans")
+        if allowed_vlans:
+            allowed_vlans = ','.join(allowed_vlans)
             commands.append("switchport trunk allowed vlan {0}".format(allowed_vlans))
 
     if commands:
