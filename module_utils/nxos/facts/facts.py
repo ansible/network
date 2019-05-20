@@ -1,13 +1,9 @@
 import platform
 import re
 
-from ansible.module_utils.network.nxos.nxos import run_commands, get_config
-from ansible.module_utils.network.nxos.nxos import get_capabilities, get_interface_type
-from ansible.module_utils.network.nxos.nxos import normalize_interface
-from ansible.module_utils.connection import ConnectionError
-from ansible.module_utils.six import string_types, iteritems
-
-from ansible.module_utils.network.common.utils import to_list
+from ansible.module_utils.network.nxos.nxos import run_commands, get_config, get_capabilities
+from ansible.module_utils.nxos.utils.utils import get_interface_type, normalize_interface
+from ansible.module_utils.six import iteritems
 from ansible.module_utils.nxos.argspec.facts.facts import FactsArgs
 from ansible.module_utils.nxos.argspec.interfaces.interfaces import InterfaceArgs
 from ansible.module_utils.nxos.facts.base import FactsBase
@@ -810,6 +806,8 @@ class Facts(FactsArgs, FactsBase):
 
 
     def get_facts(self, module, connection, gather_subset=['!config'], gather_network_resources=['all']):
+        warnings = list()
+
         self.ansible_facts['gather_network_resources'] = list()
         self.ansible_facts['gather_subset'] = list()
 
@@ -838,6 +836,7 @@ class Facts(FactsArgs, FactsBase):
                 for inst in instances:
                     inst.populate()
                     facts.update(inst.facts)
+                    warnings.extend(inst.warnings)
 
                 for key, value in iteritems(facts):
                     # this is to maintain capability with nxos_facts 2.1
@@ -847,7 +846,7 @@ class Facts(FactsArgs, FactsBase):
                         key = 'ansible_net_%s' % key
                         self.ansible_facts[key] = value
 
-        return self.ansible_facts
+        return self.ansible_facts, warnings
 
     def _get_interfaces(self, module, connection):
         return InterfacesFacts(InterfaceArgs.argument_spec, 'config', 'options').populate_facts(module, connection)

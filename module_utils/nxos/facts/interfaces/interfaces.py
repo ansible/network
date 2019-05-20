@@ -28,7 +28,7 @@ class InterfacesFacts(FactsBase):
         if objs:
             facts['interfaces'] = objs
 
-        self.ansible_facts['network_resources'].update(facts)
+        self.ansible_facts['ansible_network_resources'].update(facts)
         return self.ansible_facts
 
     def render_config(self, spec, conf):
@@ -50,7 +50,7 @@ class InterfacesFacts(FactsBase):
         config['mode'] = self.parse_conf_cmd_arg(conf, 'switchport', 'layer2', res2='layer3')
         enable = self.parse_conf_cmd_arg(conf, 'shutdown', False)
         config['enable'] = enable if enable is not None else config['enable']
-        config['fabric_forwarding_anycast_gateway'] = self.parse_conf_cmd_arg(conf, 'fabric forwarding mode anycast-gateway', True, res2=False)
-        config['ip_forward'] = self.parse_conf_cmd_arg(conf, 'ip forward', 'enable', res2='disable')
+        config['fabric_forwarding_anycast_gateway'] = self.parse_conf_arg(conf, 'fabric forwarding mode anycast-gateway')
+        config['ip_forward'] = self.parse_conf_arg(conf, 'ip forward')
 
         return self.generate_final_config(config)

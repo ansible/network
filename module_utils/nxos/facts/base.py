@@ -8,7 +8,7 @@ from ansible.module_utils.six import iteritems
 class FactsBase(object):
 
     generated_spec = {}
-    ansible_facts = {'network_resources': {}}
+    ansible_facts = {'ansible_network_resources': {}}
 
     def __init__(self, argspec, subspec=None, options=None):
         spec = deepcopy(argspec)

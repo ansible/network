@@ -19,8 +19,8 @@ class Interfaces(ConfigBase, InterfaceArgs):
     ]
 
     def get_interface_facts(self):
-        facts = Facts().get_facts(self._module, self._connection, self.gather_subset, self.gather_network_resources)
-        interface_facts = facts['network_resources'].get('interfaces')
+        facts, warnings = Facts().get_facts(self._module, self._connection, self.gather_subset, self.gather_network_resources)
+        interface_facts = facts['ansible_network_resources'].get('interfaces')
         if not interface_facts:
             return []
         return interface_facts
@@ -56,8 +56,8 @@ class Interfaces(ConfigBase, InterfaceArgs):
         commands = list()
 
         state = self._module.params['state']
-        if state == 'overriden':
-            commands.extend(self._state_overriden(want, have))
+        if state == 'overridden':
+            commands.extend(self._state_overridden(want, have))
         else:
             for w in want:
                 name = w['name']
@@ -91,6 +91,9 @@ class Interfaces(ConfigBase, InterfaceArgs):
 
     def _replace_config(self, w, obj_in_have, interface_type):
         commands = []
+        if not w:
+            return commands
+
         for key, value in w.items():
             if key == 'enable' and obj_in_have.get('enable') == False:
                 commands.append('no shutdown')
@@ -107,14 +110,14 @@ class Interfaces(ConfigBase, InterfaceArgs):
                 if key == 'mtu' and obj_in_have.get('mtu'):
                     commands.append('no mtu')
             if interface_type in ('ethernet', 'svi'):
-                if key == 'ip_forward':
+                if key == 'ip_forward' and value != obj_in_have.get('ip_forward'):
                     commands.append('no ip forward')
-                if key == 'fabric_forwarding_anycast_gateway':
+                if key == 'fabric_forwarding_anycast_gateway' and value != obj_in_have.get('fabric_forwarding_anycast_gateway'):
                     commands.append('no fabric forwarding anycast gateway')
 
         return commands
 
-    def _state_overriden(self, want, have):
+    def _state_overridden(self, want, have):
         """
         purge interfaces
         """
@@ -123,33 +126,23 @@ class Interfaces(ConfigBase, InterfaceArgs):
         for h in have:
             name = h['name']
             obj_in_want = search_obj_in_list(name, want)
-            if not obj_in_want:
-                interface_type = get_interface_type(name)
-
-                # Remove logical interfaces
-                if interface_type in ('loopback', 'portchannel', 'svi'):
-                    commands.append('no interface {0}'.format(name))
-                elif interface_type == 'ethernet':
-                    default = True
-                    if h['enable'] is True:
-                        keys = ('description', 'mode', 'mtu', 'speed', 'duplex', 'ip_forward', 'fabric_forwarding_anycast_gateway')
-                        for k, v in iteritems(h):
-                            if k in keys:
-                                if h[k] is not None:
-                                    default = False
-                                    break
-                    else:
-                        default = False
-
-                    if default is False:
-                        # Put physical interface back into default state
-                        commands.append('default interface {0}'.format(name))
+            interface_type = get_interface_type(name)
+            if obj_in_want:
+                replaced_command = self._replace_config(obj_in_want, h, interface_type)
+                if replaced_command:
+                    replaced_command.insert(0, 'interface ' + name)
+                    commands.extend(replaced_command)
+            else:
+                replaced_command = self._default_attributes(interface_type, h)
+                if replaced_command:
+                    replaced_command.insert(0, 'interface ' + name)
+                    commands.extend(replaced_command)
 
         for w in want:
             name = w['name']
             interface_type = get_interface_type(name)
             obj_in_have = search_obj_in_list(name, have)
-            commands.extend(self._state_merged( w, obj_in_have, interface_type))
+            commands.extend(self._state_merged(w, obj_in_have, interface_type))
 
         return commands
 
@@ -231,7 +224,6 @@ class Interfaces(ConfigBase, InterfaceArgs):
                     enable = w.get('enable') or obj_in_have.get('enable')
                     if enable is True:
                         commands.append(self._get_admin_state(enable))
-
         return commands
 
     def _state_deleted(self, w, obj_in_have, interface_type):
@@ -239,8 +231,10 @@ class Interfaces(ConfigBase, InterfaceArgs):
         if not obj_in_have or interface_type == 'unknown':
             return commands
 
-        commands.append('interface ' + w['name'])
-        commands.extend(self._default_attributes(self, interface_type, obj_in_have))
+        commands.extend(self._default_attributes(interface_type, obj_in_have))
+        if commands:
+            interface = 'interface ' + w['name']
+            commands.insert(0, interface)
         return commands
 
     def _remove_command_from_interface(self, cmd):

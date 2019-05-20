@@ -33,35 +33,58 @@ options:
   gather_subset:
     description:
       - When supplied, this argument will restrict the facts collected
-        to a given subset.  Possible values for this argument include
-        all, hardware, config, legacy, and interfaces.  Can specify a
-        list of values to include a larger subset.  Values can also be used
+        to a given subset. Possible values for this argument include
+        all, min, hardware, config, legacy, and interfaces. Can specify a
+        list of values to include a larger subset.Values can also be used
         with an initial C(M(!)) to specify that a specific subset should
         not be collected.
     required: false
     default: '!config'
     version_added: "2.2"
+  gather_network_resources:
+    description:
+      - When supplied, this argument will restrict the facts collected
+        to a given subset. Possible values for this argument include
+        all and the resources like interfaces, vlans etc.
+        Can specify a list of values to include a larger subset. Values
+        can also be used with an initial C(M(!)) to specify that a
+        specific subset should not be collected.
+    required: false
+    version_added: "2.9"
 """
 
 EXAMPLES = """
 # Gather all facts
 - nxos_facts:
     gather_subset: all
+    gather_network_resources: all
 
-# Collect only the config and default facts
+# Collect only the interfaces facts
 - nxos_facts:
     gather_subset:
-      - config
+      - !all
+      - !min
+    gather_network_resources:
+      - interfaces
 
-# Do not collect hardware facts
+# Do not collect interfaces facts
 - nxos_facts:
-    gather_subset:
-      - "!hardware"
+    gather_network_resources:
+      - "!interfaces"
+
+# Collect interfaces and default facts
+- nxos_facts:
+    gather_subset: min
+    gather_network_resources: interfaces
 """
 
 RETURN = """
 ansible_net_gather_subset:
   description: The list of fact subsets collected from the device
+  returned: always
+  type: list
+ansible_gather_network_resources:
+  description: The list of fact resource subsets collected from the device
   returned: always
   type: list
 """
@@ -78,12 +101,15 @@ def main():
     argument_spec.update(nxos_argument_spec)
     module = AnsibleModule(argument_spec=argument_spec,
                            supports_check_mode=True)
-    warnings = list()
+    warnings = ['default value for `gather_subset` will be changed to `min` from `!config` v2.11 onwards']
 
     connection = Connection(module._socket_path)
     gather_subset = module.params['gather_subset']
     gather_network_resources = module.params['gather_network_resources']
-    ansible_facts = Facts().get_facts(module, connection, gather_subset, gather_network_resources)
+    result = Facts().get_facts(module, connection, gather_subset, gather_network_resources)
+
+    ansible_facts, additional_warnings = result
+    warnings.extend(additional_warnings)
 
     module.exit_json(ansible_facts=ansible_facts, warnings=warnings)
 
