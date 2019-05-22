@@ -14,7 +14,7 @@ from copy import deepcopy
 
 from ansible.module_utils.ios.facts.base import FactsBase
 from ansible.module_utils.ios.utils.utils import get_interface_type, normalize_interface
-import q
+
 
 class InterfacesFacts(FactsBase):
     """ The ios interfaces fact class
