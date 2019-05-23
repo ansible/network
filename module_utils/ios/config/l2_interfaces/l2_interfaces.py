@@ -31,10 +31,9 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
 
     params = ('access', 'trunk')
     trunk_params = ('encapsulation', 'pruning_vlan', 'native_vlan', 'allowed_vlan')
-    access_cmds = {'access_vlan': 'switchport access vlan', 'mode': 'switchport mode access'}
+    access_cmds = {'access_vlan': 'switchport access vlan'}
     trunk_cmds = {'encapsulation': 'switchport trunk encapsulation', 'pruning_vlan': 'switchport trunk pruning vlan',
-                  'native_vlan': 'switchport trunk native vlan', 'allowed_vlan': 'switchport trunk allowed vlan',
-                  'mode': 'switchport mode trunk'}
+                  'native_vlan': 'switchport trunk native vlan', 'allowed_vlan': 'switchport trunk allowed vlan'}
 
     def get_interfaces_facts(self):
         """ Get the 'facts' (the current configuration)
@@ -146,8 +145,10 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
                                 proposed = (",".join(map(str, candidate[0].get(each)))).split(',')
                             if obj_in_have.get(each):
                                 value = obj_in_have.get(each).split(',')
+                            else:
+                                value = ''
                         else:
-                            proposed = candidate[0].get(each)
+                            proposed = str(candidate[0].get(each))
                             value = obj_in_have.get(each)
                         if value and proposed != value:
                             L2_Interfaces._remove_command_from_interface(interface, L2_Interfaces.trunk_cmds.get(each),
@@ -171,10 +172,11 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
         module = kwargs['module']
         # Get the user's input interface name to be configured
         interface_want = []
+        have_cmd = []
+        want_cmd = []
 
         for each in want:
             interface_want.append(each.get('name'))
-
         for have in obj_in_have:
             name = have['name']
             obj_in_want = search_obj_in_list(name, want)
@@ -183,34 +185,35 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
                 interface_type = get_interface_type(name)
                 if interface_type.lower() == 'gigabitethernet':
                     for k, v in iteritems(have):
-                        if have.get('mode') == 'access' and k != 'name':
+                        if have.get('mode') == 'access' and k != 'name' and k != 'mode':
                             interface = 'interface ' + name
                             L2_Interfaces._remove_command_from_interface(interface, L2_Interfaces.access_cmds[k],
-                                                                         commands)
-                        elif have.get('mode') == 'trunk' and k != 'name':
+                                                                         have_cmd)
+                        elif have.get('mode') == 'trunk' and k != 'name' and k != 'mode':
                             interface = 'interface ' + name
                             L2_Interfaces._remove_command_from_interface(interface, L2_Interfaces.trunk_cmds[k],
-                                                                         commands)
+                                                                         have_cmd)
             # To delete the L2 option already configured on input interface
             else:
                 cmd = []
                 for k, v in iteritems(have):
                     interface = 'interface ' + name
-                    if obj_in_want.get('access') and k != 'name':
+                    if obj_in_want.get('access') and k != 'name' and k != 'mode':
                         L2_Interfaces._remove_command_from_interface(interface, L2_Interfaces.access_cmds[k], cmd)
-                    elif obj_in_want.get('trunk') and k != 'name':
+                    elif obj_in_want.get('trunk') and k != 'name' and k != 'mode':
                         L2_Interfaces._remove_command_from_interface(interface, L2_Interfaces.trunk_cmds[k], cmd)
-                for each in cmd:
-                    commands.append(each)
+                    want_cmd.extend(cmd)
         for w in want:
             name = w['name']
+            interface = 'interface ' + name
             have = search_obj_in_list(name, obj_in_have)
             kwargs = {'want': w, 'have': have, 'module': module}
             cmd = L2_Interfaces._state_merged(**kwargs)
-            if cmd:
-                commands.extend(cmd)
-            else:
-                commands = []
+            if want_cmd and cmd and want_cmd[0] == interface:
+                commands.extend(want_cmd)
+            commands.extend(cmd)
+        if have_cmd and not commands:
+            commands.extend(have_cmd)
         return commands
 
     @staticmethod
@@ -235,14 +238,16 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
                 candidate = want.get(item)
                 if item == 'access' and candidate:
                     for each in candidate:
-                        if each.get('vlan') and str(each.get('vlan')) != obj_in_have.get('access_vlan')\
-                                or state == 'overridden':
+                        if each.get('vlan') and str(each.get('vlan')) != obj_in_have.get('access_vlan'):
                             for k,v in iteritems(L2_Interfaces.access_cmds):
                                 if k == 'access_vlan':
                                     v = v + ' {}'.format(each.get('vlan'))
                                 L2_Interfaces._add_command_to_interface(interface, v, commands)
+                                L2_Interfaces._add_command_to_interface(interface, 'switchport mode access', commands)
                 elif item == 'trunk' and candidate:
-                    if obj_in_have.get('encapsulation') or candidate[0].get('encapsulation'):
+                    for e in candidate:
+                        encapsulation = e.get('encapsulation')
+                    if obj_in_have.get('encapsulation') or encapsulation:
                         L2_Interfaces._add_interface_switchport_trunk_cmd(state, candidate, obj_in_have, interface,
                                                                           commands)
                         if commands and 'switchport mode trunk' not in commands:
@@ -250,6 +255,7 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
                     else:
                         msg = interface + " switchport trunk cannot be configured with negotiate trunking encapsulation"
                         module.fail_json(msg=msg)
+
         return commands
 
     @staticmethod
