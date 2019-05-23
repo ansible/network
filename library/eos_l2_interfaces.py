@@ -62,21 +62,16 @@ options:
           vlan:
             description:
             - Configure given VLAN in access port. It's used as the access VLAN ID.
-            type: str
+            type: int
       trunk:
         description:
         - Switchport mode trunk command to configure the interface as a Layer 2 trunk.
         type: dict
         suboptions:
-          vlans:
-            description:
-            - List of VLANs to be configured in trunk port. It's used as the VLAN range to ADD or
-              REMOVE from the trunk.
-            type: list
           native_vlan:
             description:
             - Native VLAN to be configured in trunk port. It is used as the trunk native VLAN ID.
-            type: str
+            type: int
           trunk_allowed_vlans:
             description:
             - List of allowed VLANs in a given trunk port. These are the only VLANs that will be
