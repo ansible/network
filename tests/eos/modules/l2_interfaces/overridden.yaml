@@ -1,0 +1,25 @@
+---
+- include_tasks: reset_config.yaml
+
+- set_fact:
+    config:
+      - name: Ethernet2
+        access:
+          vlan: 30
+
+- name: Override device configuration of all L2 interfaces on device with provided configuration.
+  eos_l2_interfaces:
+    config: "{{ config }}"
+    state: overridden
+
+- eos_facts:
+    gather_subset: net_configuration_l2_interfaces
+
+- set_fact:
+    expected_config: "{{ config }} + [{'name': 'Ethernet1'}, {'name': 'Management1'}]"
+
+- assert:
+    that:
+      - "ansible_facts.net_configuration.l2_interfaces|symmetric_difference(expected_config) == []"
+
+- include_tasks: reset_config.yaml

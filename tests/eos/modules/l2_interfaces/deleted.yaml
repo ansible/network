@@ -1,0 +1,23 @@
+---
+- include_tasks: reset_config.yaml
+
+- set_fact:
+    config:
+      - name: Ethernet1
+      - name: Ethernet2
+
+
+- name: Delete EOS L2 interfaces as in given arguments.
+  eos_l2_interfaces:
+    config: "{{ config }}"
+    state: deleted
+
+- eos_facts:
+    gather_subset: net_configuration_l2_interfaces
+
+- set_fact:
+    expected_config: "{{ config }} + [{'name': 'Management1'}]"
+
+- assert:
+    that:
+      - "ansible_facts.net_configuration.l2_interfaces == expected_config"

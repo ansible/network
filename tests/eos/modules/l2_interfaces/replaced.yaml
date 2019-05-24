@@ -1,0 +1,26 @@
+---
+- include_tasks: reset_config.yaml
+
+- set_fact:
+    config:
+      - name: Ethernet1
+        trunk:
+          native_vlan: 20
+          trunk_allowed_vlans: 5-10,15
+
+- name: Replace device configuration of specified L2 interfaces with provided configuration.
+  eos_l2_interfaces:
+    config: "{{ config }}"
+    state: replaced
+
+- eos_facts:
+    gather_subset: net_configuration_l2_interfaces
+
+- set_fact:
+    expected_config: "{{ config }} + [{'name': 'Ethernet2', 'trunk': {'native_vlan': 20}}, {'name': 'Management1'}]"
+
+- assert:
+    that:
+      - "ansible_facts.net_configuration.l2_interfaces == expected_config"
+
+- include_tasks: reset_config.yaml

@@ -1,0 +1,23 @@
+---
+- hosts: eos
+  gather_subset:
+    - net_configuration_interfaces
+  connection: network_cli
+  become: yes
+
+  roles:
+    - ~/workspace/ansible/roles/network
+
+  tasks:
+    - import_tasks: merged.yaml
+      tags:
+        - merged
+    - import_tasks: overridden.yaml
+      tags:
+        - overridden
+    - import_tasks: replaced.yaml
+      tags:
+        - replaced
+    - import_tasks: deleted.yaml
+      tags:
+        - deleted
