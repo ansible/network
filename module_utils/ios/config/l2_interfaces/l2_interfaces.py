@@ -17,7 +17,7 @@ from ansible.module_utils.ios.argspec.l2_interfaces.l2_interfaces import L2_Inte
 from ansible.module_utils.ios.config.base import ConfigBase
 from ansible.module_utils.ios.facts.facts import Facts
 from ansible.module_utils.ios.utils.utils import get_interface_type, normalize_interface, search_obj_in_list
-import q
+
 
 class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
     """
