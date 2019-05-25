@@ -21,7 +21,7 @@ from ansible.module_utils.ios.utils.utils import get_interface_type, normalize_i
 
 class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
     """
-    The ios_interfaces class
+    The ios_l2_interfaces class
     """
 
     gather_subset = [
