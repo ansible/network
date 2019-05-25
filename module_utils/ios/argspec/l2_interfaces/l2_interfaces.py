@@ -32,10 +32,10 @@ class L2_InterfacesArgs(object):
         pass
 
     access_arg_spec = dict(vlan=dict(type=str, required=True))
-    trunk_arg_spec = dict(allowed_vlan=dict(type=list, required=True),
+    trunk_arg_spec = dict(allowed_vlans=dict(type=list, required=True),
                           encapsulation=dict(type=str),
                           native_vlan=dict(type=str),
-                          pruning_vlan=dict(type=list)
+                          pruning_vlans=dict(type=list)
                           )
 
     config_spec = {
