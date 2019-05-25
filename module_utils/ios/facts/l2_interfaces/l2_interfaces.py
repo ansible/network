@@ -14,7 +14,7 @@ from copy import deepcopy
 
 from ansible.module_utils.ios.facts.base import FactsBase
 from ansible.module_utils.ios.utils.utils import get_interface_type, normalize_interface
-
+import q
 
 class InterfacesFacts(FactsBase):
     """ The ios interfaces fact class
@@ -62,11 +62,31 @@ class InterfacesFacts(FactsBase):
             return {}
         # populate the facts from the configuration
         config['name'] = normalize_interface(intf)
-        config['encapsulation'] = self.parse_conf_arg(conf, 'switchport trunk encapsulation')
-        config['pruning_vlan'] = self.parse_conf_arg(conf, 'switchport trunk pruning vlan')
-        config['mode'] = self.parse_conf_arg(conf, 'switchport mode')
-        config['native_vlan'] = self.parse_conf_arg(conf, 'switchport trunk native vlan')
-        config['access_vlan'] = self.parse_conf_arg(conf, 'switchport access vlan')
-        config['allowed_vlan'] = self.parse_conf_arg(conf, 'switchport trunk allowed vlan')
+
+        has_access = re.search(r"switchport access vlan (\d+)", conf)
+        if has_access:
+            config["access"] = {"vlan": int(has_access.group(1))}
+
+        has_trunk = re.findall(r"switchport trunk (.+)", conf)
+        if has_trunk:
+            trunk = {}
+            for match in has_trunk:
+                has_encapsulation = re.match(r"encapsulation (\S+)", match)
+                if has_encapsulation:
+                    trunk["encapsulation"] = has_encapsulation.group(1)
+                    continue
+                has_native = re.match(r"native vlan (\d+)", match)
+                if has_native:
+                    trunk["native_vlan"] = int(has_native.group(1))
+                    continue
+                has_allowed = re.match(r"allowed vlan (\S+)", match)
+                if has_allowed:
+                    trunk["allowed_vlans"] = has_allowed.group(1)
+                    continue
+                has_pruning = re.match(r"pruning vlan (\S+)", match)
+                if has_pruning:
+                    trunk["pruning_vlans"] = has_pruning.group(1)
+                    continue
+            config['trunk'] = trunk
 
         return self.generate_final_config(config)
