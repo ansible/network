@@ -11,14 +11,13 @@ created
 """
 
 
-from ansible.module_utils.six import iteritems
 from ansible.module_utils.network.common.utils import to_list
 
 from ansible.module_utils.ios.argspec.l2_interfaces.l2_interfaces import L2_InterfacesArgs
 from ansible.module_utils.ios.config.base import ConfigBase
 from ansible.module_utils.ios.facts.facts import Facts
 from ansible.module_utils.ios.utils.utils import get_interface_type, normalize_interface, search_obj_in_list
-
+import q
 
 class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
     """
@@ -30,10 +29,9 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
     ]
 
     params = ('access', 'trunk')
-    trunk_params = ('encapsulation', 'pruning_vlan', 'native_vlan', 'allowed_vlan')
     access_cmds = {'access_vlan': 'switchport access vlan'}
-    trunk_cmds = {'encapsulation': 'switchport trunk encapsulation', 'pruning_vlan': 'switchport trunk pruning vlan',
-                  'native_vlan': 'switchport trunk native vlan', 'allowed_vlan': 'switchport trunk allowed vlan'}
+    trunk_cmds = {'encapsulation': 'switchport trunk encapsulation', 'pruning_vlans': 'switchport trunk pruning vlan',
+                  'native_vlan': 'switchport trunk native vlan', 'allowed_vlans': 'switchport trunk allowed vlan'}
 
     def get_interfaces_facts(self):
         """ Get the 'facts' (the current configuration)
@@ -54,7 +52,6 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
         result = {'changed': False}
         commands = []
         warnings = []
-
         existing_facts = self.get_interfaces_facts()
         commands.extend(self.set_config(existing_facts))
         result['before'] = existing_facts
@@ -78,11 +75,9 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
         :returns: the commands necessary to migrate the current configuration
                   to the deisred configuration
         """
-        want = self._module.params['config']
 
-        for w in want:
-            w.update({'name': normalize_interface(w['name'])})
-        have = existing_facts#self.get_interfaces_facts()
+        want = self._module.params['config']
+        have = existing_facts
         resp = self.set_state(want, have)
 
         return to_list(resp)
@@ -96,25 +91,20 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
                   to the deisred configuration
         """
         commands = []
-        state = self._module.params['state']
 
+        state = self._module.params['state']
         if state == 'overridden':
             kwargs = {'want': want, 'have': have, 'module': self._module}
-            commands = L2_Interfaces._state_overridden(**kwargs)
-        else:
-            for w in want:
-                name = w['name']
-                interface_type = get_interface_type(name)
-                obj_in_have = search_obj_in_list(name, have)
-                kwargs = {'want': w, 'have': obj_in_have, 'type': interface_type, 'module': self._module}
-                if state == 'deleted':
-                    commands.extend(L2_Interfaces._state_deleted(**kwargs))
-
-                if state == 'merged':
-                    commands.extend(L2_Interfaces._state_merged(**kwargs))
-
-                if state == 'replaced':
-                    commands.extend(L2_Interfaces._state_replaced(**kwargs))
+            commands = self._state_overridden(**kwargs)
+        elif state == 'deleted':
+            kwargs = {'want': want, 'have': have, 'module': self._module}
+            commands = self._state_deleted(**kwargs)
+        elif state == 'merged':
+            kwargs = {'want': want, 'have': have, 'module': self._module}
+            commands = self._state_merged(**kwargs)
+        elif state == 'replaced':
+            kwargs = {'want': want, 'have': have, 'module': self._module}
+            commands = self._state_replaced(**kwargs)
 
         return commands
 
@@ -130,30 +120,19 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
         """
         commands = []
         want = kwargs['want']
-        obj_in_have = kwargs['have']
-        name = want['name']
+        have = kwargs['have']
+        module = kwargs['module']
 
-        if name:
-            interface = 'interface ' + name
-        if obj_in_have:
-            for item in L2_Interfaces.params:
-                candidate = want.get(item)
-                if item == 'trunk' and candidate:
-                    for each in L2_Interfaces.trunk_params:
-                        if each == 'allowed_vlan' or each == 'pruning_vlan':
-                            if candidate[0].get(each):
-                                proposed = (",".join(map(str, candidate[0].get(each)))).split(',')
-                            if obj_in_have.get(each):
-                                value = obj_in_have.get(each).split(',')
-                            else:
-                                value = ''
-                        else:
-                            proposed = str(candidate[0].get(each))
-                            value = obj_in_have.get(each)
-                        if value and proposed != value:
-                            L2_Interfaces._remove_command_from_interface(interface, L2_Interfaces.trunk_cmds.get(each),
-                                                                         commands)
-        commands.extend(L2_Interfaces._state_merged(**kwargs))
+        for interface in want:
+            for each in have:
+                if each['name'] == interface['name']:
+                    break
+            else:
+                continue
+            kwargs = {'want': interface, 'have': each,}
+            commands.extend(L2_Interfaces.clear_interface(**kwargs))
+            kwargs = {'want': interface, 'have': each, 'commands': commands, 'module': module}
+            commands.extend(L2_Interfaces.set_interface(**kwargs))
 
         return commands
 
@@ -168,52 +147,25 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
         """
         commands = []
         want = kwargs['want']
-        obj_in_have = kwargs['have']
+        have = kwargs['have']
         module = kwargs['module']
-        # Get the user's input interface name to be configured
-        interface_want = []
-        have_cmd = []
-        want_cmd = []
 
-        for each in want:
-            interface_want.append(each.get('name'))
-        for have in obj_in_have:
-            name = have['name']
-            obj_in_want = search_obj_in_list(name, want)
-            # To delete the L2 option already configured on other interface
-            if not obj_in_want:
-                interface_type = get_interface_type(name)
-                if interface_type.lower() == 'gigabitethernet':
-                    for k, v in iteritems(have):
-                        if have.get('mode') == 'access' and k != 'name' and k != 'mode':
-                            interface = 'interface ' + name
-                            L2_Interfaces._remove_command_from_interface(interface, L2_Interfaces.access_cmds[k],
-                                                                         have_cmd)
-                        elif have.get('mode') == 'trunk' and k != 'name' and k != 'mode':
-                            interface = 'interface ' + name
-                            L2_Interfaces._remove_command_from_interface(interface, L2_Interfaces.trunk_cmds[k],
-                                                                         have_cmd)
-            # To delete the L2 option already configured on input interface
+        for each in have:
+            for interface in want:
+                if each['name'] == interface['name']:
+                    break
             else:
-                cmd = []
-                for k, v in iteritems(have):
-                    interface = 'interface ' + name
-                    if obj_in_want.get('access') and k != 'name' and k != 'mode':
-                        L2_Interfaces._remove_command_from_interface(interface, L2_Interfaces.access_cmds[k], cmd)
-                    elif obj_in_want.get('trunk') and k != 'name' and k != 'mode':
-                        L2_Interfaces._remove_command_from_interface(interface, L2_Interfaces.trunk_cmds[k], cmd)
-                    want_cmd.extend(cmd)
-        for w in want:
-            name = w['name']
-            interface = 'interface ' + name
-            have = search_obj_in_list(name, obj_in_have)
-            kwargs = {'want': w, 'have': have, 'module': module}
-            cmd = L2_Interfaces._state_merged(**kwargs)
-            if want_cmd and cmd and want_cmd[0] == interface:
-                commands.extend(want_cmd)
-            commands.extend(cmd)
-        if have_cmd and not commands:
-            commands.extend(have_cmd)
+                # We didn't find a matching desired state, which means we can
+                # pretend we recieved an empty desired state.
+                interface = dict(name=each['name'])
+                kwargs = {'want': interface, 'have': each}
+                commands.extend(L2_Interfaces.clear_interface(**kwargs))
+                continue
+            kwargs = {'want': interface, 'have': each}
+            commands.extend(L2_Interfaces.clear_interface(**kwargs))
+            kwargs = {'want': interface, 'have': each, 'commands': commands, 'module': module}
+            commands.extend(L2_Interfaces.set_interface(**kwargs))
+
         return commands
 
     @staticmethod
@@ -227,34 +179,17 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
         """
         commands = []
         want = kwargs['want']
-        obj_in_have = kwargs['have']
-        name = want['name']
+        have = kwargs['have']
         module = kwargs['module']
-        state = module.params['state']
-        if name:
-            interface = 'interface ' + name
-        if obj_in_have:
-            for item in L2_Interfaces.params:
-                candidate = want.get(item)
-                if item == 'access' and candidate:
-                    for each in candidate:
-                        if each.get('vlan') and str(each.get('vlan')) != obj_in_have.get('access_vlan'):
-                            for k,v in iteritems(L2_Interfaces.access_cmds):
-                                if k == 'access_vlan':
-                                    v = v + ' {}'.format(each.get('vlan'))
-                                L2_Interfaces._add_command_to_interface(interface, v, commands)
-                                L2_Interfaces._add_command_to_interface(interface, 'switchport mode access', commands)
-                elif item == 'trunk' and candidate:
-                    for e in candidate:
-                        encapsulation = e.get('encapsulation')
-                    if obj_in_have.get('encapsulation') or encapsulation:
-                        L2_Interfaces._add_interface_switchport_trunk_cmd(state, candidate, obj_in_have, interface,
-                                                                          commands)
-                        if commands and 'switchport mode trunk' not in commands:
-                            L2_Interfaces._add_command_to_interface(interface, 'switchport mode trunk', commands)
-                    else:
-                        msg = interface + " switchport trunk cannot be configured with negotiate trunking encapsulation"
-                        module.fail_json(msg=msg)
+
+        for interface in want:
+            for each in have:
+                if each['name'] == interface['name']:
+                    break
+            else:
+                continue
+            kwargs = {'want': interface, 'have': each, 'module': module}
+            commands.extend(L2_Interfaces.set_interface(**kwargs))
 
         return commands
 
@@ -270,23 +205,18 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
         """
         commands = []
         want = kwargs['want']
-        obj_in_have = kwargs['have']
-        interface_type = kwargs['type']
-        if not obj_in_have or interface_type == 'unknown':
-            return commands
+        have = kwargs['have']
 
-        interface = 'interface ' + want['name']
+        for interface in want:
+            for each in have:
+                if each['name'] == interface['name']:
+                    break
+            else:
+                continue
+            interface = dict(name=interface['name'])
+            kwargs = {'want': interface, 'have': each}
+            commands.extend(L2_Interfaces.clear_interface(**kwargs))
 
-        if obj_in_have.get('mode') and obj_in_have['mode'] == 'access':
-            # delete switchport with access mode and its properties
-            L2_Interfaces._remove_command_from_interface(interface, 'switchport mode', commands)
-            if 'access_vlan' in obj_in_have:
-                L2_Interfaces._remove_command_from_interface(interface, 'switchport access vlan', commands)
-        elif obj_in_have.get('mode') and obj_in_have['mode'] == 'trunk':
-            # delete switchport with trunk mode and its properties
-            for item in L2_Interfaces.trunk_params:
-                if obj_in_have.get(item):
-                    L2_Interfaces._remove_command_from_interface(interface, L2_Interfaces.trunk_cmds[item], commands)
         return commands
 
     @staticmethod
@@ -305,33 +235,87 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
         commands.append(cmd)
 
     @staticmethod
-    def _add_interface_switchport_trunk_cmd(state, candidate, obj_in_have, interface, commands):
-        for each in candidate:
-            for item in L2_Interfaces.trunk_params:
-                if item == 'encapsulation' and each.get(item) and each.get(item) != obj_in_have.get(item):
-                    cmd = L2_Interfaces.trunk_cmds[item] + ' {}'.format(each.get('encapsulation'))
-                    L2_Interfaces._add_command_to_interface(interface, cmd, commands)
-                if item == 'native_vlan' and each.get(item) and str(each.get(item)) != obj_in_have.get(item):
-                    cmd = L2_Interfaces.trunk_cmds[item] + ' {}'.format(each.get(item))
-                    L2_Interfaces._add_command_to_interface(interface, cmd, commands)
-                if item == 'pruning_vlan' and each.get(item):
-                    pruning_vlans = (",".join(map(str, each.get(item))))
-                    if pruning_vlans != obj_in_have.get(item):
-                        cmd = L2_Interfaces.trunk_cmds[item] + ' {}'.format(pruning_vlans)
-                        L2_Interfaces._add_command_to_interface(interface, cmd, commands)
-                if item == 'allowed_vlan' and each.get(item):
-                    allowed_vlan = (",".join(map(str, each.get(item))))
-                    existing_vlans = vlans_to_add = None
-                    if obj_in_have.get(item):
-                        existing_vlans = obj_in_have.get(item).split(',')
-                        vlans_to_add = set(allowed_vlan.split(',')).difference(existing_vlans)
-                        vlans_to_remove = set(existing_vlans).difference(allowed_vlan.split(','))
-                    if not existing_vlans and each.get(item):
-                        cmd = L2_Interfaces.trunk_cmds[item] + ' {}'.format(allowed_vlan)
-                        L2_Interfaces._add_command_to_interface(interface, cmd, commands)
-                    elif vlans_to_add and state == 'merged':
-                        cmd = L2_Interfaces.trunk_cmds[item] + ' {}'.format(allowed_vlan)
-                        L2_Interfaces._add_command_to_interface(interface, cmd, commands)
-                    elif vlans_to_remove and state == 'replaced':
-                        cmd = L2_Interfaces.trunk_cmds[item] + ' {}'.format(allowed_vlan)
-                        L2_Interfaces._add_command_to_interface(interface, cmd, commands)
+    def set_interface(**kwargs):
+        # Set the interface config based on the want and have config
+        commands = []
+        want = kwargs['want']
+        have = kwargs['have']
+        module = kwargs['module']
+        clear_cmds = []
+        if kwargs.get('commands'):
+            clear_cmds = kwargs['commands']
+
+        interface = 'interface ' + want['name']
+        wants_access = want["access"]
+        if wants_access:
+            access_vlan = wants_access[0].get("vlan")
+            if access_vlan and access_vlan != have.get("access", {}).get("vlan") or\
+                    'no switchport access vlan' in clear_cmds:
+                cmd = L2_Interfaces.access_cmds['access_vlan'] + ' {}'.format(access_vlan)
+                L2_Interfaces._add_command_to_interface(interface, 'switchport mode access', commands)
+                L2_Interfaces._add_command_to_interface(interface, cmd, commands)
+
+        wants_trunk = want["trunk"]
+        if wants_trunk:
+            has_trunk = have.get("trunk", {})
+            encapsulation = wants_trunk[0].get("encapsulation")
+            if not encapsulation and not has_trunk.get("encapsulation"):
+                module.fail_json(msg='Switchport Trunk mode cannot be configured with negotiate encapsulation!')
+            if encapsulation and (encapsulation != has_trunk.get("encapsulation") or\
+                    'no switchport trunk encapsulation' in clear_cmds):
+                cmd = L2_Interfaces.trunk_cmds['encapsulation'] + ' {}'.format(encapsulation)
+                L2_Interfaces._add_command_to_interface(interface, cmd, commands)
+
+            if commands and 'switchport mode trunk' not in commands or 'no switchport mode' in clear_cmds:
+                L2_Interfaces._add_command_to_interface(interface, 'switchport mode trunk', commands)
+
+            native_vlan = wants_trunk[0].get("native_vlan")
+            if native_vlan and (native_vlan != has_trunk.get("native_vlan") or\
+                    'no switchport trunk native vlan' in clear_cmds):
+                cmd = L2_Interfaces.trunk_cmds['native_vlan'] + ' {}'.format(native_vlan)
+                L2_Interfaces._add_command_to_interface(interface, cmd, commands)
+
+            allowed_vlans = wants_trunk[0].get("allowed_vlans")
+            has_allowed = has_trunk.get("allowed_vlans")
+            if allowed_vlans:
+                allowed_vlans = (",".join(map(str, allowed_vlans)))
+            if allowed_vlans and (allowed_vlans != has_allowed or 'no switchport trunk allowed vlan' in clear_cmds):
+                cmd = L2_Interfaces.trunk_cmds['allowed_vlans'] + ' {}'.format(allowed_vlans)
+                L2_Interfaces._add_command_to_interface(interface, cmd, commands)
+
+            pruning_vlans = wants_trunk[0].get("pruning_vlans")
+            has_pruning = has_trunk.get("pruning_vlans")
+            if pruning_vlans:
+                pruning_vlans = (",".join(map(str, pruning_vlans)))
+
+            if pruning_vlans and (pruning_vlans != has_pruning or 'no switchport trunk pruning vlan' in clear_cmds):
+                cmd = L2_Interfaces.trunk_cmds['pruning_vlans'] + ' {}'.format(pruning_vlans)
+                L2_Interfaces._add_command_to_interface(interface, cmd, commands)
+
+        return commands
+
+    @staticmethod
+    def clear_interface(**kwargs):
+        # Delete the interface config based on the want and have config
+        commands = []
+        want = kwargs['want']
+        have = kwargs['have']
+        interface = 'interface ' + want['name']
+
+        if "access" in have and not want.get('access'):
+            L2_Interfaces._remove_command_from_interface(interface, L2_Interfaces.access_cmds['access_vlan'], commands)
+
+        has_trunk = have.get("trunk") or {}
+        wants_trunk = want.get("trunk") or {}
+        if wants_trunk:
+            wants_trunk = wants_trunk[0]
+        if "encapsulation" in has_trunk and "encapsulation" not in wants_trunk:
+            L2_Interfaces._remove_command_from_interface(interface, L2_Interfaces.trunk_cmds['encapsulation'], commands)
+        if "allowed_vlans" in has_trunk and "allowed_vlans" not in wants_trunk:
+            L2_Interfaces._remove_command_from_interface(interface, L2_Interfaces.trunk_cmds['allowed_vlans'], commands)
+        if "native_vlan" in has_trunk and "native_vlan" not in wants_trunk:
+            L2_Interfaces._remove_command_from_interface(interface, L2_Interfaces.trunk_cmds['native_vlan'], commands)
+        if "pruning_vlans" in has_trunk and "pruning_vlans" not in wants_trunk:
+            L2_Interfaces._remove_command_from_interface(interface, L2_Interfaces.trunk_cmds['pruning_vlans'], commands)
+
+        return commands
