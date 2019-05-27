@@ -14,8 +14,8 @@ from ansible.module_utils.six import iteritems
 from ansible.module_utils.iosxr.argspec.facts.facts import FactsArgs
 from ansible.module_utils.iosxr.facts.base import FactsBase
 from ansible.module_utils.iosxr.argspec.l2_interfaces.l2_interfaces import L2_InterfacesArgs
-from ansible.module_utils.iosxr.facts.l2_interfaces.l2_interfaces import InterfacesFacts
-import q
+from ansible.module_utils.iosxr.facts.l2_interfaces.l2_interfaces import L2_interfacesFacts
+
 
 FACT_SUBSETS = {}
 
@@ -85,11 +85,8 @@ class Facts(FactsArgs, FactsBase): #pylint: disable=R0903
             resources_runable_subsets = self.generate_runable_subsets(module, gather_network_resources, valid_network_resources_subsets)
             if resources_runable_subsets:
                 self.ansible_facts['gather_network_resources'] = list(resources_runable_subsets)
-                q(resources_runable_subsets)
                 for attr in resources_runable_subsets:
-                    q(attr, module, connection)
                     getattr(self, '_get_%s' % attr, {})(module, connection)
-
         if self.VALID_GATHER_SUBSETS:
             runable_subsets = self.generate_runable_subsets(module, gather_subset, self.VALID_GATHER_SUBSETS)
 
@@ -117,5 +114,5 @@ class Facts(FactsArgs, FactsBase): #pylint: disable=R0903
 
 
     @staticmethod
-    def  _get_net_configuration_interfaces(module, connection):
-        return InterfacesFacts(L2_InterfacesArgs.argument_spec, 'config', 'options').populate_facts(module, connection)
+    def _get_l2_interfaces(module, connection):
+        return L2_interfacesFacts(L2_InterfacesArgs.argument_spec, 'config', 'options').populate_facts(module, connection)
