@@ -297,7 +297,7 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
         elif 'q_vlan' in have and 'l2transport' not in have['name'] and want['name'] in have['name']:
             L2_Interfaces._remove_command_from_interface(interface, 'encapsulation dot1q', commands)
 
-        if 'native_vlan' in have and want.get('native_vlan') != have.get('native_vlan'):
+        if 'native_vlan' in have and want.get('native_vlan') != str(have.get('native_vlan').get('vlan')):
             L2_Interfaces._remove_command_from_interface(interface, 'dot1q native vlan', commands)
         if want.get('l2transport'):
             if want.get('l2protocol'):
