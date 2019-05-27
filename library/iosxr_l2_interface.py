@@ -46,8 +46,8 @@ DOCUMENTATION = """
 ---
   module: iosxr_l2_interfaces
   version_added: 2.9
-  short_description: Manage Layer-2 interface on Cisco IOS-XR devices.
-  description: This module provides declarative management of Layer-2 interface on Cisco IOS-XR devices.
+  short_description: Manage Layer-2 interface on Cisco IOS-XR devices
+  description: This module provides declarative management of a Layer-2 interface on Cisco IOS-XR devices.
   author: Sumit Jaiswal (@justjais)
   options:
     config:
@@ -58,7 +58,7 @@ DOCUMENTATION = """
         name:
           description:
           - Full name of the interface/sub-interface excluding any logical unit number,
-            i.e. GigabitEthernet0/0/0/1 or GigabitEthernet0/0/0/1.100.
+            e.g. GigabitEthernet0/0/0/1 or GigabitEthernet0/0/0/1.100.
           type: str
           required: True
         native_vlan:
@@ -67,7 +67,7 @@ DOCUMENTATION = """
           type: str
         l2transport:
           description:
-          - Switchport mode access command to configure the interface as a layer 2 access.
+          - Switchport mode access command to configure the interface as a layer 2 access
           type: bool
         l2protocol:
           description:
@@ -80,28 +80,28 @@ DOCUMENTATION = """
               type: str
             pvst:
               description:
-              - Configures VLAN spanning tree protocol tunneling and data unit parameters.
+              - Configures the per-VLAN Spanning Tree Protocol (PVST) tunneling and data unit parameters.
               choices: ['drop','forward', 'tunnel']
               type: str
             stp:
               description:
-              - Spanning tree protocol tunneling and data unit parameters.
+              - Spanning Tree Protocol (STP) tunneling and data unit parameters.
               choices: ['drop','forward', 'tunnel']
               type: str
             vtp:
               description:
-              - VLAN trunk protocol tunneling and data unit parameters.
+              - VLAN Trunk Protocol (VTP) tunneling and data unit parameters.
               choices: ['drop','forward', 'tunnel']
               type: str
         q_vlan:
           description:
-          - 802.1Q VLAN configuration. Note that it can accept either 2 VLAN IDs when configuring Q-in-Q vlan,
-            or it shall accept 1 VLAN ID and 'any' as input list when configuring Q-in-any vlan as input.
-          type: str
+          - 802.1Q VLAN configuration. Note that it can accept either 2 VLAN IDs when configuring Q-in-Q VLAN,
+            or it will accept 1 VLAN ID and 'any' as input list when configuring Q-in-any vlan as input. Note, that
+            this option is valid only with respect to Sub-Interface and is not valid when configuring for Interface.
+          type: list
         propagate:
           description:
-          - Propagate Layer 2 transport events. Note that it will work only when l2tranport param is set
-            to True.
+          - Propagate Layer 2 transport events. Note that it will work only when the I(l2tranport) option is set to True
           type: bool
     state:
       choices:
@@ -202,7 +202,7 @@ EXAMPLES = """
 # !
 
 - name: Replaces device configuration of listed interfaces with provided configuration
-  iosxr_interfaces:
+  iosxr_l2_interfaces:
     config:
       - name: GigabitEthernet0/0/0/4
         native_vlan: 40
@@ -213,7 +213,7 @@ EXAMPLES = """
         q_vlan:
         - 20
         - any
-    state: overridden
+    state: replaced
 
 # After state:
 # -------------
@@ -264,7 +264,7 @@ EXAMPLES = """
 # !
 
 - name: Override device configuration of all interfaces with provided configuration
-  iosxr_interfaces:
+  iosxr_l2_interfaces:
     config:
       - name: GigabitEthernet0/0/0/4
         native_vlan: 40
@@ -321,7 +321,7 @@ EXAMPLES = """
 #  !
 # !
 
-- name: Delete attributes of given interfaces (Note: This won't delete the interface itself)
+- name: Delete L2 attributes of given interfaces (Note: This won't delete the interface itself)
   iosxr_l2_interfaces:
     config:
       - name: GigabitEthernet0/0/0/3
