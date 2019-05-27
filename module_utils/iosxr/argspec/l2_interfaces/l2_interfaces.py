@@ -43,6 +43,7 @@ class L2_InterfacesArgs(object):
         'l2transport': dict(element=dict, type=bool),
         'l2protocol': dict(element=dict, type=list, options=l2_protocol_arg_spec),
         'q_vlan':dict(element=dict, type=list),
+        'propagate': dict(element=dict, type=bool)
     }
 
     argument_spec = {
