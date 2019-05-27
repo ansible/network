@@ -16,13 +16,12 @@ from ansible.module_utils.iosxr.facts.base import FactsBase
 from ansible.module_utils.iosxr.utils.utils import get_interface_type, normalize_interface
 
 
-class InterfacesFacts(FactsBase):
+class L2_interfacesFacts(FactsBase):
     """ The iosxr l2 interfaces fact class
     """
 
     def populate_facts(self, module, connection, data=None):
         """ Populate the facts for l2_interfaces
-
         :param module: the module instance
         :param connection: the device connection
         :param data: previously collected conf
@@ -33,13 +32,12 @@ class InterfacesFacts(FactsBase):
             pass
         if connection:  #just for linting purposes
             pass
-
+        objs = []
         if not data:
             data = connection.get('show running-config interface')
 
         # operate on a collection of resource x
-        config = [data] # data.split('interface ')
-        objs = []
+        config = data.split('interface ')
         for conf in config:
             if conf:
                 obj = self.render_config(self.generated_spec, conf)
@@ -61,37 +59,37 @@ class InterfacesFacts(FactsBase):
         """
         config = deepcopy(spec)
         match = re.search(r'^(\S+)', conf)
-        intf = match.group(1)
 
-        if get_interface_type(intf) == 'unknown':
-            return {}
-        # populate the facts from the configuration
-        config['name'] = normalize_interface(intf)
+        if len(match.group().split('.')) > 1:
+            sub_match = re.search(r'^(\S+ \S+)', conf)
+            if sub_match:
+                intf = sub_match.group()
+                config['name'] = intf
+            else:
+                intf = match.group(1)
+                config['name'] = intf
+        else:
+            intf = match.group(1)
+            if get_interface_type(intf) == 'unknown':
+                return {}
+            # populate the facts from the configuration
+            config['name'] = normalize_interface(intf)
+        native_vlan = re.search(r"dot1q native vlan (\d+)", conf)
+        if native_vlan:
+            config["native_vlan"] = {"vlan": int(native_vlan.group(1))}
+        if 'l2transport' in config['name']:
+            config['q_vlan'] = self.parse_conf_arg(conf, 'dot1q vlan')
+        else:
+            config['q_vlan'] = self.parse_conf_arg(conf, 'encapsulation dot1q')
 
-        has_access = re.search(r"switchport access vlan (\d+)", conf)
-        if has_access:
-            config["access"] = {"vlan": int(has_access.group(1))}
-
-        has_trunk = re.findall(r"switchport trunk (.+)", conf)
-        if has_trunk:
-            trunk = {}
-            for match in has_trunk:
-                has_encapsulation = re.match(r"encapsulation (\S+)", match)
-                if has_encapsulation:
-                    trunk["encapsulation"] = has_encapsulation.group(1)
-                    continue
-                has_native = re.match(r"native vlan (\d+)", match)
-                if has_native:
-                    trunk["native_vlan"] = int(has_native.group(1))
-                    continue
-                has_allowed = re.match(r"allowed vlan (\S+)", match)
-                if has_allowed:
-                    trunk["allowed_vlans"] = has_allowed.group(1)
-                    continue
-                has_pruning = re.match(r"pruning vlan (\S+)", match)
-                if has_pruning:
-                    trunk["pruning_vlans"] = has_pruning.group(1)
-                    continue
-            config['trunk'] = trunk
+        if self.parse_conf_arg(conf, 'propagate'):
+            config['propagate'] = True
+        config['l2protocol_cdp'] = self.parse_conf_arg(conf, 'l2protocol cdp')
+        config['l2protocol_pvst'] = self.parse_conf_arg(conf, 'l2protocol pvst')
+        config['l2protocol_stp'] = self.parse_conf_arg(conf, 'l2protocol stp')
+        config['l2protocol_vtp'] = self.parse_conf_arg(conf, 'l2protocol vtp')
+        if config.get('propagate') or config.get('l2protocol_cdp') or config.get('l2protocol_pvst') or\
+            config.get('l2protocol_stp') or config.get('l2protocol_vtp'):
+            config['l2transport'] = True
 
         return self.generate_final_config(config)
