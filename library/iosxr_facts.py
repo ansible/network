@@ -85,7 +85,7 @@ See the respective resource module parameters for the tree.
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.connection import Connection
-from ansible.module_utils.ios.facts.facts import Facts
+from ansible.module_utils.iosxr.facts.facts import Facts
 
 def main():
     """
