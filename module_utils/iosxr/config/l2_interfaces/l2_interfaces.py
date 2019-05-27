@@ -11,12 +11,12 @@ created
 """
 
 from ansible.module_utils.network.common.utils import to_list
+from ansible.module_utils.six import iteritems
 
 from ansible.module_utils.iosxr.argspec.l2_interfaces.l2_interfaces import L2_InterfacesArgs
 from ansible.module_utils.iosxr.config.base import ConfigBase
 from ansible.module_utils.iosxr.facts.facts import Facts
-from ansible.module_utils.iosxr.utils.utils import get_interface_type, normalize_interface, search_obj_in_list
-import q
+
 
 class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
     """
@@ -39,13 +39,9 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
         :returns: The current configuration as a dictionary
         """
         result = Facts().get_facts(self._module, self._connection, self.gather_subset, self.gather_network_resources)
-        try:
-            facts = result[0]
-            q(facts)
-        except (TypeError, KeyError):
-            facts = result
-            l2_interfaces_facts = facts['ansible_network_resources'].get('l2_interfaces')
-            q(l2_interfaces_facts)
+        facts = result
+        l2_interfaces_facts = facts['ansible_network_resources'].get('l2_interfaces')
+
         if not l2_interfaces_facts:
             return []
         return l2_interfaces_facts
@@ -99,19 +95,22 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
         :returns: the commands necessary to migrate the current configuration
                   to the desired configuration
         """
+        commands = []
+
         state = self._module.params['state']
         if state == 'overridden':
-            kwargs = {}
+            kwargs = {'want': want, 'have': have, 'module': self._module}
             commands = self._state_overridden(**kwargs)
         elif state == 'deleted':
-            kwargs = {}
+            kwargs = {'want': want, 'have': have, 'module': self._module}
             commands = self._state_deleted(**kwargs)
         elif state == 'merged':
-            kwargs = {}
+            kwargs = {'want': want, 'have': have, 'module': self._module}
             commands = self._state_merged(**kwargs)
         elif state == 'replaced':
-            kwargs = {}
+            kwargs = {'want': want, 'have': have, 'module': self._module}
             commands = self._state_replaced(**kwargs)
+
         return commands
 
     @staticmethod
@@ -123,6 +122,23 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
                   to the desired configuration
         """
         commands = []
+        want = kwargs['want']
+        have = kwargs['have']
+        module = kwargs['module']
+
+        for interface in want:
+            for each in have:
+                if each['name'] == interface['name']:
+                    break
+                elif interface['name'] in each['name']:
+                    break
+            else:
+                continue
+            kwargs = {'want': interface, 'have': each, }
+            commands.extend(L2_Interfaces.clear_interface(**kwargs))
+            kwargs = {'want': interface, 'have': each, 'commands': commands, 'module': module}
+            commands.extend(L2_Interfaces.set_interface(**kwargs))
+
         return commands
 
     @staticmethod
@@ -134,6 +150,28 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
                   to the desired configuration
         """
         commands = []
+        want = kwargs['want']
+        have = kwargs['have']
+        module = kwargs['module']
+
+        for each in have:
+            for interface in want:
+                if each['name'] == interface['name']:
+                    break
+                elif interface['name'] in each['name']:
+                    break
+            else:
+                # We didn't find a matching desired state, which means we can
+                # pretend we recieved an empty desired state.
+                interface = dict(name=each['name'])
+                kwargs = {'want': interface, 'have': each}
+                commands.extend(L2_Interfaces.clear_interface(**kwargs))
+                continue
+            kwargs = {'want': interface, 'have': each}
+            commands.extend(L2_Interfaces.clear_interface(**kwargs))
+            kwargs = {'want': interface, 'have': each, 'commands': commands, 'module': module}
+            commands.extend(L2_Interfaces.set_interface(**kwargs))
+
         return commands
 
     @staticmethod
@@ -145,6 +183,21 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
                   the current configuration
         """
         commands = []
+        want = kwargs['want']
+        have = kwargs['have']
+        module = kwargs['module']
+
+        for interface in want:
+            for each in have:
+                if each['name'] == interface['name']:
+                    break
+                elif interface['name'] in each['name']:
+                    break
+            else:
+                continue
+            kwargs = {'want': interface, 'have': each, 'module': module}
+            commands.extend(L2_Interfaces.set_interface(**kwargs))
+
         return commands
 
     @staticmethod
@@ -156,4 +209,105 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
                   of the provided objects
         """
         commands = []
+        want = kwargs['want']
+        have = kwargs['have']
+
+        for interface in want:
+            for each in have:
+                if each['name'] == interface['name']:
+                    break
+                elif interface['name'] in each['name']:
+                    break
+            else:
+                continue
+            interface = dict(name=interface['name'])
+            kwargs = {'want': interface, 'have': each}
+            commands.extend(L2_Interfaces.clear_interface(**kwargs))
+
+        return commands
+
+    @staticmethod
+    def _remove_command_from_interface(interface, cmd, commands):
+        if interface not in commands:
+            commands.insert(0, interface)
+        commands.append('no %s' % cmd)
+        return commands
+
+    @staticmethod
+    def _add_command_to_interface(interface, cmd, commands):
+        if interface not in commands:
+            commands.insert(0, interface)
+        commands.append(cmd)
+
+    @staticmethod
+    def set_interface(**kwargs):
+        # Set the interface config based on the want and have config
+        commands = []
+        want = kwargs['want']
+        have = kwargs['have']
+        module = kwargs['module']
+        clear_cmds = []
+        if kwargs.get('commands'):
+            clear_cmds = kwargs['commands']
+
+        interface = 'interface ' + want['name']
+        wants_native = want["native_vlan"]
+        if wants_native and wants_native != str(have.get("native_vlan", {}).get("vlan")) or\
+            'no dot1q native vlan' in clear_cmds:
+            cmd = 'dot1q native vlan {}'.format(wants_native)
+            L2_Interfaces._add_command_to_interface(interface, cmd, commands)
+
+        if want.get('l2transport'):
+            if want.get('l2protocol'):
+                for each in want.get('l2protocol'):
+                    for k, v in iteritems(each):
+                        l2ptotocol_type = 'l2protocol_' + k
+                        if have.get(l2ptotocol_type) != v:
+                            cmd = 'l2transport l2protocol ' + k + ' ' + v
+                            L2_Interfaces._add_command_to_interface(interface, cmd, commands)
+            if want.get('propagate') and not have.get('propagate'):
+                cmd = 'l2transport propagate remote-status'
+                L2_Interfaces._add_command_to_interface(interface, cmd, commands)
+        elif want.get('l2protocol') or want.get('propagate'):
+            module.fail_json(msg='L2transports L2protocol or Propagate can only be configured when'
+                                 'L2transprt set to True!')
+
+        if want.get('q_vlan'):
+            q_vlans = (" ".join(map(str, want.get('q_vlan'))))
+            if q_vlans != have.get('q_vlan'):
+                if 'any' in q_vlans and 'l2transport' in interface:
+                    cmd = 'dot1q vlan {}'.format(q_vlans)
+                    L2_Interfaces._add_command_to_interface(interface, cmd, commands)
+                else:
+                    cmd = 'dot1q vlan {}'.format(q_vlans)
+                    L2_Interfaces._add_command_to_interface(interface, cmd, commands)
+
+        return commands
+
+    @staticmethod
+    def clear_interface(**kwargs):
+        # Delete the interface config based on the want and have config
+        commands = []
+        want = kwargs['want']
+        have = kwargs['have']
+        interface = 'interface ' + want['name']
+
+        if 'q_vlan' in have and 'l2transport' in have['name'] and want['name'] in have['name']:
+            L2_Interfaces._remove_command_from_interface(interface, 'dot1q vlan', commands)
+        elif 'q_vlan' in have and 'l2transport' not in have['name'] and want['name'] in have['name']:
+            L2_Interfaces._remove_command_from_interface(interface, 'encapsulation dot1q', commands)
+
+        if 'native_vlan' in have and want.get('native_vlan') != have.get('native_vlan'):
+            L2_Interfaces._remove_command_from_interface(interface, 'dot1q native vlan', commands)
+        if want.get('l2transport'):
+            if want.get('l2protocol'):
+                for each in want.get('l2protocol'):
+                    for k, v in iteritems(each):
+                        l2ptotocol_type = 'l2protocol_' + k
+                        if have.get(l2ptotocol_type) != v:
+                            L2_Interfaces._remove_command_from_interface(interface, 'l2transport', commands)
+        if have.get('l2transport') and not want.get('l2transport'):
+            if 'no l2transport' not in commands:
+                L2_Interfaces._remove_command_from_interface(interface, 'l2transport', commands)
+
         return commands
