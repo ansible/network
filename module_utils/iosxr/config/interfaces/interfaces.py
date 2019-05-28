@@ -289,5 +289,3 @@ class Interfaces(ConfigBase, InterfacesArgs):
                 Interfaces._remove_command_from_interface(interface, 'mtu', commands)
 
         return commands
-
-
