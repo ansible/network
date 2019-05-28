@@ -17,7 +17,7 @@ class FactsBase(object):
     The ios facts base class
     """
     generated_spec = {}
-    ansible_facts = {'net_configuration': {}}
+    ansible_facts = {'ansible_network_resources': {}}
 
     def __init__(self, argspec, subspec=None, options=None):
         spec = deepcopy(argspec)
