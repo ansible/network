@@ -36,8 +36,8 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
                     'status': ['preview'],
                     'supported_by': 'network'}
 
-NETWORK_OS = "iosxr"
-RESOURCE = "l2_interfaces"
+NETWORK_OS = "ios"
+RESOURCE = "interfaces"
 COPYRIGHT = "Copyright 2019 Red Hat"
 
 
