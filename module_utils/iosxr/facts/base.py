@@ -1,9 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-# Copyright 2019 <company_name>
+# Copyright 2019 Red Hat Inc.
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 """
-The myos facts base class
+The iosxr facts base class
 this contains methods common to all facts subsets
 """
 
@@ -14,10 +14,10 @@ from ansible.module_utils.six import iteritems
 
 class FactsBase(object): #pylint: disable=R0205
     """
-    The myos facts base class
+    The iosxr facts base class
     """
     generated_spec = {}
-    ansible_facts = {'net_configuration': {}}
+    ansible_facts = {'ansible_network_resources': {}}
 
     def __init__(self, argspec, subspec=None, options=None):
         spec = deepcopy(argspec)
