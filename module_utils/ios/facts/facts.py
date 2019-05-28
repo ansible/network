@@ -63,7 +63,7 @@ class Facts(FactsArgs, FactsBase): #pylint: disable=R0903
         return runable_subsets
 
     def get_facts(self, module, connection, gather_subset=['!config'], gather_network_resources=['all']):
-        """ Collect the facts for iosxr
+        """ Collect the facts for ios
         :param module: The module instance
         :param connection: The device connection
         :param gather_subset: The facts subset to collect
