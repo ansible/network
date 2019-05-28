@@ -28,64 +28,78 @@ The module file for iosxr_interfaces
 """
 
 from __future__ import absolute_import, division, print_function
-from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.iosxr.config.interfaces.interfaces import Interfaces
+__metaclass__ = type
+
+GENERATOR_VERSION = '1.0'
 
 ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': [u'preview'],
-                    'supported_by': [u'Ansible Network']}
+                   'status': ['preview'],
+                   'supported_by': 'network'}
 
+NETWORK_OS = "iosxr"
+RESOURCE = "interfaces"
+COPYRIGHT = "Copyright 2019 Red Hat"
 
 DOCUMENTATION = """
----
-module: iosxr_interfaces
-version_added: 2.9
-short_description: Manage Interface on Cisco IOSXR network devices.
-description: Manage Interface on Cisco IOSXR network devices.
-author: [u'Sumit Jaiswal (@justjais)']
-options:
-  config:
-    description: The provided configuration
-    suboptions:
-      name:
+  module: iosxr_interfaces
+  version_added: 2.9
+  short_description: Manage interface attributes on Cisco IOS-XR network devices
+  description: This module manages the interface attributes on Cisco IOS-XR network devices.
+  author: Sumit Jaiswal (@justjais)
+  options:
+    config:
+      description: A dictionary of interface options
+      type: list
+      elements: dict
+      suboptions:
+        name:
+          description:
+          - Full name of the interface to configure in C(type + path) format. e.g. C(GigabitEthernet0/0/0/0)
+          type: str
+          required: True
         description:
-        - Name of interface, i.e. GigabitEthernet0/2, loopback999.
-        type: str
-        required: true
+          description:
+          - Interface description.
+          type: str
+        enable:
+          default: True
+          description:
+          - Administrative state of the interface.
+          - Set the value to C(True) to administratively enable the interface or C(False) to disable it.
+          type: bool
+        active:
+          default: active
+          description:
+          - Whether the interface is C(active) or C(preconfigured). Preconfiguration allows you to configure modular
+            services cards before they are inserted into the router. When the cards are inserted, they are instantly
+            configured. Active cards are the ones already inserted.
+          type: str
+          choices: ['active', 'preconfigure']
+        speed:
+          description:
+          - Configure the speed for an interface. Default is auto-negotiation when not configured.
+          type: str
+          choices: ['10', '100', '1000']
+        mtu:
+          description:
+          - Sets the MTU value for the interface. Range is between 64 and 65535. Applicable for Ethernet interfaces only.
+          type: str
+        duplex:
+          default: auto
+          description:
+          - Configures the interface duplex mode. Default is auto-negotiation when not configured.
+          type: str
+          choices: ['full', 'half']
+    state:
+      choices:
+      - merged
+      - replaced
+      - overridden
+      - deleted
+      default: merged
       description:
-        description:
-        - Description of Interface.
-        type: str
-      enabled:
-        description:
-        - Interface link status.
-        type: bool
-        default: true
-      speed:
-        description:
-        - Interface link speed. Applicable for ethernet interface only.
-        type: str
-      mtu:
-        description:
-        - Maximum size of transmit packet. Must be an number between 64 and 9600.
-          Applicable for Ethernet interface only.
-        type: str
-      duplex:
-        description:
-        - Interface link status. Applicable for ethernet interface only.
-        type: str
-        default: auto
-        choices: ['full', 'half']
-  state:
-    choices:
-    - merged
-    - replaced
-    - overridden
-    - deleted
-    default: merged
-    description:
-    - The state the configuration should be left in
-    type: str
+      - The state the configuration should be left in
+      type: str
 """
 
 EXAMPLES = """
@@ -337,6 +351,10 @@ commands:
   type: list
   sample: ['command 1', 'command 2', 'command 3']
 """
+
+
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.iosxr.config.interfaces.interfaces import Interfaces
 
 
 def main():
