@@ -8,40 +8,41 @@ this file validates each subset of facts and selectively
 calls the appropriate facts gathering function
 """
 
+from ansible.module_utils.six import iteritems
+
 from ansible.module_utils.ios.argspec.facts.facts import FactsArgs
 from ansible.module_utils.ios.facts.base import FactsBase
 from ansible.module_utils.ios.argspec.interfaces.interfaces import InterfacesArgs
 from ansible.module_utils.ios.facts.interfaces.interfaces import InterfacesFacts
 
 
-class Facts(FactsArgs, FactsBase):
+FACT_SUBSETS = {}
+
+class Facts(FactsArgs, FactsBase): #pylint: disable=R0903
     """ The fact class for ios
     """
 
-    def get_facts(self, module, connection, gather_subset=['all']):
-        """ Collect the facts for ios
+    VALID_GATHER_SUBSETS = frozenset(FACT_SUBSETS.keys())
 
-        :param module: The module instance
-        :param connection: The device connection
-        :param gather_subset: The facts subset to collect
-        :rtype: dict
-        :returns: the facts gathered
-        """
-        valid_subsets = self.argument_spec['gather_subset'].get('choices', [])
-        if valid_subsets and 'all' in valid_subsets:
-            valid_subsets.remove('all')
-
+    def generate_runable_subsets(self, module, subsets, valid_subsets):
         runable_subsets = set()
         exclude_subsets = set()
+        minimal_gather_subset = frozenset(['default'])
 
-        for subset in gather_subset:
+        for subset in subsets:
             if subset == 'all':
                 runable_subsets.update(valid_subsets)
                 continue
+            if subset == 'min' and minimal_gather_subset:
+                runable_subsets.update(minimal_gather_subset)
+                continue
             if subset.startswith('!'):
                 subset = subset[1:]
+                if subset == 'min':
+                    exclude_subsets.update(minimal_gather_subset)
+                    continue
                 if subset == 'all':
-                    exclude_subsets.update(valid_subsets)
+                    exclude_subsets.update(valid_subsets - minimal_gather_subset)
                     continue
                 exclude = True
             else:
@@ -57,16 +58,59 @@ class Facts(FactsArgs, FactsBase):
 
         if not runable_subsets:
             runable_subsets.update(valid_subsets)
-
         runable_subsets.difference_update(exclude_subsets)
-        self.ansible_facts['gather_subset'] = list(runable_subsets)
 
-        for attr in runable_subsets:
-            getattr(self, '_get_%s' % attr, {})(module, connection)
+        return runable_subsets
 
-        return self.ansible_facts
+    def get_facts(self, module, connection, gather_subset=['!config'], gather_network_resources=['all']):
+        """ Collect the facts for iosxr
+        :param module: The module instance
+        :param connection: The device connection
+        :param gather_subset: The facts subset to collect
+        :param gather_network_resources: The resource subset to collect
+        :rtype: dict
+        :returns: the facts gathered
+        """
+        warnings = []
+        self.ansible_facts['gather_network_resources'] = list()
+        self.ansible_facts['gather_subset'] = list()
+
+        valid_network_resources_subsets = self.argument_spec['gather_network_resources'].get('choices', [])
+        if valid_network_resources_subsets and 'all' in valid_network_resources_subsets:
+            valid_network_resources_subsets.remove('all')
+
+        if valid_network_resources_subsets:
+            resources_runable_subsets = self.generate_runable_subsets(module, gather_network_resources, valid_network_resources_subsets)
+            if resources_runable_subsets:
+                self.ansible_facts['gather_network_resources'] = list(resources_runable_subsets)
+                for attr in resources_runable_subsets:
+                    getattr(self, '_get_%s' % attr, {})(module, connection)
+        if self.VALID_GATHER_SUBSETS:
+            runable_subsets = self.generate_runable_subsets(module, gather_subset, self.VALID_GATHER_SUBSETS)
+
+            if runable_subsets:
+                facts = dict()
+                self.ansible_facts['gather_subset'] = list(runable_subsets)
+
+                instances = list()
+                for key in runable_subsets:
+                    instances.append(FACT_SUBSETS[key](module))
+
+                for inst in instances:
+                    inst.populate()
+                    facts.update(inst.facts)
+                    warnings.extend(inst.warnings)
+
+                for key, value in iteritems(facts):
+                    key = 'ansible_net_%s' % key
+                    self.ansible_facts[key] = value
+
+        if warnings:
+            return self.ansible_facts, warnings
+        else:
+            return self.ansible_facts
+
 
     @staticmethod
-    def _get_net_configuration_interfaces(module, connection):
+    def _get_interfaces(module, connection):
         return InterfacesFacts(InterfacesArgs.argument_spec, 'config', 'options').populate_facts(module, connection)
-
