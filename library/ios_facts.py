@@ -7,9 +7,6 @@ The module file for ios_facts
 """
 
 from __future__ import absolute_import, division, print_function
-from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.connection import Connection
-from ansible.module_utils.ios.facts.facts import Facts
 
 ANSIBLE_METADATA = {'metadata_version': '1.1',
                     'status': [u'preview'],
@@ -47,16 +44,22 @@ EXAMPLES = """
 # Gather all facts
 - ios_facts:
     gather_subset: all
-
-# Collect only the interfaces and default facts
+    gather_network_resources: all
+# Collect only the ios facts
 - ios_facts:
     gather_subset:
-      - config
-
-# Do not collect interfaces facts
+      - !all
+      - !min
+    gather_network_resources:
+      - ios
+# Do not collect ios facts
 - ios_facts:
-    gather_subset:
-      - "!hardware"
+    gather_network_resources:
+      - "!ios"
+# Collect ios and minimal default facts
+- ios_facts:
+    gather_subset: min
+    gather_network_resources: ios
 """
 
 RETURN = """
@@ -72,16 +75,23 @@ from ansible.module_utils.ios.facts.facts import Facts
 def main():
     """
     Main entry point for module execution
-
     :returns: ansible_facts
     """
     module = AnsibleModule(argument_spec=Facts.argument_spec,
                            supports_check_mode=True)
-    warnings = list()
+    warnings = ['default value for `gather_subset` will be changed to `min` from `!config` v2.11 onwards']
 
-    connection = Connection(module._socket_path) #pylint: disable=W0212
+    connection = Connection(module._socket_path)
     gather_subset = module.params['gather_subset']
-    ansible_facts = Facts().get_facts(module, connection, gather_subset)
+    gather_network_resources = module.params['gather_network_resources']
+    result = Facts().get_facts(module, connection, gather_subset, gather_network_resources)
+
+    try:
+        ansible_facts, warning = result
+        warnings.extend(warning)
+    except (TypeError, KeyError):
+        ansible_facts = result
+
     module.exit_json(ansible_facts=ansible_facts, warnings=warnings)
 
 if __name__ == '__main__':
