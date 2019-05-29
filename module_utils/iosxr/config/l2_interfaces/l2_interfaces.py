@@ -292,7 +292,8 @@ class L2_Interfaces(ConfigBase, L2_InterfacesArgs):
         have = kwargs['have']
         interface = 'interface ' + want['name']
 
-        if 'q_vlan' in have and 'l2transport' in have['name'] and want['name'] in have['name']:
+        if 'q_vlan' in have and 'l2transport' in have['name'] and want['name'] in have['name']\
+                and (" ".join(map(str, want.get('q_vlan')))) != have.get('q_vlan'):
             L2_Interfaces._remove_command_from_interface(interface, 'dot1q vlan', commands)
         elif 'q_vlan' in have and 'l2transport' not in have['name'] and want['name'] in have['name']:
             L2_Interfaces._remove_command_from_interface(interface, 'encapsulation dot1q', commands)
