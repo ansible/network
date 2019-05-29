@@ -257,31 +257,3 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
             L3_Interfaces._remove_command_from_interface(interface, 'no ipv6 address', commands)
 
         return commands
-    
-'library/__init__.py',
-'library/ios_facts.py',
-'library/ios_l3_interface.py',
-'module_utils/__init__.py',
-'module_utils/ios/__init__.py',
-'module_utils/ios/argspec/__init__.py',
-'module_utils/ios/argspec/facts/__init__.py',
-'module_utils/ios/argspec/facts/facts.py',
-'module_utils/ios/argspec/l3_interfaces/__init__.py',
-'module_utils/ios/argspec/l3_interfaces/l3_interfaces.py',
-'module_utils/ios/argspec/resource/__init__.py',
-'module_utils/ios/argspec/resource/resource.py',
-'module_utils/ios/config/__init__.py',
-'module_utils/ios/config/base.py',
-'module_utils/ios/config/l3_interfaces/__init__.py',
-'module_utils/ios/config/l3_interfaces/l3_interfaces.py',
-'module_utils/ios/config/resource/__init__.py',
-'module_utils/ios/config/resource/resource.py',
-'module_utils/ios/facts/__init__.py',
-'module_utils/ios/facts/base.py',
-'module_utils/ios/facts/facts.py',
-'module_utils/ios/facts/l3_interfacs/__init__.py',
-'module_utils/ios/facts/l3_interfacs/l3_interfaces.py',
-'module_utils/ios/facts/resource/__init__.py',
-'module_utils/ios/facts/resource/resource.py',
-'module_utils/ios/utils/__init__.py',
-'module_utils/ios/utils/utils.py'
