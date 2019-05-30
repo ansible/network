@@ -1,0 +1,37 @@
+---
+- debug:
+      msg: "START iosxr_interfaces Overridden integration tests on connection={{ ansible_connection }}"
+
+- include_tasks: reset_config.yaml
+
+- name: Override device configuration of all interfaces with provided configuration
+  iosxr_interfaces:
+    config:
+      - name: GigabitEthernet0/0/0/1
+        enable: True
+      - name: GigabitEthernet0/0/0/2
+        description: 'Configured by Ansible-Network'
+        enable: False
+    state: overridden
+
+- iosxr_facts:
+    gather_subset: net_configuration_interfaces
+
+- set_fact:
+    expected_output:
+      - name: GigabitEthernet0/0/0/2
+        duplex: auto
+        enable: True
+      - name: GigabitEthernet0/0/0/2
+        description: 'Configured by Ansible-Network'
+        duplex: auto
+        enable: False
+      - name: GigabitEthernet0/0/0/3
+        duplex: auto
+        enable: True
+
+- assert:
+    that:
+      - "ansible_facts.net_configuration.interfaces == expected_output"
+
+- include_tasks: reset_config.yaml
