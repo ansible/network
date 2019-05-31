@@ -1,0 +1,8 @@
+---
+- hosts: all
+  gather_facts: false
+  pre_tasks:
+  - import_role:
+      name: "../../../../network"
+  roles:
+    - vyos_interfaces

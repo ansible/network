@@ -2,7 +2,7 @@
 - debug:
     msg: "Start vyos_interfaces deleted integration tests ansible_connection={{ ansible_connection }}"
 
-- include_tasks: populate.yaml
+- include_tasks: _populate.yaml
 
 - name: Delete attributes of given interfaces
   vyos_interfaces: &deleted
@@ -41,4 +41,4 @@
     that:
       - "{{ deleted['after'] | symmetric_difference(result['before']) |length == 0 }}"
 
-- include_tasks: remove_config.yaml
+- include_tasks: _remove_config.yaml

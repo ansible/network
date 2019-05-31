@@ -2,7 +2,7 @@
 - debug:
       msg: "START vyos_interfaces overridden integration tests on connection={{ ansible_connection }}"
 
-- include_tasks: populate.yaml
+- include_tasks: _populate.yaml
 
 - name: Overrides all device configuration with provided configuration
   vyos_interfaces: &overridden
@@ -45,4 +45,4 @@
       that:
           - "{{ overridden['after'] | symmetric_difference(result['before']) |length == 0 }}"
 
-- include_tasks: remove_config.yaml
+- include_tasks: _remove_config.yaml
