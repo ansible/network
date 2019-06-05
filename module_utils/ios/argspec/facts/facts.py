@@ -6,6 +6,7 @@
 The arg spec for the ios facts module.
 """
 
+
 class FactsArgs(object): #pylint: disable=R0903
     """ The arg spec for the ios facts module
     """

@@ -31,8 +31,6 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-# {{ rm|to_doc(model) }}
-
 GENERATOR_VERSION = '1.0'
 
 ANSIBLE_METADATA = {'metadata_version': '1.1',
@@ -47,8 +45,8 @@ DOCUMENTATION = """
 ---
   module: ios_l3_interfaces
   version_added: 2.9
-  short_description: Manage Layer-3 interface on Cisco IOS-XR devices
-  description: This module provides declarative management of a Layer-3 interface on Cisco IOS-XR devices.
+  short_description: Manage Layer-3 interface on Cisco IOS devices.
+  description: This module provides declarative management of Layer-3 interface on Cisco IOS devices.
   author: Sumit Jaiswal (@justjais)
   options:
     config:
@@ -66,13 +64,43 @@ DOCUMENTATION = """
           - IPv4 address to be set for the Layer-3 interface mentioned in I(name) option.
             The address format is <ipv4 address>/<mask>, the mask is number in range 0-32
             eg. 192.168.0.1/24
-          type: str
+          suboptions:
+            address:
+              description:
+              - Configures the IPv4 address for Interface.
+              type: str
+            secondary:
+              description:
+              - Configures the IP address as a secondary address.
+              type: bool
+            dhcp_client:
+              description:
+              - Configures and specifies client-id to use over DHCP ip. Note, This option shall
+                work only when dhcp is configured as IP.
+              type: str
+            dhcp_hostname:
+              description:
+              - Configures and specifies value for hostname option over DHCP ip. Note, This option shall
+                work only when dhcp is configured as IP.
+              type: str
        ipv6:
          description:
          - IPv6 address to be set for the Layer-3 interface mentioned in I(name) option.
            The address format is <ipv6 address>/<mask>, the mask is number in range 0-128
            eg. fd5d:12c9:2201:1::1/64
-         type: str
+         suboptions:
+            address:
+              description:
+              - Configures the IPv6 address for Interface.
+              type: str
+            autoconfig:
+              description:
+              - Obtain address using autoconfiguration.
+              type: bool
+            dhcp:
+              description:
+              - Obtain a ipv6 address using dhcp.
+              type: bool
     state:
       choices:
       - merged
@@ -95,7 +123,7 @@ EXAMPLES = """
 # vios#show running-config | section ^interface
 # interface GigabitEthernet0/1
 #  description Configured by Ansible
-#  no ip address
+#  ip address 10.1.1.1 255.255.255.0
 #  duplex auto
 #  speed auto
 # interface GigabitEthernet0/2
@@ -106,43 +134,58 @@ EXAMPLES = """
 # interface GigabitEthernet0/3
 #  description Configured by Ansible Network
 #  no ip address
+# interface GigabitEthernet0/3.100
+#  encapsulation dot1Q 20
 
 - name: Merge provided configuration with device configuration
   ios_interfaces:
     config:
+      - name: GigabitEthernet0/1
+        ipv4: 
+        - address: 192.168.0.1/24
+          secondary: True
       - name: GigabitEthernet0/2
-        ipv4: 192.168.0.1/24
+        ipv4: 
+        - address: 192.168.0.2/24
       - name: GigabitEthernet0/3
-        ipv6: fd5d:12c9:2201:1::1/64
+        ipv6:
+        - address: fd5d:12c9:2201:1::1/64
+      - name: GigabitEthernet0/3.100
+        ipv4:
+        - address: 192.168.0.3/24
     operation: merged
-#
+
 # After state:
 # ------------
 #
 # vios#show running-config | section ^interface
 # interface GigabitEthernet0/1
 #  description Configured by Ansible
-#  no ip address
+#  ip address 10.1.1.1 255.255.255.0
+#  ip address 192.168.0.1 255.255.255.0 secondary
 #  duplex auto
 #  speed auto
 # interface GigabitEthernet0/2
 #  description This is test
-#  ip address 192.168.0.1 255.255.255.0
+#  ip address 192.168.0.2 255.255.255.0
 #  duplex auto
 #  speed 1000
 # interface GigabitEthernet0/3
 #  description Configured by Ansible Network
 #  ipv6 address FD5D:12C9:2201:1::1/64
+# interface GigabitEthernet0/3.100
+#  encapsulation dot1Q 20
+#  ip address 192.168.0.3 255.255.255.0
 
 # Using replaced
-
+#
 # Before state:
 # -------------
 #
 # vios#show running-config | section ^interface
 # interface GigabitEthernet0/1
 #  description Configured by Ansible
-#  no ip address
+#  ip address 10.1.1.1 255.255.255.0
 #  duplex auto
 #  speed auto
 # interface GigabitEthernet0/2
@@ -153,14 +196,25 @@ EXAMPLES = """
 # interface GigabitEthernet0/3
 #  description Configured by Ansible Network
 #  ip address 192.168.2.0 255.255.255.0
+# interface GigabitEthernet0/3.100
+#  encapsulation dot1Q 20
+#  ip address 192.168.0.2 255.255.255.0
 
 - name: Replaces device configuration of listed interfaces with provided configuration
   ios_interfaces:
     config:
       - name: GigabitEthernet0/2
-        ipv4: 192.168.2.0/24
+        ipv4:
+        - address: 192.168.2.0/24
       - name: GigabitEthernet0/3
-        ipv4: dhcp
+        ipv4: 
+        - address: dhcp
+          dhcp_client: 2
+          dhcp_hostname: test.com
+      - name: GigabitEthernet0/3.100
+        ipv4:
+        - address: 192.168.0.3/24
+          secondary: True
     operation: replaced
 
 # After state:
@@ -169,43 +223,54 @@ EXAMPLES = """
 # vios#show running-config | section ^interface
 # interface GigabitEthernet0/1
 #  description Configured by Ansible
-#  no ip address
+#  ip address 10.1.1.1 255.255.255.0
 #  duplex auto
 #  speed auto
 # interface GigabitEthernet0/2
 #  description This is test
-#  ip address 192.168.2.0 255.255.255.0
+#  ip address 192.168.2.1 255.255.255.0
 #  duplex auto
 #  speed 1000
 # interface GigabitEthernet0/3
 #  description Configured by Ansible Network
-#  ip address dhcp
+#  ip address dhcp client-id GigabitEthernet0/2 hostname test.com
+# interface GigabitEthernet0/3.100
+#  encapsulation dot1Q 20
+#  ip address 192.168.0.2 255.255.255.0
+#  ip address 192.168.0.3 255.255.255.0 secondary
 
 # Using overridden
-
+#
 # Before state:
 # -------------
 #
 # vios#show running-config | section ^interface
 # interface GigabitEthernet0/1
 #  description Configured by Ansible
-#  ip address 192.168.0.1 255.255.255.0
+#  ip address 10.1.1.1 255.255.255.0
 #  duplex auto
 #  speed auto
 # interface GigabitEthernet0/2
 #  description This is test
-#  no ip address
+#  ip address 192.168.2.1 255.255.255.0
 #  duplex auto
 #  speed 1000
 # interface GigabitEthernet0/3
 #  description Configured by Ansible Network
 #  ipv6 address FD5D:12C9:2201:1::1/64
+# interface GigabitEthernet0/3.100
+#  encapsulation dot1Q 20
+#  ip address 192.168.0.2 255.255.255.0
 
 - name: Override device configuration of all interfaces with provided configuration
   ios_interfaces:
     config:
       - name: GigabitEthernet0/2
-        ipv4: 192.168.0.1/24
+        ipv4:
+        - address: 192.168.0.1/24
+      - name: GigabitEthernet0/3.100
+        ipv6:
+        - autoconfig: True
     operation: overridden
 
 # After state:
@@ -224,9 +289,12 @@ EXAMPLES = """
 #  speed 1000
 # interface GigabitEthernet0/3
 #  description Configured by Ansible Network
+# interface GigabitEthernet0/3.100
+#  encapsulation dot1Q 20
+#  ipv6 address autoconfig
 
 # Using Deleted
-
+#
 # Before state:
 # -------------
 #
@@ -246,13 +314,16 @@ EXAMPLES = """
 #  duplex full
 #  speed 10
 #  ipv6 address FD5D:12C9:2201:1::1/64
+# interface GigabitEthernet0/3.100
+#  encapsulation dot1Q 20
+#  ip address 192.168.0.2 255.255.255.0
 
 - name: Delete attributes of given interfaces (Note: This won't delete the interface itself)
   ios_interfaces:
     config:
       - name: GigabitEthernet0/2
-      - name: GigabitEthernet0/2
       - name: GigabitEthernet0/3
+      - name: GigabitEthernet0/3.100
     operation: deleted
 
 # After state:
@@ -273,6 +344,8 @@ EXAMPLES = """
 #  shutdown
 #  duplex full
 #  speed 10
+# interface GigabitEthernet0/3.100
+#  encapsulation dot1Q 20
 
 """
 
