@@ -16,12 +16,12 @@ from ansible.module_utils.ios.facts.base import FactsBase
 from ansible.module_utils.ios.utils.utils import get_interface_type, normalize_interface
 
 
-class InterfacesFacts(FactsBase):
-    """ The ios interfaces fact class
+class L3_interfacesFacts(FactsBase):
+    """ The ios l3 interfaces fact class
     """
 
     def populate_facts(self, module, connection, data=None):
-        """ Populate the facts for interfaces
+        """ Populate the facts for l3 interfaces
         :param module: the module instance
         :param connection: the device connection
         :param data: previously collected conf
@@ -42,8 +42,8 @@ class InterfacesFacts(FactsBase):
         facts = {}
 
         if objs:
-            facts['interfaces'] = objs
-        self.ansible_facts['net_configuration'].update(facts)
+            facts['l3_interfaces'] = objs
+        self.ansible_facts['ansible_network_resources'].update(facts)
         return self.ansible_facts
 
     def render_config(self, spec, conf):
@@ -63,11 +63,35 @@ class InterfacesFacts(FactsBase):
         # populate the facts from the configuration
         config['name'] = normalize_interface(intf)
 
-        ipv4 = re.search(r"ip address (\S+.)*", conf)
-        if ipv4:
-            config["ipv4"] = ipv4.group().split(' ')
-        ipv6 = re.search(r"ipv6 address (\S+)", conf)
-        if ipv6:
-            config["ipv6"] = ipv6.group(1)
+        # Get the configured IPV4 details
+        ipv4 = re.findall(r"ip address (\S+.*)", conf)
+        for each in ipv4:
+            if 'secondary' in each:
+                config['secondary'] = True
+                config['secondary_ipv4'] = each.split(' secondary')[0]
+            elif 'dhcp' in each:
+                config["ipv4"] = 'dhcp'
+                if 'hostname' in each and 'client-id' in each:
+                    config['dhcp_client'] = each.split(' hostname ')[0].split('client-id ')[-1]
+                    config["dhcp_hostname"] = each.split(' hostname ')[-1]
+                elif 'hostname' in each:
+                    config["dhcp_hostname"] = each.split(' hostname ')[-1]
+                elif 'client-id' in each:
+                    config['dhcp_client'] = ipv4.split(' client-id ')[-1]
+            else:
+                config["ipv4"] = each
+
+        # Get the configured IPV6 details
+        ipv6 = re.findall(r"ipv6 address (\S+)", conf)
+        for each in ipv6:
+            config["ipv6"] = each
+            if 'autoconfig' in config["ipv6"]:
+                config['autoconfig'] = True
+            elif 'dhcp' in config['ipv6']:
+                config['dhcp'] = True
+
+        encapsulation = re.search(r"encapsulation (\S+)", conf)
+        if encapsulation:
+            config['encapsulation'] = True
 
         return self.generate_final_config(config)

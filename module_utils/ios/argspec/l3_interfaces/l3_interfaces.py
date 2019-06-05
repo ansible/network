@@ -31,10 +31,19 @@ class L3_InterfacesArgs(object):
     def __init__(self, **kwargs):
         pass
 
+    ipv4addr_spec = dict(address=dict(type=str),
+                         secondary=dict(type=bool),
+                         dhcp_client=dict(type=str),
+                         dhcp_hostname=dict(type=str))
+
+    ipv6addr_spec = dict(address=dict(type=str),
+                         autoconfig=dict(type=bool),
+                         dhcp=dict(type=bool))
+
     config_spec = {
         'name': dict(type='str', required=True),
-        'ipv4':dict(type='str'),
-        'ipv6':dict(type='str')
+        'ipv4':dict(type='list', elements='dict', options=ipv4addr_spec),
+        'ipv6':dict(type='list', elements='dict', options=ipv6addr_spec)
     }
 
     argument_spec = {
