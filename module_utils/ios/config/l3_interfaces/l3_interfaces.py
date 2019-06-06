@@ -268,16 +268,16 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
         if ipv4:
             for each_ip in ipv4:
                 if each_ip.get('address') == 'dhcp':
-                    if each_ip.get('dhcp_client') and (each_ip.get('dhcp_client') != have('dhcp_client').split('/')[1]
-                                                    or 'no ip address' in clear_cmds):
-                        if each_ip.get('dhcp_hostname') and each_ip.get('dhcp_hostname') != have('dhcp_hostname'):
-                            cmd = 'ip address dhcp client-id GigabitEthernet0/{0} hostname {1}'.format
-                            (each_ip.get('dhcp_client'), each_ip.get('dhcp_hostname'))
+                    if each_ip.get('dhcp_client') and (each_ip.get('dhcp_client') != have.get('dhcp_client')
+                                                       or 'no ip address' in clear_cmds):
+                        if each_ip.get('dhcp_hostname') and each_ip.get('dhcp_hostname') == have.get('dhcp_hostname'):
+                            cmd = 'ip address dhcp client-id GigabitEthernet0/{} hostname {}'.\
+                                format(each_ip.get('dhcp_client'), each_ip.get('dhcp_hostname'))
                             L3_Interfaces._add_command_to_interface(interface, cmd, commands)
                         else:
                             cmd = 'ip address dhcp client-id GigabitEthernet0/{}'.format(each_ip.get('dhcp_client'))
                             L3_Interfaces._add_command_to_interface(interface, cmd, commands)
-                    if each_ip.get('dhcp_hostname') and (each_ip.get('dhcp_hostname') != have('dhcp_hostname')
+                    if each_ip.get('dhcp_hostname') and (each_ip.get('dhcp_hostname') != have.get('dhcp_hostname')
                                                       or 'no ip address' in clear_cmds):
                         cmd = 'ip address dhcp hostname {}'.format(each_ip.get('dhcp_hostname'))
                         L3_Interfaces._add_command_to_interface(interface, cmd, commands)
@@ -322,12 +322,12 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
         have = kwargs['have']
         interface = 'interface ' + want['name']
 
+        if have.get('secondary') and not want.get('secondary'):
+            cmd = 'ip address {} secondary'.format(have.get('secondary_ipv4'))
+            L3_Interfaces._remove_command_from_interface(interface, cmd, commands)
         if have.get('ipv4') and not want.get('ipv4'):
             L3_Interfaces._remove_command_from_interface(interface, 'ip address', commands)
         if have.get('ipv6') and not want.get('ipv6'):
             L3_Interfaces._remove_command_from_interface(interface, 'ipv6 address', commands)
-        if have.get('secondary') and not want.get('secondary'):
-            cmd = 'ip address {} secondary'.format(have.get('secondary_ipv4'))
-            L3_Interfaces._remove_command_from_interface(interface, cmd, commands)
 
         return commands
