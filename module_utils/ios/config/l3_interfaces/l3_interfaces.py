@@ -326,5 +326,8 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
             L3_Interfaces._remove_command_from_interface(interface, 'ip address', commands)
         if have.get('ipv6') and not want.get('ipv6'):
             L3_Interfaces._remove_command_from_interface(interface, 'ipv6 address', commands)
+        if have.get('secondary') and not want.get('secondary'):
+            cmd = 'ip address {} secondary'.format(have.get('secondary_ipv4'))
+            L3_Interfaces._remove_command_from_interface(interface, cmd, commands)
 
         return commands
