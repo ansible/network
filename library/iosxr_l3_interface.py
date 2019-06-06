@@ -63,13 +63,25 @@ module: iosxr_l3_interfaces
           - IPv4 address to be set for the Layer-3 interface mentioned in I(name) option.
             The address format is <ipv4 address>/<mask>, the mask is number in range 0-32
             eg. 192.168.0.1/24
-          type: str
-       ipv6:
-         description:
-         - IPv6 address to be set for the Layer-3 interface mentioned in I(name) option.
-           The address format is <ipv6 address>/<mask>, the mask is number in range 0-128
-           eg. fd5d:12c9:2201:1::1/64
-         type: str
+          suboptions:
+            address:
+              description:
+              - Configures the IPv4 address for Interface.
+              type: str
+            secondary:
+              description:
+              - Configures the IP address as a secondary address.
+              type: bool
+        ipv6:
+          description:
+          - IPv6 address to be set for the Layer-3 interface mentioned in I(name) option.
+            The address format is <ipv6 address>/<mask>, the mask is number in range 0-128
+            eg. fd5d:12c9:2201:1::1/64
+          suboptions:
+            address:
+              description:
+              - Configures the IPv6 address for Interface.
+              type: str
     state:
       choices:
       - merged
@@ -100,6 +112,8 @@ EXAMPLES = """
 #  ipv4 address 192.168.0.2 255.255.255.0
 #  shutdown
 # !
+# interface GigabitEthernet0/0/0/3.700
+# !
 # interface GigabitEthernet0/0/0/4
 #  ipv6 address fd5d:12c9:2201:1::1/64
 #  shutdown
@@ -109,9 +123,12 @@ EXAMPLES = """
   iosxr_interfaces:
     config:
       - name: GigabitEthernet0/0/0/2
-        ipv4: 192.168.0.1/24
+        ipv4:
+        - address: 192.168.0.1/24
       - name: GigabitEthernet0/0/0/3
-        ipv4: 192.168.1.0/24
+        ipv4:
+        - address: 192.168.2.1/24
+          secondary: True
     operation: merged
 
 # After state:
@@ -127,7 +144,10 @@ EXAMPLES = """
 # !
 # interface GigabitEthernet0/0/0/3
 #  ipv4 address 192.168.1.0 255.255.255.0
+#  ipv4 address 192.168.2.1 255.255.255.0 secondary
 #  shutdown
+# !
+# interface GigabitEthernet0/0/0/3.700
 # !
 # interface GigabitEthernet0/0/0/4
 #  ipv6 address fd5d:12c9:2201:1::1/64
@@ -151,6 +171,8 @@ EXAMPLES = """
 #  ipv4 address 192.168.1.0 255.255.255.0
 #  shutdown
 # !
+# interface GigabitEthernet0/0/0/3.700
+# !
 # interface GigabitEthernet0/0/0/4
 #  ipv6 address fd5d:12c9:2201:1::1/64
 #  shutdown
@@ -160,7 +182,13 @@ EXAMPLES = """
   iosxr_interfaces:
     config:
       - name: GigabitEthernet0/0/0/3
-        ipv4: 192.168.0.1/24
+        ipv4:
+        - address: 192.168.0.1/24
+      - name: GigabitEthernet0/0/0/3.700
+        ipv4:
+        - address: 192.168.0.2/24
+        - address: 192.168.2.1/24
+          secondary: True
     operation: overridden
 
 # After state:
@@ -176,6 +204,10 @@ EXAMPLES = """
 # interface GigabitEthernet0/0/0/3
 #  ipv4 address 192.168.0.1 255.255.255.0
 #  shutdown
+# !
+# interface GigabitEthernet0/0/0/3.700
+#  ipv4 address 192.168.0.2 255.255.255.0
+#  ipv4 address 192.168.2.1 255.255.255.0 secondary
 # !
 # interface GigabitEthernet0/0/0/4
 #  shutdown
@@ -197,6 +229,9 @@ EXAMPLES = """
 #  ipv4 address 192.168.0.2 255.255.255.0
 #  shutdown
 # !
+# interface GigabitEthernet0/0/0/3.700
+#  ipv4 address 192.168.0.1 255.255.255.0
+# !
 # interface GigabitEthernet0/0/0/4
 #  ipv6 address fd5d:12c9:2201:1::1/64
 #  shutdown
@@ -206,9 +241,11 @@ EXAMPLES = """
   iosxr_interfaces:
     config:
       - name: GigabitEthernet0/0/0/3
-        ipv6: fd5d:12c9:2201:1::1/64
+        ipv6:
+        - address: fd5d:12c9:2201:1::1/64
       - name: GigabitEthernet0/0/0/4
-        ipv4: 192.168.0.2/24
+        ipv4:
+        - address: 192.168.0.2/24
     operation: replaced
 
 # After state:
@@ -224,6 +261,9 @@ EXAMPLES = """
 # interface GigabitEthernet0/0/0/3
 #  ipv6 address fd5d:12c9:2201:1::1/64
 #  shutdown
+# !
+# interface GigabitEthernet0/0/0/3.700
+#  ipv4 address 192.168.0.1 255.255.255.0
 # !
 # interface GigabitEthernet0/0/0/4
 #  ipv4 address 192.168.0.2 255.255.255.0
@@ -246,6 +286,9 @@ EXAMPLES = """
 #  ipv4 address 192.168.0.2 255.255.255.0
 #  shutdown
 # !
+# interface GigabitEthernet0/0/0/3.700
+#  ipv4 address 192.168.0.1 255.255.255.0
+# !
 # interface GigabitEthernet0/0/0/4
 #  ipv6 address fd5d:12c9:2201:1::1/64
 #  shutdown
@@ -254,8 +297,9 @@ EXAMPLES = """
 - name: Delete attributes of given interfaces (Note: This won't delete the interface itself)
   iosxr_interfaces:
     config:
-      - name: GigabitEthernet0/0/0/2
       - name: GigabitEthernet0/0/0/3
+      - name: GigabitEthernet0/0/0/4
+      - name: GigabitEthernet0/0/0/3.700
     operation: deleted
 
 # After state:
@@ -270,6 +314,8 @@ EXAMPLES = """
 # !
 # interface GigabitEthernet0/0/0/3
 #  shutdown
+# !
+# interface GigabitEthernet0/0/0/3.700
 # !
 # interface GigabitEthernet0/0/0/4
 #  shutdown
