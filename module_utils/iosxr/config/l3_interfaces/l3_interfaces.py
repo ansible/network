@@ -11,7 +11,7 @@ created
 """
 
 from ansible.module_utils.network.common.utils import to_list
-from ansible.module_utils.six import iteritems
+from ansible.module_utils.network.common.utils import is_netmask, is_masklen, to_netmask, to_masklen
 
 from ansible.module_utils.iosxr.argspec.l3_interfaces.l3_interfaces import L3_InterfacesArgs
 from ansible.module_utils.iosxr.config.base import ConfigBase
@@ -125,8 +125,6 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
             for each in have:
                 if each['name'] == interface['name']:
                     break
-                elif interface['name'] in each['name']:
-                    break
             else:
                 continue
             kwargs = {'want': interface, 'have': each, }
@@ -151,8 +149,6 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
         for each in have:
             for interface in want:
                 if each['name'] == interface['name']:
-                    break
-                elif interface['name'] in each['name']:
                     break
             else:
                 # We didn't find a matching desired state, which means we can
@@ -184,8 +180,6 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
             for each in have:
                 if each['name'] == interface['name']:
                     break
-                elif interface['name'] in each['name']:
-                    break
             else:
                 continue
             kwargs = {'want': interface, 'have': each, 'module': module}
@@ -207,8 +201,6 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
         for interface in want:
             for each in have:
                 if each['name'] == interface['name']:
-                    break
-                elif interface['name'] in each['name']:
                     break
             else:
                 continue
@@ -232,6 +224,26 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
         commands.append(cmd)
 
     @staticmethod
+    def validate_ipv4(value, module):
+        if value:
+            address = value.split('/')
+            if len(address) != 2:
+                module.fail_json(msg='address format is <ipv4 address>/<mask>, got invalid format {}'.format(value))
+
+            if not is_masklen(address[1]):
+                module.fail_json(msg='invalid value for mask: {}, mask should be in range 0-32'.format(address[1]))
+
+    @staticmethod
+    def validate_ipv6(value, module):
+        if value:
+            address = value.split('/')
+            if len(address) != 2:
+                module.fail_json(msg='address format is <ipv6 address>/<mask>, got invalid format {}'.format(value))
+            else:
+                if not 0 <= int(address[1]) <= 128:
+                    module.fail_json(msg='invalid value for mask: {}, mask should be in range 0-128'.format(address[1]))
+
+    @staticmethod
     def set_interface(**kwargs):
         # Set the interface config based on the want and have config
         commands = []
@@ -241,6 +253,40 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
         clear_cmds = []
         if kwargs.get('commands'):
             clear_cmds = kwargs['commands']
+        interface = 'interface ' + want['name']
+
+        # To handle Interface L3 config if L2transport is configured
+        if have.get('l2transport'):
+            module.fail_json(msg='L3 configuration is not allowed under a L2 subinterface {}'.format(want['name']))
+        elif 'l2transport' in want['name']:
+            module.fail_json(msg='L3 configuration is not allowed under a L2 subinterface {}'.format(want['name']))
+
+        # To handle L3 IPV4 configuration
+        ipv4 = want.get('ipv4')
+        if ipv4:
+            for each_ip in ipv4:
+                ip_addr = each_ip.get('address')
+                L3_Interfaces.validate_ipv4(ip_addr, module)
+                ip = ip_addr.split('/')
+                if len(ip) == 2:
+                    ip_addr = '{0} {1}'.format(ip[0], to_netmask(ip[1]))
+                if each_ip.get('secondary'):
+                    if ip_addr != have.get('secondary_ipv4') or 'no ip address' in clear_cmds:
+                        cmd = 'ip address {} secondary'.format(ip_addr)
+                        L3_Interfaces._add_command_to_interface(interface, cmd, commands)
+                elif have.get('ipv4') != ip_addr or 'no ip address' in clear_cmds:
+                    cmd = 'ip address {}'.format(ip_addr)
+                    L3_Interfaces._add_command_to_interface(interface, cmd, commands)
+
+        # To handle L3 IPV6 configuration
+        ipv6 = want.get('ipv6')
+        if ipv6:
+            for each_ip in ipv6:
+                ipv6_addr = each_ip.get('address')
+                L3_Interfaces.validate_ipv6(ipv6_addr, module)
+                if have.get('ipv6') != ipv6_addr or 'no ipv6 address' in clear_cmds:
+                    cmd = 'ipv6 address {}'.format(ipv6_addr)
+                    L3_Interfaces._add_command_to_interface(interface, cmd, commands)
 
         return commands
 
@@ -251,9 +297,13 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
         want = kwargs['want']
         have = kwargs['have']
         interface = 'interface ' + want['name']
-        if 'ip address' in have:
-            L3_Interfaces._remove_command_from_interface(interface, 'no ip address', commands)
-        if 'ipv6 address' in have:
-            L3_Interfaces._remove_command_from_interface(interface, 'no ipv6 address', commands)
+
+        if have.get('ipv4') and not want.get('ipv4'):
+            L3_Interfaces._remove_command_from_interface(interface, 'ipv4 address', commands)
+        if have.get('ipv6') and not want.get('ipv6'):
+            L3_Interfaces._remove_command_from_interface(interface, 'ipv6 address', commands)
+        if have.get('secondary') and not want.get('secondary'):
+            cmd = 'ipv4 address {} secondary'.format(have.get('secondary_ipv4'))
+            L3_Interfaces._remove_command_from_interface(interface, cmd, commands)
 
         return commands
