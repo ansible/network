@@ -14,7 +14,7 @@ from copy import deepcopy
 
 from ansible.module_utils.ios.facts.base import FactsBase
 from ansible.module_utils.ios.utils.utils import get_interface_type, normalize_interface
-
+import q
 
 class L3_interfacesFacts(FactsBase):
     """ The ios l3 interfaces fact class
@@ -72,12 +72,12 @@ class L3_interfacesFacts(FactsBase):
             elif 'dhcp' in each:
                 config["ipv4"] = 'dhcp'
                 if 'hostname' in each and 'client-id' in each:
-                    config['dhcp_client'] = each.split(' hostname ')[0].split('client-id ')[-1]
+                    config['dhcp_client'] = each.split(' hostname ')[0].split('/')[-1]
                     config["dhcp_hostname"] = each.split(' hostname ')[-1]
-                elif 'hostname' in each:
+                if 'hostname' in each and not config["dhcp_hostname"]:
                     config["dhcp_hostname"] = each.split(' hostname ')[-1]
-                elif 'client-id' in each:
-                    config['dhcp_client'] = ipv4.split(' client-id ')[-1]
+                if 'client-id' in each and not config['dhcp_client']:
+                    config['dhcp_client'] = each.split('/')[-1]
             else:
                 config["ipv4"] = each
 
