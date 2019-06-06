@@ -16,7 +16,7 @@ from ansible.module_utils.iosxr.facts.base import FactsBase
 from ansible.module_utils.iosxr.utils.utils import get_interface_type, normalize_interface
 
 
-class InterfacesFacts(FactsBase):
+class L3_interfacesFacts(FactsBase):
     """ The iosxr l3 interfaces fact class
     """
 
@@ -31,7 +31,7 @@ class InterfacesFacts(FactsBase):
         objs = []
 
         if not data:
-            data = connection.get('show running-config | section ^interface')
+            data = connection.get('show running-config interface')
         # operate on a collection of resource x
         config = data.split('interface ')
         for conf in config:
@@ -42,8 +42,8 @@ class InterfacesFacts(FactsBase):
         facts = {}
 
         if objs:
-            facts['interfaces'] = objs
-        self.ansible_facts['net_configuration'].update(facts)
+            facts['l3_interfaces'] = objs
+        self.ansible_facts['ansible_network_resources'].update(facts)
         return self.ansible_facts
 
     def render_config(self, spec, conf):
@@ -63,11 +63,29 @@ class InterfacesFacts(FactsBase):
         # populate the facts from the configuration
         config['name'] = normalize_interface(intf)
 
-        ipv4 = re.search(r"ip address (\S+.)*", conf)
-        if ipv4:
-            config["ipv4"] = ipv4.group().split(' ')
-        ipv6 = re.search(r"ipv6 address (\S+)", conf)
-        if ipv6:
-            config["ipv6"] = ipv6.group(1)
+        # Get the configured IPV4 details
+        ipv4 = re.findall(r"ipv4 address (\S+.*)", conf)
+        for each in ipv4:
+            if 'secondary' in each:
+                config['secondary'] = True
+                config['secondary_ipv4'] = each.split(' secondary')[0]
+            else:
+                config["ipv4"] = each
+
+        # Get the configured IPV6 details
+        ipv6 = re.findall(r"ipv6 address (\S+)", conf)
+        for each in ipv6:
+            config["ipv6"] = each
+
+        # To verify if L2transport is configured on the interface
+        l2transport = False
+        interface_name = re.search(r'^(\S+) (\S.*)', conf)
+        if interface_name:
+            if 'l2transport' in interface_name.group():
+                l2transport = True
+        elif re.search(r"l2transport", conf):
+            l2transport = True
+        if l2transport:
+            config['l2transport'] = True
 
         return self.generate_final_config(config)
