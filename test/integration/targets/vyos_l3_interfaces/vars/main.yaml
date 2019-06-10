@@ -1,0 +1,149 @@
+---
+merged:
+  before:
+    - name: "eth0"
+      ipv4:
+        - address: "dhcp"
+      ipv6:
+        - address: "dhcpv6"
+
+    - name: "eth1"
+
+    - name: "eth2"
+
+    - name: "eth3"
+
+  commands:
+    - "set interfaces ethernet eth2 address '192.0.2.10/24'"
+    - "set interfaces ethernet eth2 address '192.0.2.11/24'"
+    - "set interfaces ethernet eth2 address '2001:db8::10/32'"
+    - "set interfaces ethernet eth2 address '2001:db8::11/32'"
+    - "set interfaces ethernet eth3 address '198.51.100.10/24'"
+    - "set interfaces ethernet eth3 vif 101 address '198.51.100.130/25'"
+    - "set interfaces ethernet eth3 vif 101 address '198.51.100.131/25'"
+    - "set interfaces ethernet eth3 vif 102 address '2001:db8:4000::2/34'"
+    - "set interfaces ethernet eth3 vif 102 address '2001:db8:4000::3/34'"
+
+  after:
+    - name: "eth3"
+      ipv4:
+        - address: "198.51.100.10/24"
+      vifs:
+        - vlan_id: "102"
+          ipv6:
+            - address: "2001:db8:4000::2/34"
+            - address: "2001:db8:4000::3/34"
+
+        - vlan_id: "101"
+          ipv4:
+            - address: "198.51.100.130/25"
+            - address: "198.51.100.131/25"
+
+    - name: "eth2"
+      ipv4:
+        - address: "192.0.2.10/24"
+        - address: "192.0.2.11/24"
+      ipv6:
+        - address: "2001:db8::10/32"
+        - address: "2001:db8::11/32"
+
+    - name: "eth1"
+
+    - name: "eth0"
+      ipv4:
+        - address: "dhcp"
+      ipv6:
+        - address: "dhcpv6"
+
+populate:
+  - name: "eth1"
+    ipv4:
+      - address: "192.0.2.14/24"
+
+  - name: "eth2"
+    ipv4:
+      - address: "192.0.2.10/24"
+      - address: "192.0.2.11/24"
+    ipv6:
+      - address: "2001:db8::10/32"
+      - address: "2001:db8::11/32"
+
+  - name: "eth3"
+    ipv4:
+      - address: "198.51.100.130/25"
+
+  - name: "eth0"
+    ipv4:
+      - address: "dhcp"
+    ipv6:
+      - address: "dhcpv6"
+
+replaced:
+  commands:
+    - "delete interfaces ethernet eth2 address '192.0.2.10/24'"
+    - "delete interfaces ethernet eth2 address '192.0.2.11/24'"
+    - "delete interfaces ethernet eth2 address '2001:db8::10/32'"
+    - "delete interfaces ethernet eth2 address '2001:db8::11/32'"
+    - "set interfaces ethernet eth2 address '192.0.2.19/24'"
+    - "delete interfaces ethernet eth3 address '198.51.100.130/25'"
+    - "set interfaces ethernet eth3 address '2001:db8::11/32'"
+
+  after:
+    - name: "eth3"
+      ipv6:
+        - address: "2001:db8::11/32"
+
+    - name: "eth1"
+      ipv4:
+        - address: "192.0.2.14/24"
+
+    - name: "eth2"
+      ipv4:
+        - address: "192.0.2.19/24"
+
+    - name: "eth0"
+      ipv4:
+        - address: "dhcp"
+      ipv6:
+        - address: "dhcpv6"
+
+overridden:
+  commands:
+    - "delete interfaces ethernet eth2 address"
+    - "delete interfaces ethernet eth3 address"
+    - "delete interfaces ethernet eth1 address '192.0.2.14/24'"
+    - "set interfaces ethernet eth1 address '192.0.2.15/24'"
+
+  after:
+    - name: "eth0"
+      ipv4:
+        - address: "dhcp"
+      ipv6:
+        - address: "dhcpv6"
+
+    - name: "eth1"
+      ipv4:
+        - address: "192.0.2.15/24"
+
+    - name: "eth2"
+
+    - name: "eth3"
+
+deleted:
+  commands:
+    - "delete interfaces ethernet eth1 address"
+    - "delete interfaces ethernet eth2 address"
+  after:
+    - name: "eth0"
+      ipv4:
+        - address: "dhcp"
+      ipv6:
+        - address: "dhcpv6"
+
+    - name: "eth1"
+
+    - name: "eth2"
+
+    - name: "eth3"
+      ipv4:
+        - address: "198.51.100.130/25"

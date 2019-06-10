@@ -1,1 +1,3 @@
 .tox
+.vscode/
+.idea/
