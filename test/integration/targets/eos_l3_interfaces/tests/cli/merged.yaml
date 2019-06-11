@@ -1,0 +1,34 @@
+---
+- include_tasks: reset_config.yaml
+
+- set_fact:
+    config:
+      - name: Ethernet1
+        ipv4: 198.51.100.14/24
+      - name: Ethernet2
+        ipv4: 203.0.113.27/24
+
+- name: Merge provided configuration with device configuration.
+  eos_l3_interfaces:
+    config: "{{ config }}"
+    state: merged
+
+- eos_facts:
+    gather_subset: net_configuration_l3_interfaces
+
+- set_fact:
+    expected_config:
+      - name: Ethernet1
+        ipv4: 198.51.100.14/24
+      - name: Ethernet2
+        ipv4: 203.0.113.27/24
+        ipv6: 2001:db8::1/64
+      - name: Management1
+        ipv4: dhcp
+        ipv6: auto-config
+
+- assert:
+    that:
+      - "ansible_facts.network_resources.l3_interfaces|symmetric_difference(expected_config)|length == 0"
+
+- include_tasks: reset_config.yaml
