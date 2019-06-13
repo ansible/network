@@ -211,13 +211,20 @@ class L3_interfaces(ConfigBase, L3_interfacesArgs):
 def set_interface(want, have):
     commands = []
 
-    want_ipv4 = want.get("ipv4")
-    if want_ipv4 and want_ipv4 != have.get("ipv4"):
-        commands.append("ip address {}".format(want_ipv4))
+    want_ipv4 = set(tuple(address.items()) for address in want.get("ipv4") or [])
+    have_ipv4 = set(tuple(address.items()) for address in have.get("ipv4") or [])
+    for address in want_ipv4 - have_ipv4:
+        address = dict(address)
+        address_cmd = "ip address {}".format(address["address"])
+        if address["secondary"]:
+            address_cmd += " secondary"
+        commands.append(address_cmd)
 
-    want_ipv6 = want.get("ipv6")
-    if want_ipv6 and want_ipv6 != have.get("ipv6"):
-        commands.append("ipv6 address {}".format(want_ipv6))
+    want_ipv6 = set(tuple(address.items()) for address in want.get("ipv6") or [])
+    have_ipv6 = set(tuple(address.items()) for address in have.get("ipv6") or [])
+    for address in want_ipv6 - have_ipv6:
+        address = dict(address)
+        commands.append("ipv6 address {}".format(address["address"]))
 
     return commands
 

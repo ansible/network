@@ -61,12 +61,22 @@ class L3_interfacesFacts(FactsBase):
 
         config['name'] = self.parse_conf_arg(conf, 'interface')
 
-        match = re.match(r'.*ip address (\S+)', conf, re.MULTILINE | re.DOTALL)
-        if match:
-            config['ipv4'] = match.groups()[0]
+        matches = re.findall(r'.*ip address (.+)$', conf, re.MULTILINE)
+        if matches:
+            config["ipv4"] = []
+            for match in matches:
+                address, dummy, remainder = match.partition(" ")
+                ipv4 = {"address": address}
+                if remainder == "secondary":
+                    ipv4["secondary"] = True
+                config['ipv4'].append(ipv4)
 
-        match = re.match(r'.*ipv6 address (\S+)', conf, re.MULTILINE | re.DOTALL)
-        if match:
-            config['ipv6'] = match.groups()[0]
+        matches = re.findall(r'.*ipv6 address (.+)$', conf, re.MULTILINE)
+        if matches:
+            config["ipv6"] = []
+            for match in matches:
+                address, dummy, remainder = match.partition(" ")
+                ipv6 = {"address": address}
+                config['ipv6'].append(ipv6)
 
         return self.generate_final_config(config)
