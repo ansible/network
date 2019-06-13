@@ -11,13 +11,25 @@
     other_config:
       - name: Ethernet1
 
+- eos_facts:
+    gather_subset: net_configuration_l3_interfaces
+
 - name: Replace device configuration of specified L3 interfaces with provided configuration.
   eos_l3_interfaces:
     config: "{{ config }}"
     state: replaced
+  register: result
+
+- assert:
+    that:
+      - "ansible_facts.network_resources.l3_interfaces|symmetric_difference(result.before)|length == 0"
 
 - eos_facts:
     gather_subset: net_configuration_l3_interfaces
+
+- assert:
+    that:
+      - "ansible_facts.network_resources.l3_interfaces|symmetric_difference(result.after)|length == 0"
 
 - set_fact:
     expected_config: "{{ config }} + {{ other_config }}"

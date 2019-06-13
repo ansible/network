@@ -10,14 +10,25 @@
         ipv4: dhcp
         ipv6: auto-config
 
+- eos_facts:
+    gather_subset: net_configuration_l3_interfaces
 
 - name: Delete EOS L3 interfaces as in given arguments.
   eos_l3_interfaces:
     config: "{{ config }}"
     state: deleted
+  register: result
+
+- assert:
+    that:
+      - "ansible_facts.network_resources.l3_interfaces|symmetric_difference(result.before)|length == 0"
 
 - eos_facts:
     gather_subset: net_configuration_l3_interfaces
+
+- assert:
+    that:
+      - "ansible_facts.network_resources.l3_interfaces|symmetric_difference(result.after)|length == 0"
 
 - set_fact:
     expected_config: "{{ config }} + {{ other_config }}"
