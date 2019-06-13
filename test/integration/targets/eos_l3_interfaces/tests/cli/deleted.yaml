@@ -7,8 +7,10 @@
       - name: Ethernet2
     other_config:
       - name: Management1
-        ipv4: dhcp
-        ipv6: auto-config
+        ipv4:
+          - address: dhcp
+        ipv6:
+          - address: auto-config
 
 - eos_facts:
     gather_subset: net_configuration_l3_interfaces
@@ -36,5 +38,3 @@
 - assert:
     that:
       - "ansible_facts.network_resources.l3_interfaces|symmetric_difference(expected_config)|length == 0"
-
-- include_tasks: reset_config.yaml
