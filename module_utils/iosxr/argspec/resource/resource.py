@@ -23,5 +23,5 @@
 ##############################################
 ##############################################
 """
-The arg spec for the ios_l3_interfaces module
+The arg spec for the iosxr_l3_interfaces module
 """

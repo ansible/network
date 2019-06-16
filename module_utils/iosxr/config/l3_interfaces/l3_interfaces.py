@@ -3,7 +3,7 @@
 # Copyright 2019 Red Hat Inc.
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 """
-The ios_l3_interfaces class
+The iosxr_l3_interfaces class
 It is in this file where the current configuration (as dict)
 is compared to the provided configuration (as dict) and the command set
 necessary to bring the current configuration to it's desired end-state is
@@ -20,7 +20,7 @@ from ansible.module_utils.iosxr.facts.facts import Facts
 
 class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
     """
-    The ios_l3_interfaces class
+    The iosxr_l3_interfaces class
     """
 
     gather_subset = [
@@ -127,11 +127,12 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
                     break
             else:
                 continue
-            kwargs = {'want': interface, 'have': each, }
+            kwargs = {'want': interface, 'have': each}
             commands.extend(L3_Interfaces.clear_interface(**kwargs))
             kwargs = {'want': interface, 'have': each, 'commands': commands, 'module': module}
             commands.extend(L3_Interfaces.set_interface(**kwargs))
 
+        commands = L3_Interfaces._remove_command_from_interface(commands)
         return commands
 
     @staticmethod
@@ -162,6 +163,7 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
             kwargs = {'want': interface, 'have': each, 'commands': commands, 'module': module}
             commands.extend(L3_Interfaces.set_interface(**kwargs))
 
+        commands = L3_Interfaces._remove_duplicate_interface(commands)
         return commands
 
     @staticmethod
@@ -244,15 +246,37 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
                     module.fail_json(msg='invalid value for mask: {}, mask should be in range 0-128'.format(address[1]))
 
     @staticmethod
+    def validate_n_expand_ipv4(module, want):
+        # Check if input IPV4 is valid IP and expand IPV4 with its subnet mask
+        ip_addr_want = want.get('address')
+        L3_Interfaces.validate_ipv4(ip_addr_want, module)
+        ip = ip_addr_want.split('/')
+        if len(ip) == 2:
+            ip_addr_want = '{0} {1}'.format(ip[0], to_netmask(ip[1]))
+
+        return ip_addr_want
+
+    @staticmethod
+    def _remove_duplicate_interface(commands):
+        # Remove duplicate interface from commands
+        set_cmd = []
+        for each in commands:
+            if 'interface' in each:
+                interface = each
+                if interface not in set_cmd:
+                    set_cmd.append(each)
+            else:
+                set_cmd.append(each)
+
+        return set_cmd
+
+    @staticmethod
     def set_interface(**kwargs):
         # Set the interface config based on the want and have config
         commands = []
         want = kwargs['want']
         have = kwargs['have']
         module = kwargs['module']
-        clear_cmds = []
-        if kwargs.get('commands'):
-            clear_cmds = kwargs['commands']
         interface = 'interface ' + want['name']
 
         # To handle Interface L3 config if L2transport is configured
@@ -261,32 +285,29 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
         elif 'l2transport' in want['name']:
             module.fail_json(msg='L3 configuration is not allowed under a L2 subinterface {}'.format(want['name']))
 
-        # To handle L3 IPV4 configuration
-        ipv4 = want.get('ipv4')
-        if ipv4:
-            for each_ip in ipv4:
-                ip_addr = each_ip.get('address')
-                L3_Interfaces.validate_ipv4(ip_addr, module)
-                ip = ip_addr.split('/')
-                if len(ip) == 2:
-                    ip_addr = '{0} {1}'.format(ip[0], to_netmask(ip[1]))
-                if each_ip.get('secondary'):
-                    if ip_addr != have.get('secondary_ipv4') or 'no ip address' in clear_cmds:
-                        cmd = 'ip address {} secondary'.format(ip_addr)
-                        L3_Interfaces._add_command_to_interface(interface, cmd, commands)
-                elif have.get('ipv4') != ip_addr or 'no ip address' in clear_cmds:
-                    cmd = 'ip address {}'.format(ip_addr)
-                    L3_Interfaces._add_command_to_interface(interface, cmd, commands)
+        if want.get("ipv4"):
+            for each in want.get("ipv4"):
+                if each.get('address'):
+                    ip_addr_want = L3_Interfaces.validate_n_expand_ipv4(module, each)
+                    each['address'] = ip_addr_want
 
-        # To handle L3 IPV6 configuration
-        ipv6 = want.get('ipv6')
-        if ipv6:
-            for each_ip in ipv6:
-                ipv6_addr = each_ip.get('address')
-                L3_Interfaces.validate_ipv6(ipv6_addr, module)
-                if have.get('ipv6') != ipv6_addr or 'no ipv6 address' in clear_cmds:
-                    cmd = 'ipv6 address {}'.format(ipv6_addr)
-                    L3_Interfaces._add_command_to_interface(interface, cmd, commands)
+        want_ipv4 = set(tuple(address.items()) for address in want.get("ipv4") or [])
+        have_ipv4 = set(tuple(address.items()) for address in have.get("ipv4") or [])
+
+        diff = want_ipv4 - have_ipv4
+        for address in diff:
+            address = dict(address)
+            cmd = "ip address {}".format(address["address"])
+            if address["secondary"]:
+                cmd += " secondary"
+            L3_Interfaces._add_command_to_interface(interface, cmd, commands)
+
+        want_ipv6 = set(tuple(address.items()) for address in want.get("ipv6") or [])
+        have_ipv6 = set(tuple(address.items()) for address in have.get("ipv6") or [])
+        for address in want_ipv6 - have_ipv6:
+            address = dict(address)
+            cmd = "ipv6 address {}".format(address["address"])
+            L3_Interfaces._add_command_to_interface(interface, cmd, commands)
 
         return commands
 
@@ -298,12 +319,14 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
         have = kwargs['have']
         interface = 'interface ' + want['name']
 
-        if have.get('ipv4') and not want.get('ipv4'):
+        if have.get('ipv4') and want.get('ipv4'):
+            for each in have.get('ipv4'):
+                if each.get('secondary') and not (want.get('ipv4')[0].get('secondary')):
+                    cmd = 'ipv4 address {} secondary'.format(each.get('address'))
+                    L3_Interfaces._remove_command_from_interface(interface, cmd, commands)
+        if have.get('ipv4') and not (want.get('ipv4')):
             L3_Interfaces._remove_command_from_interface(interface, 'ipv4 address', commands)
-        if have.get('ipv6') and not want.get('ipv6'):
+        if have.get('ipv6') and not (want.get('ipv6')):
             L3_Interfaces._remove_command_from_interface(interface, 'ipv6 address', commands)
-        if have.get('secondary') and not want.get('secondary'):
-            cmd = 'ipv4 address {} secondary'.format(have.get('secondary_ipv4'))
-            L3_Interfaces._remove_command_from_interface(interface, cmd, commands)
 
         return commands

@@ -1,0 +1,31 @@
+---
+- name: Reset initial config
+  cli_config:
+    config: |
+      interface GigabitEthernet0/0/0/3
+        ipv4 address 192.168.0.1 255.255.255.0
+      interface GigabitEthernet0/0/0/3
+        ipv4 address 192.168.2.1 255.255.255.0
+        ipv4 address 192.168.3.1 255.255.255.0 secondary
+      interface GigabitEthernet0/0/0/3
+        ipv6 address fd5d:12c9:2201:1::1/64
+- iosxr_facts:
+    gather_subset: net_configuration_interfaces
+
+- set_fact:
+    expected_output:
+      - name: GigabitEthernet0/0/0/3
+        ipv4:
+          - address: 192.168.0.1/24
+      - name: GigabitEthernet0/0/0/3
+        ipv4:
+          - address: 192.168.2.1/24
+          - address: 192.168.3.1/24
+            secondary: True
+      - name: GigabitEthernet0/0/0/3
+        ipv6:
+          - address: fd5d:12c9:2201:1::1/64
+
+- assert:
+    that:
+      - "ansible_facts.net_configuration.l3_interfaces == expected_output"

@@ -29,7 +29,7 @@ description:
     collection of additional facts.
 author: [u'Sumit Jaiswal (@justjais)']
 notes:
-  - Tested against iosv Version 6.1.3 on VIRL
+  - Tested against IOSXRv Version 6.1.3 on VIRL
 options:
   gather_subset:
     description:

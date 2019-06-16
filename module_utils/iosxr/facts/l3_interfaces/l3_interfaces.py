@@ -56,26 +56,37 @@ class L3_interfacesFacts(FactsBase):
         """
         config = deepcopy(spec)
         match = re.search(r'^(\S+)', conf)
-        intf = match.group(1)
+        if match.group(1).lower() == "preconfigure":
+            match = re.search(r'^(\S+ \S+)', conf)
 
+        intf = match.group(1)
         if get_interface_type(intf) == 'unknown':
             return {}
         # populate the facts from the configuration
         config['name'] = normalize_interface(intf)
 
         # Get the configured IPV4 details
-        ipv4 = re.findall(r"ipv4 address (\S+.*)", conf)
-        for each in ipv4:
+        ipv4 = []
+        ipv4_all = re.findall(r"ipv4 address (\S+.*)", conf)
+        for each in ipv4_all:
+            each_ipv4 = dict()
             if 'secondary' in each:
-                config['secondary'] = True
-                config['secondary_ipv4'] = each.split(' secondary')[0]
+                each_ipv4['address'] = each.split(' secondary')[0]
+                each_ipv4['secondary'] = True
             else:
-                config["ipv4"] = each
+                each_ipv4['address'] = each
+                each_ipv4['secondary'] = None
+            ipv4.append(each_ipv4)
+            config['ipv4'] = ipv4
 
         # Get the configured IPV6 details
-        ipv6 = re.findall(r"ipv6 address (\S+)", conf)
-        for each in ipv6:
-            config["ipv6"] = each
+        ipv6 = []
+        ipv6_all = re.findall(r"ipv6 address (\S+)", conf)
+        for each in ipv6_all:
+            each_ipv6 = dict()
+            each_ipv6['address'] = each
+            ipv6.append(each_ipv6)
+            config['ipv6'] = ipv6
 
         # To verify if L2transport is configured on the interface
         l2transport = False

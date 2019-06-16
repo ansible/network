@@ -120,7 +120,7 @@ EXAMPLES = """
 # !
 
 - name: Merge provided configuration with device configuration
-  iosxr_interfaces:
+  iosxr_l3_interfaces:
     config:
       - name: GigabitEthernet0/0/0/2
         ipv4:
@@ -179,7 +179,7 @@ EXAMPLES = """
 # !
 
 - name: Override device configuration of all interfaces with provided configuration
-  iosxr_interfaces:
+  iosxr_l3_interfaces:
     config:
       - name: GigabitEthernet0/0/0/3
         ipv4:
@@ -238,7 +238,7 @@ EXAMPLES = """
 # !
 
 - name: Replaces device configuration of listed interfaces with provided configuration
-  iosxr_interfaces:
+  iosxr_l3_interfaces:
     config:
       - name: GigabitEthernet0/0/0/3
         ipv6:
@@ -295,7 +295,7 @@ EXAMPLES = """
 # !
 
 - name: Delete attributes of given interfaces (Note: This won't delete the interface itself)
-  iosxr_interfaces:
+  iosxr_l3_interfaces:
     config:
       - name: GigabitEthernet0/0/0/3
       - name: GigabitEthernet0/0/0/4
