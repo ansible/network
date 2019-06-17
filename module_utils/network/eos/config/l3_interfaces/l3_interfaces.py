@@ -215,8 +215,13 @@ def set_interface(want, have):
     have_ipv4 = set(tuple(address.items()) for address in have.get("ipv4") or [])
     for address in want_ipv4 - have_ipv4:
         address = dict(address)
+        if "secondary" in address and not address["secondary"]:
+            del address["secondary"]
+            if tuple(address.items()) in have_ipv4:
+                continue
+
         address_cmd = "ip address {}".format(address["address"])
-        if address["secondary"]:
+        if address.get("secondary"):
             address_cmd += " secondary"
         commands.append(address_cmd)
 
@@ -232,9 +237,28 @@ def set_interface(want, have):
 def clear_interface(want, have):
     commands = []
 
-    if have.get("ipv4") and not want.get("ipv4"):
-        commands.append("no ip address")
-    if have.get("ipv6") and not want.get("ipv6"):
-        commands.append("no ipv6 address")
+    want_ipv4 = set(tuple(address.items()) for address in want.get("ipv4") or [])
+    have_ipv4 = set(tuple(address.items()) for address in have.get("ipv4") or [])
+    for address in have_ipv4 - want_ipv4:
+        address = dict(address)
+        if "secondary" not in address:
+            address["secondary"] = False
+            if tuple(address.items()) in want_ipv4:
+                continue
+
+        address_cmd = "no ip address"
+        if address.get("secondary"):
+            address_cmd += " {} secondary".format(address["address"])
+        commands.append(address_cmd)
+
+        if "secondary" not in address:
+            # Removing non-secondary removes all other interfaces
+            break
+
+    want_ipv6 = set(tuple(address.items()) for address in want.get("ipv6") or [])
+    have_ipv6 = set(tuple(address.items()) for address in have.get("ipv6") or [])
+    for address in have_ipv6 - want_ipv6:
+        address = dict(address)
+        commands.append("no ipv6 address {}".format(address["address"]))
 
     return commands

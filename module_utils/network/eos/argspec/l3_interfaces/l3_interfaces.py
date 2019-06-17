@@ -37,7 +37,7 @@ class L3_interfacesArgs(object):  # pylint: disable=R0903
     argument_spec = {'config': {'elements': 'dict',
             'options': {'ipv4': {'elements': 'dict',
                                  'options': {'address': {'type': 'str'},
-                                             'secondary': {'type': 'bool'}},
+                                             'secondary': {'type': 'bool', 'default': False}},
                                  'type': 'list'},
                         'ipv6': {'elements': 'dict',
                                  'options': {'address': {'type': 'str'}},
