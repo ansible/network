@@ -31,7 +31,7 @@ from ansible.module_utils.network. \
     vyos.facts.facts import Facts
 
 from ansible.module_utils.network. \
-    vyos.utils.utils import search_obj_in_list
+    vyos.utils.utils import search_obj_in_list, member_list_diff
 
 import q
 class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
@@ -145,8 +145,14 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
                     )
                 )
         elif state == 'replaced':
-            kwargs = {}
-            commands = self._state_replaced(**kwargs)
+            for item in want:
+                name = item['name']
+                obj_in_have = search_obj_in_list(name, have)
+                commands.extend(
+                    self._state_replaced(
+                        want_lag=item, have_lag=obj_in_have
+                    )
+                )
         return commands
 
     @staticmethod
@@ -158,6 +164,23 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
                   to the desired configuration
         """
         commands = []
+        want_lag = kwargs['want_lag']
+        have_lag = kwargs['have_lag']
+
+        if have_lag:
+            commands.extend(
+                Lag_interfaces._render_del_commands(
+                    want_element = {'lag': want_lag},
+                    have_element = {'lag': have_lag}
+                )
+            )
+
+        commands.extend(
+            Lag_interfaces._state_merged(
+                want_lag=want_lag,
+                have_lag=have_lag
+            )
+        )
         return commands
 
     @staticmethod
@@ -262,10 +285,8 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
         params = Lag_interfaces.params
         want_item = want_element['lag']
 
-        for item in want_item :
-            members = item.get('members') or []
-            name = item['name']
-
+        name = want_item['name']
+        members = want_item.get('members') or []
 
         commands.append(set_cmd)
         for attrib in params:
@@ -291,8 +312,41 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
 
         for item in Lag_interfaces.params:
             if lag.get(item):
-                commands.append(del_lag + ' ' + item)
+                if item == 'members':
+                    for member in lag['members']:
+                        commands.append(
+                            'delete interfaces ethernet ' + member + ' bond-group ' + lag['name']
+                        )
+                elif item == 'name':
+                    commands.append(del_lag)
+                else:
+                    commands.append(del_lag + ' ' + item)
             if not lag['enable']:
                 commands.append(lag + ' disable')
 
+        return commands
+
+    @staticmethod
+    def _render_del_commands(**kwargs):
+        commands = []
+        want_element = kwargs['want_element']
+        have_element = kwargs['have_element']
+
+        del_cmd = Lag_interfaces.del_cmd + have_element['lag']['name']
+
+        params = Lag_interfaces.params
+        have_item = have_element['lag']
+        want_item = want_element['lag']
+        name = have_item['name']
+        want_members = want_item.get('members') or []
+        have_members = have_item.get('members') or []
+
+        for attrib in params:
+            if attrib == 'members':
+                members_diff = member_list_diff(have_members, want_members)
+                if members_diff:
+                    for member in members_diff:
+                        commands.append('delete interfaces ethernet ' + member + ' bond-group ' + name)
+            elif have_item.get(attrib) and not want_item.get(attrib):
+                commands.append(del_cmd + ' ' + attrib)
         return commands

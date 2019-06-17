@@ -12,3 +12,13 @@ def search_obj_in_list(name, lst, key='name'):
         if item[key] == name:
             return item
     return None
+
+def member_list_diff(have_member, want_member):
+    if have_member and not want_member:
+        diff = have_member
+    elif not have_member:
+        diff = None
+    else:
+        diff = [i for i in have_member + want_member if i in have_member and  i not in want_member]
+    return diff
+
