@@ -2,9 +2,9 @@
 - name: Reset initial config
   cli_config:
     config: |
-      interface GigabitEthernet0/0/0/3
+      interface GigabitEthernet0/0/0/1
         ipv4 address 192.168.0.1 255.255.255.0
-      interface GigabitEthernet0/0/0/3
+      interface GigabitEthernet0/0/0/2
         ipv4 address 192.168.2.1 255.255.255.0
         ipv4 address 192.168.3.1 255.255.255.0 secondary
       interface GigabitEthernet0/0/0/3
@@ -14,10 +14,10 @@
 
 - set_fact:
     expected_output:
-      - name: GigabitEthernet0/0/0/3
+      - name: GigabitEthernet0/0/0/1
         ipv4:
           - address: 192.168.0.1/24
-      - name: GigabitEthernet0/0/0/3
+      - name: GigabitEthernet0/0/0/2
         ipv4:
           - address: 192.168.2.1/24
           - address: 192.168.3.1/24

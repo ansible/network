@@ -1,17 +1,23 @@
 ---
 - debug:
-      msg: "START iosxr_l3_interfaces Replaced integration tests on connection={{ ansible_connection }}"
+      msg: "START iosxr_l3_interfaces Merged integration tests on connection={{ ansible_connection }}"
 
 - include_tasks: reset_config.yaml
 
-- name: Replaces device configuration of listed interfaces with provided configuration
+- name: Merge provided configuration with device configuration
   iosxr_l3_interfaces:
     config:
       - name: GigabitEthernet0/0/0/1
-          ipv4:
-          - address: 192.168.3.1/24
-            secondary: True
-    state: replaced
+        ipv4:
+          - address: 192.168.0.1/24
+      - name: GigabitEthernet0/0/0/2
+        ipv4:
+          - address: 192.168.2.1/24
+          secondary: True
+      - name: GigabitEthernet0/0/0/3
+        ipv6:
+          - address: fd5d:12c9:2201:1::1/64
+    state: merged
 
 - iosxr_facts:
     gather_subset: net_configuration_interfaces
@@ -21,8 +27,6 @@
       - name: GigabitEthernet0/0/0/1
         ipv4:
           - address: 192.168.0.1 255.255.255.0
-          - address: 192.168.3.1 255.255.255.0
-            secondary: True
       - name: GigabitEthernet0/0/0/2
         ipv4:
           - address: 192.168.2.1 255.255.255.0
@@ -30,7 +34,6 @@
       - name: GigabitEthernet0/0/0/3
         ipv6:
           - address: fd5d:12c9:2201:1::1/64
-
 
 - assert:
     that:

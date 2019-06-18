@@ -1,18 +1,16 @@
 ---
 - debug:
-      msg: "START iosxr_l3_interfaces Deleted integration tests on connection={{ ansible_connection }}"
+      msg: "START iosxr_l3_interfaces Overridden integration tests on connection={{ ansible_connection }}"
 
 - include_tasks: reset_config.yaml
 
-- include_tasks: reset_config.yaml
-
-- name: Delete attributes of given interfaces (Note: This won't delete the interface itself)
-  ios_l3_interfaces:
+- name: Override device configuration of all interfaces with provided configuration
+  iosxr_l3_interfaces:
     config:
       - name: GigabitEthernet0/0/0/1
-      - name: GigabitEthernet0/0/0/2
-      - name: GigabitEthernet0/0/0/3
-    state: deleted
+        ipv4:
+          - address: 192.168.0.1/24
+    state: overridden
 
 - iosxr_facts:
     gather_subset: net_configuration_interfaces
@@ -20,6 +18,8 @@
 - set_fact:
     expected_output:
       - name: GigabitEthernet0/0/0/1
+        ipv4:
+          - address: 192.168.0.1 255.255.255.0
       - name: GigabitEthernet0/0/0/2
       - name: GigabitEthernet0/0/0/3
 
