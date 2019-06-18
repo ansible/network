@@ -1,0 +1,44 @@
+---
+- debug:
+      msg: "START ios_l3_interfaces Overridden integration tests on connection={{ ansible_connection }}"
+
+- include_tasks: reset_config.yaml
+
+- name: Override device configuration of all interfaces with provided configuration
+  ios_l3_interfaces:
+    config:
+      - name: GigabitEthernet0/1
+        ipv4:
+          - address: 192.168.0.1/24
+      - name: GigabitEthernet0/2
+        ipv4:
+          - address: dhcp
+            dhcp_client: 2
+            dhcp_hostname: test.com
+      - name: GigabitEthernet0/3
+        ipv6:
+          - address: autoconfig
+    state: overridden
+
+- ios_facts:
+    gather_subset: net_configuration_interfaces
+
+- set_fact:
+    expected_output:
+      - name: GigabitEthernet0/1
+        ipv4:
+          - address: 192.168.0.1 255.255.255.0
+      - name: GigabitEthernet0/2
+        ipv4:
+          - address: dhcp
+            dhcp_client: 2
+            dhcp_hostname: test.com
+      - name: GigabitEthernet0/3
+        ipv6:
+          - address: autoconfig
+
+- assert:
+    that:
+      - "ansible_facts.net_configuration.l3_interfaces == expected_output"
+
+- include_tasks: reset_config.yaml

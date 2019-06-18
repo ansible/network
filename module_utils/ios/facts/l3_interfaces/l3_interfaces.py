@@ -54,6 +54,7 @@ class L3_interfacesFacts(FactsBase):
         :rtype: dictionary
         :returns: The generated config
         """
+        import q
         config = deepcopy(spec)
         match = re.search(r'^(\S+)', conf)
         intf = match.group(1)
@@ -63,32 +64,40 @@ class L3_interfacesFacts(FactsBase):
         # populate the facts from the configuration
         config['name'] = normalize_interface(intf)
 
-        # Get the configured IPV4 details
-        ipv4 = re.findall(r"ip address (\S+.*)", conf)
-        for each in ipv4:
-            if 'secondary' in each:
-                config['secondary'] = True
-                config['secondary_ipv4'] = each.split(' secondary')[0]
+        ipv4 = []
+        ipv4_all = re.findall(r"ip address (\S+.*)", conf)
+        for each in ipv4_all:
+            each_ipv4 = dict()
+            if 'secondary' not in each and 'dhcp' not in each:
+                each_ipv4['address'] = each
+            elif 'secondary' in each:
+                each_ipv4['secondary'] = True
+                each_ipv4['address'] = each.split(' secondary')[0]
             elif 'dhcp' in each:
-                config["ipv4"] = 'dhcp'
+                each_ipv4['address'] = 'dhcp'
                 if 'hostname' in each and 'client-id' in each:
-                    config['dhcp_client'] = each.split(' hostname ')[0].split('/')[-1]
-                    config["dhcp_hostname"] = each.split(' hostname ')[-1]
-                if 'hostname' in each and not config["dhcp_hostname"]:
-                    config["dhcp_hostname"] = each.split(' hostname ')[-1]
-                if 'client-id' in each and not config['dhcp_client']:
-                    config['dhcp_client'] = each.split('/')[-1]
-            else:
-                config["ipv4"] = each
+                    each_ipv4["dhcp_hostname"] = each.split(' hostname ')[-1]
+                    each_ipv4['dhcp_client'] = each.split(' hostname ')[0].split('/')[-1]
+                if 'client-id' in each and not each_ipv4['dhcp_client']:
+                    each_ipv4['dhcp_client'] = each.split('/')[-1]
+                if 'hostname' in each and not each_ipv4["dhcp_hostname"]:
+                    each_ipv4["dhcp_hostname"] = each.split(' hostname ')[-1]
+
+            ipv4.append(each_ipv4)
+        config['ipv4'] = ipv4
 
         # Get the configured IPV6 details
-        ipv6 = re.findall(r"ipv6 address (\S+)", conf)
-        for each in ipv6:
-            config["ipv6"] = each
-            if 'autoconfig' in config["ipv6"]:
-                config['autoconfig'] = True
-            elif 'dhcp' in config['ipv6']:
-                config['dhcp'] = True
+        ipv6 = []
+        ipv6_all = re.findall(r"ipv6 address (\S+)", conf)
+        for each in ipv6_all:
+            each_ipv6 = dict()
+            if 'autoconfig' in each:
+                each_ipv6['autoconfig'] = True
+            if 'dhcp' in each:
+                each_ipv6['dhcp'] = True
+            each_ipv6['address'] = each.lower()
+            ipv6.append(each_ipv6)
+        config['ipv6'] = ipv6
 
         encapsulation = re.search(r"encapsulation (\S+)", conf)
         if encapsulation:
