@@ -31,7 +31,7 @@ from ansible.module_utils.network. \
     vyos.facts.facts import Facts
 
 from ansible.module_utils.network. \
-    vyos.utils.utils import search_obj_in_list, member_list_diff
+    vyos.utils.utils import search_obj_in_list, member_list_diff, member_list_diff_update
 
 import q
 class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
@@ -91,7 +91,6 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
             result['diff'] = resp['diff'] if result['changed'] else None
 
         changed_lag_interfaces_facts = self.get_lag_interfaces_facts()
-
 
         result['before'] = existing_lag_interfaces_facts
         if result['changed']:
@@ -174,7 +173,6 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
                     have_element = {'lag': have_lag}
                 )
             )
-
         commands.extend(
             Lag_interfaces._state_merged(
                 want_lag=want_lag,
@@ -192,6 +190,30 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
                   to the desired configuration
         """
         commands = []
+        want_lags = kwargs['want']
+        have_lags = kwargs['have']
+
+
+        for  have_lag in have_lags:
+            lag_name = have_lag['name']
+            lag_in_want = search_obj_in_list(lag_name, want_lags)
+            if not lag_in_want:
+                commands.extend(
+                    Lag_interfaces._purge_attribs(
+                        lag=have_lag
+                    )
+                )
+
+        for lag in want_lags:
+            name = lag['name']
+            lag_in_have = search_obj_in_list(name, have_lags)
+            commands.extend(
+                Lag_interfaces._state_replaced(
+                    want_lag=lag,
+                    have_lag=lag_in_have
+                )
+            )
+
         return commands
 
     @staticmethod
@@ -253,10 +275,15 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
         have_item = have_element['lag']
         want_item = want_element['lag']
 
+
         name = want_item['name']
-        members = want_item.get('members') or []
+        want_members = want_item.get('members') or []
+        have_members = have_item.get('members') or []
+
+        diff_members = member_list_diff_update(have_members, want_members)
 
         updates = dict_diff(have_item, want_item)
+
         if updates:
             for key, value in iteritems(updates):
                 if key == 'enable':
@@ -266,8 +293,9 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
                         commands.append(set_cmd + ' disable')
                 elif value:
                     if key == 'members':
-                        for m in members:
-                            commands.append('set interfaces ethernet ' + m + ' bond-group ' + name)
+                        if diff_members:
+                            for m in diff_members:
+                                commands.append('set interfaces ethernet ' + m + ' bond-group ' + name)
 
                     else:
                         commands.append(
@@ -308,6 +336,7 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
     def _purge_attribs(**kwargs):
         commands = []
         lag = kwargs['lag']
+        delete_bond = ''
         del_lag = Lag_interfaces.del_cmd + lag['name']
 
         for item in Lag_interfaces.params:
@@ -318,11 +347,13 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
                             'delete interfaces ethernet ' + member + ' bond-group ' + lag['name']
                         )
                 elif item == 'name':
-                    commands.append(del_lag)
+                    delete_bond  = del_lag
                 else:
                     commands.append(del_lag + ' ' + item)
             if not lag['enable']:
                 commands.append(lag + ' disable')
+        if delete_bond:
+            commands.append(delete_bond)
 
         return commands
 

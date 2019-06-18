@@ -245,6 +245,8 @@ class Facts(FactsArgs, FactsBase):  # pylint: disable=R0903
         warnings = []
         self.ansible_facts['gather_network_resources'] = list()
         self.ansible_facts['gather_subset'] = list()
+        self.ansible_facts['ansible_network_resources'] = {}
+
 
         valnetres = self.argument_spec['gather_network_resources'].\
             get('choices', [])
@@ -259,12 +261,10 @@ class Facts(FactsArgs, FactsBase):  # pylint: disable=R0903
                 self.ansible_facts['gather_network_resources'] = list(restorun)
                 for attr in restorun:
                     getattr(self, '_get_%s' % attr, {})(module, connection)
-
         if self.VALID_GATHER_SUBSETS:
             runable_subsets = self.gen_runable(module,
                                                gather_subset,
                                                self.VALID_GATHER_SUBSETS)
-
             if runable_subsets:
                 facts = dict()
                 self.ansible_facts['gather_subset'] = list(runable_subsets)

@@ -22,3 +22,13 @@ def member_list_diff(have_member, want_member):
         diff = [i for i in have_member + want_member if i in have_member and  i not in want_member]
     return diff
 
+def member_list_diff_update(have_member, want_member):
+    if have_member and not want_member:
+        diff = None
+    elif not have_member:
+        diff = want_member
+    else:
+        diff = [i for i in have_member + want_member if i in want_member and  i not in have_member]
+    return diff
+
+
