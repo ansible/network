@@ -131,8 +131,9 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
             commands.extend(L3_Interfaces.clear_interface(**kwargs))
             kwargs = {'want': interface, 'have': each, 'commands': commands, 'module': module}
             commands.extend(L3_Interfaces.set_interface(**kwargs))
+        # Remove the duplicate interface call
+        commands = L3_Interfaces._remove_duplicate_interface(commands)
 
-        commands = L3_Interfaces._remove_command_from_interface(commands)
         return commands
 
     @staticmethod
@@ -162,8 +163,9 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
             commands.extend(L3_Interfaces.clear_interface(**kwargs))
             kwargs = {'want': interface, 'have': each, 'commands': commands, 'module': module}
             commands.extend(L3_Interfaces.set_interface(**kwargs))
-
+        # Remove the duplicate interface call
         commands = L3_Interfaces._remove_duplicate_interface(commands)
+
         return commands
 
     @staticmethod
@@ -293,7 +295,6 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
 
         want_ipv4 = set(tuple(address.items()) for address in want.get("ipv4") or [])
         have_ipv4 = set(tuple(address.items()) for address in have.get("ipv4") or [])
-
         diff = want_ipv4 - have_ipv4
         for address in diff:
             address = dict(address)
@@ -304,7 +305,8 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
 
         want_ipv6 = set(tuple(address.items()) for address in want.get("ipv6") or [])
         have_ipv6 = set(tuple(address.items()) for address in have.get("ipv6") or [])
-        for address in want_ipv6 - have_ipv6:
+        diff = want_ipv6 - have_ipv6
+        for address in diff:
             address = dict(address)
             cmd = "ipv6 address {}".format(address["address"])
             L3_Interfaces._add_command_to_interface(interface, cmd, commands)
@@ -314,6 +316,7 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
     @staticmethod
     def clear_interface(**kwargs):
         # Delete the interface config based on the want and have config
+        count = 0
         commands = []
         want = kwargs['want']
         have = kwargs['have']
@@ -321,9 +324,10 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
 
         if have.get('ipv4') and want.get('ipv4'):
             for each in have.get('ipv4'):
-                if each.get('secondary') and not (want.get('ipv4')[0].get('secondary')):
+                if each.get('secondary') and not (want.get('ipv4')[count].get('secondary')):
                     cmd = 'ipv4 address {} secondary'.format(each.get('address'))
                     L3_Interfaces._remove_command_from_interface(interface, cmd, commands)
+                count += 1
         if have.get('ipv4') and not (want.get('ipv4')):
             L3_Interfaces._remove_command_from_interface(interface, 'ipv4 address', commands)
         if have.get('ipv6') and not (want.get('ipv6')):
