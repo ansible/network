@@ -93,14 +93,6 @@ DOCUMENTATION = """
               description:
               - Configures the IPv6 address for Interface.
               type: str
-            autoconfig:
-              description:
-              - Obtain address using autoconfiguration.
-              type: bool
-            dhcp:
-              description:
-              - Obtain a ipv6 address using dhcp.
-              type: bool
     state:
       choices:
       - merged
@@ -138,7 +130,7 @@ EXAMPLES = """
 #  encapsulation dot1Q 20
 
 - name: Merge provided configuration with device configuration
-  ios_interfaces:
+  ios_l3_interfaces:
     config:
       - name: GigabitEthernet0/1
         ipv4: 
@@ -201,7 +193,7 @@ EXAMPLES = """
 #  ip address 192.168.0.2 255.255.255.0
 
 - name: Replaces device configuration of listed interfaces with provided configuration
-  ios_interfaces:
+  ios_l3_interfaces:
     config:
       - name: GigabitEthernet0/2
         ipv4:
@@ -263,14 +255,14 @@ EXAMPLES = """
 #  ip address 192.168.0.2 255.255.255.0
 
 - name: Override device configuration of all interfaces with provided configuration
-  ios_interfaces:
+  ios_l3_interfaces:
     config:
       - name: GigabitEthernet0/2
         ipv4:
         - address: 192.168.0.1/24
       - name: GigabitEthernet0/3.100
         ipv6:
-        - autoconfig: True
+        - address: autoconfig
     operation: overridden
 
 # After state:
@@ -319,7 +311,7 @@ EXAMPLES = """
 #  ip address 192.168.0.2 255.255.255.0
 
 - name: Delete attributes of given interfaces (Note: This won't delete the interface itself)
-  ios_interfaces:
+  ios_l3_interfaces:
     config:
       - name: GigabitEthernet0/2
       - name: GigabitEthernet0/3
