@@ -20,6 +20,7 @@ from ansible.module_utils.network.common.utils import remove_default_spec
 from ansible.module_utils.network.vyos.vyos import load_config, run_commands
 from ansible.module_utils.network.vyos.vyos import vyos_argument_spec
 '''
+
 from ansible.module_utils.network.common.utils import to_list, dict_diff
 from ansible.module_utils.six import iteritems
 from ansible.module_utils.network. \
@@ -33,7 +34,6 @@ from ansible.module_utils.network. \
 from ansible.module_utils.network. \
     vyos.utils.utils import search_obj_in_list, member_list_diff, member_list_diff_update
 
-import q
 class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
     """
     The vyos_lag_interfaces class
@@ -283,6 +283,7 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
         diff_members = member_list_diff_update(have_members, want_members)
 
         updates = dict_diff(have_item, want_item)
+        arp_monitor = updates.get('arp-monitor') or {}
 
         if updates:
             for key, value in iteritems(updates):
@@ -295,11 +296,21 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
                     if key == 'members':
                         if diff_members:
                             for m in diff_members:
-                                commands.append('set interfaces ethernet ' + m + ' bond-group ' + name)
-
+                                commands.append(
+                                    'set interfaces ethernet ' + m + ' bond-group ' + name
+                                )
+                    elif key == 'arp-monitor':
+                        if 'interval' in arp_monitor:
+                            commands.append(
+                                set_cmd + ' ' + key + ' interval ' + str(arp_monitor['interval'])
+                            )
+                        if 'target' in arp_monitor:
+                            commands.append(
+                                set_cmd + ' ' + key + ' target ' + arp_monitor['target']
+                            )
                     else:
                         commands.append(
-                        set_cmd + ' ' + key + " '" + str(value) + "'"
+                            set_cmd + ' ' + key + " '" + str(value) + "'"
                         )
         return commands
 
@@ -315,17 +326,28 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
 
         name = want_item['name']
         members = want_item.get('members') or []
+        arp_monitor =  want_item.get('arp-monitor') or {}
 
-        commands.append(set_cmd)
         for attrib in params:
             value = want_item[attrib]
             if value:
                 if attrib == 'name':
                     commands.append(set_cmd)
+                elif attrib == 'arp-monitor':
+                    if 'interval' in arp_monitor:
+                        commands.append(
+                            set_cmd + ' ' + attrib + ' interval ' + str(arp_monitor['interval'])
+                        )
+                    if 'target' in arp_monitor:
+                        commands.append(
+                            set_cmd + ' ' + attrib + ' target ' + arp_monitor['target']
+                        )
+
                 elif attrib == 'members':
                     for m in members:
-                        commands.append('set interfaces ethernet ' + m + ' bond-group ' + name)
-
+                        commands.append(
+                            'set interfaces ethernet ' + m + ' bond-group ' + name
+                        )
                 else:
                     commands.append(
                         set_cmd + ' ' + attrib + " '" + str(value) + "'"
@@ -347,14 +369,13 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
                             'delete interfaces ethernet ' + member + ' bond-group ' + lag['name']
                         )
                 elif item == 'name':
-                    delete_bond  = del_lag
+                    delete_bond = del_lag
                 else:
                     commands.append(del_lag + ' ' + item)
             if not lag['enable']:
                 commands.append(lag + ' disable')
         if delete_bond:
             commands.append(delete_bond)
-
         return commands
 
     @staticmethod
@@ -368,6 +389,7 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
         params = Lag_interfaces.params
         have_item = have_element['lag']
         want_item = want_element['lag']
+
         name = have_item['name']
         want_members = want_item.get('members') or []
         have_members = have_item.get('members') or []

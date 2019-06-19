@@ -9,10 +9,8 @@ It is in this file the configuration is collected from the device
 for a given resource, parsed, and the facts tree is populated
 based on the configuration.
 """
-import q
 from ansible.module_utils.network.vyos.vyos import load_config, run_commands
-from re import findall, M
-#from copy import deepcopy
+from re import findall, search, match, M
 from ansible.module_utils.network. \
     vyos.facts.base import FactsBase
 
@@ -78,10 +76,12 @@ class Lag_interfacesFacts(FactsBase):
         :rtype: dictionary
         :returns: The generated config
         """
+        arp_monitor_conf = '\n'.join(filter(lambda x: ('arp-monitor' in x), conf))
         lag_conf = '\n'.join(filter(lambda x: ('bond' in x), conf))
         config = self.parse_attribs(
-            ['arp-monitor', 'hash-policy', 'members', 'mode', 'name', 'primary'],lag_conf
+            ['hash-policy', 'members', 'mode', 'name', 'primary'],lag_conf
         )
+        config['arp-monitor'] =  self.parse_arp_monitor(arp_monitor_conf)
 
         return self.generate_final_config(config)
 
@@ -97,6 +97,23 @@ class Lag_interfacesFacts(FactsBase):
         else:
             config['enable'] = True
         return self.generate_final_config(config)
+
+
+    def parse_arp_monitor(self, conf):
+        arp_monitor = None
+        if conf:
+            arp_monitor = {}
+            interval = search(r'^.*arp-monitor interval (.+)', conf, M)
+            target = search(r'^.*arp-monitor target (.+)', conf, M)
+            if interval:
+                value = interval.group(1).strip("'")
+                arp_monitor['interval'] = int(value)
+
+            if target:
+                value = target.group(1).strip("'")
+                arp_monitor['target'] = value
+
+        return arp_monitor
 
 
 
