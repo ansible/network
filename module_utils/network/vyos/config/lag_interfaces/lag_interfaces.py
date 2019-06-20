@@ -11,17 +11,8 @@ necessary to bring the current configuration to it's desired end-state is
 created
 """
 
-'''
-from copy import deepcopy
-
-from ansible.module_utils.basic import AnsibleModule
-
-from ansible.module_utils.network.common.utils import remove_default_spec
-from ansible.module_utils.network.vyos.vyos import load_config, run_commands
-from ansible.module_utils.network.vyos.vyos import vyos_argument_spec
-'''
-
 from ansible.module_utils.network.common.utils import to_list, dict_diff
+
 from ansible.module_utils.six import iteritems
 from ansible.module_utils.network. \
     vyos.argspec.lag_interfaces.lag_interfaces import Lag_interfacesArgs
@@ -32,7 +23,7 @@ from ansible.module_utils.network. \
     vyos.facts.facts import Facts
 
 from ansible.module_utils.network. \
-    vyos.utils.utils import search_obj_in_list, member_list_diff, member_list_diff_update
+    vyos.utils.utils import search_obj_in_list, list_diff_have, get_member_diff, get_arp_monitor_diff
 
 class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
     """
@@ -275,13 +266,9 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
         have_item = have_element['lag']
         want_item = want_element['lag']
 
-
-        name = want_item['name']
-        want_members = want_item.get('members') or []
-        have_members = have_item.get('members') or []
-
-        diff_members = member_list_diff_update(have_members, want_members)
-
+        bond_name = want_item['name']
+        diff_targets = get_arp_monitor_diff(want_item, have_item)
+        diff_members = get_member_diff(want_item, have_item)
         updates = dict_diff(have_item, want_item)
         arp_monitor = updates.get('arp-monitor') or {}
 
@@ -297,17 +284,18 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
                         if diff_members:
                             for m in diff_members:
                                 commands.append(
-                                    'set interfaces ethernet ' + m + ' bond-group ' + name
+                                    'set interfaces ethernet ' + m + ' bond-group ' + bond_name
                                 )
                     elif key == 'arp-monitor':
                         if 'interval' in arp_monitor:
                             commands.append(
                                 set_cmd + ' ' + key + ' interval ' + str(arp_monitor['interval'])
                             )
-                        if 'target' in arp_monitor:
-                            commands.append(
-                                set_cmd + ' ' + key + ' target ' + arp_monitor['target']
-                            )
+                        if diff_targets:
+                            for target in diff_targets:
+                                commands.append(
+                                    set_cmd + ' ' + key + ' target ' + target
+                                )
                     else:
                         commands.append(
                             set_cmd + ' ' + key + " '" + str(value) + "'"
@@ -326,7 +314,7 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
 
         name = want_item['name']
         members = want_item.get('members') or []
-        arp_monitor =  want_item.get('arp-monitor') or {}
+        arp_monitor = want_item.get('arp-monitor') or {}
 
         for attrib in params:
             value = want_item[attrib]
@@ -339,9 +327,10 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
                             set_cmd + ' ' + attrib + ' interval ' + str(arp_monitor['interval'])
                         )
                     if 'target' in arp_monitor:
-                        commands.append(
-                            set_cmd + ' ' + attrib + ' target ' + arp_monitor['target']
-                        )
+                        for target in arp_monitor['target']:
+                            commands.append(
+                                set_cmd + ' ' + attrib + ' target ' + target
+                            )
 
                 elif attrib == 'members':
                     for m in members:
@@ -361,6 +350,8 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
         delete_bond = ''
         del_lag = Lag_interfaces.del_cmd + lag['name']
 
+        del_arp_monitor = lag.get('arp-monitor') or {}
+
         for item in Lag_interfaces.params:
             if lag.get(item):
                 if item == 'members':
@@ -368,6 +359,16 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
                         commands.append(
                             'delete interfaces ethernet ' + member + ' bond-group ' + lag['name']
                         )
+                elif item == 'arp-monitor':
+                    if 'interval' in del_arp_monitor:
+                        commands.append(
+                            del_lag + ' ' + item + ' interval'
+                        )
+                    if 'target' in del_arp_monitor:
+                        for target in del_arp_monitor['target']:
+                            commands.append(
+                                del_lag + ' ' + item + ' target ' + target
+                            )
                 elif item == 'name':
                     delete_bond = del_lag
                 else:
@@ -381,6 +382,9 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
     @staticmethod
     def _render_del_commands(**kwargs):
         commands = []
+        want_arp_target = []
+        have_arp_target = []
+
         want_element = kwargs['want_element']
         have_element = kwargs['have_element']
 
@@ -394,12 +398,32 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
         want_members = want_item.get('members') or []
         have_members = have_item.get('members') or []
 
+        want_arp_monitor = want_item.get('arp-monitor') or {}
+        have_arp_monitor = have_item.get('arp-monitor') or {}
+
+        if want_arp_monitor and 'target' in want_arp_monitor:
+            want_arp_target = want_arp_monitor['target']
+
+        if have_arp_monitor and 'target' in have_arp_monitor:
+            have_arp_target = have_arp_monitor['target']
+
+
         for attrib in params:
             if attrib == 'members':
-                members_diff = member_list_diff(have_members, want_members)
+                members_diff = list_diff_have(have_members, want_members)
                 if members_diff:
                     for member in members_diff:
                         commands.append('delete interfaces ethernet ' + member + ' bond-group ' + name)
+
+            elif attrib == 'arp-monitor':
+                if 'interval' in have_arp_monitor and not want_arp_monitor:
+                    commands.append(del_cmd + ' ' + attrib + ' interval')
+                if 'target' in have_arp_monitor:
+                    target_diff = list_diff_have(have_arp_target, want_arp_target)
+                    if target_diff:
+                        for target in target_diff:
+                            commands.append(del_cmd + ' ' + attrib + ' target ' + target)
+
             elif have_item.get(attrib) and not want_item.get(attrib):
                 commands.append(del_cmd + ' ' + attrib)
         return commands

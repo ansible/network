@@ -98,21 +98,20 @@ class Lag_interfacesFacts(FactsBase):
             config['enable'] = True
         return self.generate_final_config(config)
 
-
     def parse_arp_monitor(self, conf):
         arp_monitor = None
         if conf:
             arp_monitor = {}
+            target_list = []
             interval = search(r'^.*arp-monitor interval (.+)', conf, M)
-            target = search(r'^.*arp-monitor target (.+)', conf, M)
+            targets = findall(r"^.*arp-monitor target '(.+)'", conf, M)
+            if targets:
+                for target in targets:
+                    target_list.append(target)
+                arp_monitor['target'] = target_list
             if interval:
                 value = interval.group(1).strip("'")
                 arp_monitor['interval'] = int(value)
-
-            if target:
-                value = target.group(1).strip("'")
-                arp_monitor['target'] = value
-
         return arp_monitor
 
 

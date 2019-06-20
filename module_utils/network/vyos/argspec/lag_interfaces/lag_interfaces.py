@@ -36,7 +36,7 @@ class Lag_interfacesArgs(object):  # pylint: disable=R0903
 
     argument_spec = {'config': {'elements': 'dict',
             'options': {'arp-monitor': {'options': {'interval': {'type': 'int'},
-                                                    'target': {'type': 'str'}},
+                                                    'target': {'type': 'list'}},
                                         'type': 'dict'},
                         'hash-policy': {'choices': ['layer2',
                                                     'layer2+3',
