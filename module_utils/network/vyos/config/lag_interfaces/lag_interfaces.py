@@ -23,7 +23,9 @@ from ansible.module_utils.network. \
     vyos.facts.facts import Facts
 
 from ansible.module_utils.network. \
-    vyos.utils.utils import search_obj_in_list, list_diff_have, get_member_diff, get_arp_monitor_diff
+    vyos.utils.utils import search_obj_in_list, \
+    list_diff_have, get_member_diff, get_arp_monitor_diff
+
 
 class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
     """
@@ -160,8 +162,8 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
         if have_lag:
             commands.extend(
                 Lag_interfaces._render_del_commands(
-                    want_element = {'lag': want_lag},
-                    have_element = {'lag': have_lag}
+                    want_element={'lag': want_lag},
+                    have_element={'lag': have_lag}
                 )
             )
         commands.extend(
@@ -184,8 +186,7 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
         want_lags = kwargs['want']
         have_lags = kwargs['have']
 
-
-        for  have_lag in have_lags:
+        for have_lag in have_lags:
             lag_name = have_lag['name']
             lag_in_want = search_obj_in_list(lag_name, want_lags)
             if not lag_in_want:
@@ -222,8 +223,8 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
         if have_lag:
             commands.extend(
                 Lag_interfaces._render_updates(
-                    want_element = {'lag': want_lag},
-                    have_element = {'lag': have_lag}
+                    want_element={'lag': want_lag},
+                    have_element={'lag': have_lag}
                 )
             )
         else:
@@ -301,7 +302,6 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
                             set_cmd + ' ' + key + " '" + str(value) + "'"
                         )
         return commands
-
 
     @staticmethod
     def _render_set_commands(**kwargs):
@@ -407,13 +407,13 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
         if have_arp_monitor and 'target' in have_arp_monitor:
             have_arp_target = have_arp_monitor['target']
 
-
         for attrib in params:
             if attrib == 'members':
                 members_diff = list_diff_have(have_members, want_members)
                 if members_diff:
                     for member in members_diff:
-                        commands.append('delete interfaces ethernet ' + member + ' bond-group ' + name)
+                        commands.append('delete interfaces ethernet ' + member + \
+                                        ' bond-group ' + name)
 
             elif attrib == 'arp-monitor':
                 if 'interval' in have_arp_monitor and not want_arp_monitor:

@@ -64,7 +64,7 @@ options:
           - round-robin
           - transmit-load-balance
           - adaptive-load-balance
-          - xor-hash 
+          - xor-hash
       members:
         description:
           - Ethernet Interfaces that are part of the LAG (bond).
@@ -74,7 +74,7 @@ options:
           - Primary device interfaces for the LAG (bond).
         type: str
       hash-policy:
-        description: 
+        description:
           - LAG or bonding transmit hash policy.
         type: str
         choices:
@@ -104,7 +104,7 @@ options:
     - overridden
     - deleted
     default: merged
-    
+
 """
 EXAMPLES = """
 # Using merged
@@ -131,16 +131,16 @@ EXAMPLES = """
       - name: bond0
         mode: 802.3ad
         members:
-	  - eth1
-	  - eth3
+          - eth1
+          - eth3
         hash-policy: layer2
 
       - name: bond1
         mode: xor-hash
-	members: eth2
+        members: eth2
         hash-policy: layer2+3
     state: merged
-    
+
 # After state:
 # -------------
 #
@@ -196,7 +196,7 @@ EXAMPLES = """
       - name: bond0
         mode: xor-hash
         hash-policy: layer2+3
-        members: 
+        members:
           - eth2
           - eth3
 
@@ -316,7 +316,7 @@ EXAMPLES = """
       - name: bond0
       - name: bond1
     state: deleted
-    
+
 # After state
 # ------------
 # vyos@vyos-appliance:~$ show configuration commands | grep interfaces

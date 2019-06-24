@@ -6,11 +6,13 @@
 
 # utils
 
+
 def search_obj_in_list(name, lst, key='name'):
     for item in lst:
         if item[key] == name:
             return item
     return None
+
 
 def get_arp_monitor_diff(want_item, have_item):
     want_arp_target = []
@@ -27,11 +29,13 @@ def get_arp_monitor_diff(want_item, have_item):
     diff = list_diff_for_update(have_arp_target, want_arp_target)
     return diff
 
+
 def get_member_diff(want_item, have_item):
     want_members = want_item.get('members') or []
     have_members = have_item.get('members') or []
     diff = list_diff_for_update(have_members, want_members)
     return diff
+
 
 def list_diff_have(have_list, want_list):
     if have_list and not want_list:
@@ -39,8 +43,9 @@ def list_diff_have(have_list, want_list):
     elif not have_list:
         diff = None
     else:
-        diff = [i for i in have_list + want_list if i in have_list and  i not in want_list]
+        diff = [i for i in have_list + want_list if i in have_list and i not in want_list]
     return diff
+
 
 def list_diff_for_update(have_list, want_list):
     if have_list and not want_list:
@@ -48,5 +53,5 @@ def list_diff_for_update(have_list, want_list):
     elif not have_list:
         diff = want_list
     else:
-        diff = [i for i in have_list + want_list if i in want_list and  i not in have_list]
+        diff = [i for i in have_list + want_list if i in want_list and i not in have_list]
     return diff

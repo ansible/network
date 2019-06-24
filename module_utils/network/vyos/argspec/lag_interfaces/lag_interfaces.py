@@ -34,26 +34,34 @@ class Lag_interfacesArgs(object):  # pylint: disable=R0903
     def __init__(self, **kwargs):
         pass
 
-    argument_spec = {'config': {'elements': 'dict',
-            'options': {'arp-monitor': {'options': {'interval': {'type': 'int'},
-                                                    'target': {'type': 'list'}},
-                                        'type': 'dict'},
-                        'hash-policy': {'choices': ['layer2',
-                                                    'layer2+3',
-                                                    'layer3+4'],
-                                        'type': 'str'},
-                        'members': {'type': 'list'},
-                        'mode': {'choices': ['802.3ad',
-                                             'active-backup',
-                                             'broadcast',
-                                             'round-robin',
-                                             'transmit-load-balance',
-                                             'adaptive-load-balance',
-                                             'xor-hash'],
-                                 'type': 'str'},
-                        'name': {'required': True, 'type': 'str'},
-                        'primary': {'type': 'str'}},
-            'type': 'list'},
- 'state': {'choices': ['merged', 'replaced', 'overridden', 'deleted'],
-           'default': 'merged',
-           'type': 'str'}}  # pylint: disable=C0301
+    argument_spec = \
+        {
+            'config': {
+                'elements': 'dict',
+                'options': {
+                    'arp-monitor': {
+                        'options': {
+                            'interval': {'type': 'int'},
+                            'target': {'type': 'list'}
+                        },
+                        'type': 'dict'},
+                    'hash-policy': {'choices': ['layer2', 'layer2+3', 'layer3+4'],
+                                    'type': 'str'},
+                    'members': {'type': 'list'},
+                    'mode': {'choices': ['802.3ad',
+                                         'active-backup',
+                                         'broadcast',
+                                         'round-robin',
+                                         'transmit-load-balance',
+                                         'adaptive-load-balance',
+                                         'xor-hash'],
+                             'type': 'str'},
+                    'name': {'required': True, 'type': 'str'},
+                    'primary': {'type': 'str'}
+                },
+                'type': 'list'
+            },
+            'state': {'choices': ['merged', 'replaced', 'overridden', 'deleted'],
+                      'default': 'merged',
+                      'type': 'str'}
+        }  # pylint: disable=C0301

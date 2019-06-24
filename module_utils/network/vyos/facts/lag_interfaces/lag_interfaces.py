@@ -9,8 +9,8 @@ It is in this file the configuration is collected from the device
 for a given resource, parsed, and the facts tree is populated
 based on the configuration.
 """
-from ansible.module_utils.network.vyos.vyos import load_config, run_commands
-from re import findall, search, match, M
+from ansible.module_utils.network.vyos.vyos import run_commands
+from re import findall, search, M
 from ansible.module_utils.network. \
     vyos.facts.base import FactsBase
 
@@ -79,12 +79,11 @@ class Lag_interfacesFacts(FactsBase):
         arp_monitor_conf = '\n'.join(filter(lambda x: ('arp-monitor' in x), conf))
         lag_conf = '\n'.join(filter(lambda x: ('bond' in x), conf))
         config = self.parse_attribs(
-            ['hash-policy', 'members', 'mode', 'name', 'primary'],lag_conf
+            ['hash-policy', 'members', 'mode', 'name', 'primary'], lag_conf
         )
-        config['arp-monitor'] =  self.parse_arp_monitor(arp_monitor_conf)
+        config['arp-monitor'] = self.parse_arp_monitor(arp_monitor_conf)
 
         return self.generate_final_config(config)
-
 
     def parse_attribs(self, attribs, conf):
         config = {}
@@ -113,6 +112,3 @@ class Lag_interfacesFacts(FactsBase):
                 value = interval.group(1).strip("'")
                 arp_monitor['interval'] = int(value)
         return arp_monitor
-
-
-

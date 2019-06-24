@@ -23,6 +23,7 @@ from ansible.module_utils.network. \
 from ansible.module_utils. \
     network.vyos.vyos import run_commands, get_capabilities
 
+
 class LegacyFactsBase(object):
 
     COMMANDS = frozenset()
@@ -171,7 +172,7 @@ FACT_SUBSETS = dict(
     config=Config
 )
 
-#FACT_SUBSETS = {}
+
 class Facts(FactsArgs, FactsBase):  # pylint: disable=R0903
     """ The fact class for vyos
     """
