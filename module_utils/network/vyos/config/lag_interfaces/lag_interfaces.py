@@ -24,7 +24,8 @@ from ansible.module_utils.network. \
 
 from ansible.module_utils.network. \
     vyos.utils.utils import search_obj_in_list, \
-    list_diff_have, get_member_diff, get_arp_monitor_diff
+    add_arp_monitor, add_bond_members, delete_bond_members, \
+    delete_arp_monitor, update_bond_members, update_arp_monitor
 
 
 class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
@@ -205,7 +206,6 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
                     have_lag=lag_in_have
                 )
             )
-
         return commands
 
     @staticmethod
@@ -235,7 +235,6 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
                     }
                 )
             )
-
         return commands
 
     @staticmethod
@@ -251,7 +250,6 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
         have_lag = kwargs['have_lag']
         if have_lag:
             commands.extend(Lag_interfaces._purge_attribs(lag=have_lag))
-
         return commands
 
     @staticmethod
@@ -267,11 +265,7 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
         have_item = have_element['lag']
         want_item = want_element['lag']
 
-        bond_name = want_item['name']
-        diff_targets = get_arp_monitor_diff(want_item, have_item)
-        diff_members = get_member_diff(want_item, have_item)
         updates = dict_diff(have_item, want_item)
-        arp_monitor = updates.get('arp-monitor') or {}
 
         if updates:
             for key, value in iteritems(updates):
@@ -282,72 +276,42 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
                         commands.append(set_cmd + ' disable')
                 elif value:
                     if key == 'members':
-                        if diff_members:
-                            for m in diff_members:
-                                commands.append(
-                                    'set interfaces ethernet ' + m + ' bond-group ' + bond_name
-                                )
+                        commands.extend(add_bond_members(want_item, have_item))
                     elif key == 'arp-monitor':
-                        if 'interval' in arp_monitor:
-                            commands.append(
-                                set_cmd + ' ' + key + ' interval ' + str(arp_monitor['interval'])
-                            )
-                        if diff_targets:
-                            for target in diff_targets:
-                                commands.append(
-                                    set_cmd + ' ' + key + ' target ' + target
-                                )
-                    else:
-                        commands.append(
-                            set_cmd + ' ' + key + " '" + str(value) + "'"
+                        commands.extend(
+                            add_arp_monitor(updates, set_cmd, key, want_item, have_item)
                         )
+                    else:
+                        commands.append(set_cmd + ' ' + key + " '" + str(value) + "'")
         return commands
 
     @staticmethod
     def _render_set_commands(**kwargs):
         commands = []
+        have_item = []
         want_element = kwargs['want_element']
         set_cmd = Lag_interfaces.set_cmd + want_element['lag']['name']
 
         params = Lag_interfaces.params
         want_item = want_element['lag']
 
-        name = want_item['name']
-        members = want_item.get('members') or []
-        arp_monitor = want_item.get('arp-monitor') or {}
-
         for attrib in params:
             value = want_item[attrib]
             if value:
-                if attrib == 'name':
-                    commands.append(set_cmd)
-                elif attrib == 'arp-monitor':
-                    if 'interval' in arp_monitor:
-                        commands.append(
-                            set_cmd + ' ' + attrib + ' interval ' + str(arp_monitor['interval'])
-                        )
-                    if 'target' in arp_monitor:
-                        for target in arp_monitor['target']:
-                            commands.append(
-                                set_cmd + ' ' + attrib + ' target ' + target
-                            )
-
-                elif attrib == 'members':
-                    for m in members:
-                        commands.append(
-                            'set interfaces ethernet ' + m + ' bond-group ' + name
-                        )
-                else:
-                    commands.append(
-                        set_cmd + ' ' + attrib + " '" + str(value) + "'"
+                if attrib == 'arp-monitor':
+                    commands.extend(
+                        add_arp_monitor(want_item, set_cmd, attrib, want_item, have_item)
                     )
+                elif attrib == 'members':
+                    commands.extend(add_bond_members(want_item, have_item))
+                elif attrib != 'name':
+                    commands.append(set_cmd + ' ' + attrib + " '" + str(value) + "'")
         return commands
 
     @staticmethod
     def _purge_attribs(**kwargs):
         commands = []
         lag = kwargs['lag']
-        delete_bond = ''
         del_lag = Lag_interfaces.del_cmd + lag['name']
 
         del_arp_monitor = lag.get('arp-monitor') or {}
@@ -355,75 +319,32 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
         for item in Lag_interfaces.params:
             if lag.get(item):
                 if item == 'members':
-                    for member in lag['members']:
-                        commands.append(
-                            'delete interfaces ethernet ' + member + ' bond-group ' + lag['name']
-                        )
+                    commands.extend(delete_bond_members(lag))
                 elif item == 'arp-monitor':
-                    if 'interval' in del_arp_monitor:
-                        commands.append(
-                            del_lag + ' ' + item + ' interval'
-                        )
-                    if 'target' in del_arp_monitor:
-                        for target in del_arp_monitor['target']:
-                            commands.append(
-                                del_lag + ' ' + item + ' target ' + target
-                            )
-                elif item == 'name':
-                    delete_bond = del_lag
-                else:
+                    commands.extend(delete_arp_monitor(del_lag, del_arp_monitor))
+                elif item != 'name':
                     commands.append(del_lag + ' ' + item)
             if not lag['enable']:
                 commands.append(lag + ' disable')
-        if delete_bond:
-            commands.append(delete_bond)
         return commands
 
     @staticmethod
     def _render_del_commands(**kwargs):
         commands = []
-        want_arp_target = []
-        have_arp_target = []
-
         want_element = kwargs['want_element']
         have_element = kwargs['have_element']
 
         del_cmd = Lag_interfaces.del_cmd + have_element['lag']['name']
-
         params = Lag_interfaces.params
+
         have_item = have_element['lag']
         want_item = want_element['lag']
 
-        name = have_item['name']
-        want_members = want_item.get('members') or []
-        have_members = have_item.get('members') or []
-
-        want_arp_monitor = want_item.get('arp-monitor') or {}
-        have_arp_monitor = have_item.get('arp-monitor') or {}
-
-        if want_arp_monitor and 'target' in want_arp_monitor:
-            want_arp_target = want_arp_monitor['target']
-
-        if have_arp_monitor and 'target' in have_arp_monitor:
-            have_arp_target = have_arp_monitor['target']
-
         for attrib in params:
             if attrib == 'members':
-                members_diff = list_diff_have(have_members, want_members)
-                if members_diff:
-                    for member in members_diff:
-                        commands.append('delete interfaces ethernet ' + member + \
-                                        ' bond-group ' + name)
-
+                commands.extend(update_bond_members(want_item, have_item))
             elif attrib == 'arp-monitor':
-                if 'interval' in have_arp_monitor and not want_arp_monitor:
-                    commands.append(del_cmd + ' ' + attrib + ' interval')
-                if 'target' in have_arp_monitor:
-                    target_diff = list_diff_have(have_arp_target, want_arp_target)
-                    if target_diff:
-                        for target in target_diff:
-                            commands.append(del_cmd + ' ' + attrib + ' target ' + target)
-
+                commands.extend(update_arp_monitor(del_cmd, want_item, have_item))
             elif have_item.get(attrib) and not want_item.get(attrib):
                 commands.append(del_cmd + ' ' + attrib)
         return commands
