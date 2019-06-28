@@ -75,7 +75,7 @@ class L3_interfacesFacts(FactsBase):
                 each_ipv4['secondary'] = True
             else:
                 each_ipv4['address'] = each
-                each_ipv4['secondary'] = None
+                each_ipv4['secondary'] = False
             ipv4.append(each_ipv4)
             config['ipv4'] = ipv4
 
