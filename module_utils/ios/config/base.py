@@ -8,7 +8,8 @@ The base class for all ios resource modules
 
 from ansible.module_utils.connection import Connection
 
-class ConfigBase(object): #pylint: disable=R0205,R0903
+
+class ConfigBase(object):
     """ The base class for all ios resource modules
     """
     _connection = None
@@ -20,5 +21,5 @@ class ConfigBase(object): #pylint: disable=R0205,R0903
     def _get_connection(self):
         if self._connection:
             return self._connection
-        self._connection = Connection(self._module._socket_path) #pylint: disable=W0212
+        self._connection = Connection(self._module._socket_path)
         return self._connection

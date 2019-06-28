@@ -14,7 +14,7 @@ from copy import deepcopy
 
 from ansible.module_utils.ios.facts.base import FactsBase
 from ansible.module_utils.ios.utils.utils import get_interface_type, normalize_interface
-import q
+
 
 class L3_interfacesFacts(FactsBase):
     """ The ios l3 interfaces fact class
@@ -54,7 +54,6 @@ class L3_interfacesFacts(FactsBase):
         :rtype: dictionary
         :returns: The generated config
         """
-        import q
         config = deepcopy(spec)
         match = re.search(r'^(\S+)', conf)
         intf = match.group(1)
@@ -70,6 +69,7 @@ class L3_interfacesFacts(FactsBase):
             each_ipv4 = dict()
             if 'secondary' not in each and 'dhcp' not in each:
                 each_ipv4['address'] = each
+                each_ipv4['secondary'] = False
             elif 'secondary' in each:
                 each_ipv4['secondary'] = True
                 each_ipv4['address'] = each.split(' secondary')[0]

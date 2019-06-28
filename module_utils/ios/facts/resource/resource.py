@@ -11,6 +11,7 @@ based on the configuration.
 from copy import deepcopy
 from ansible.module_utils.ios.facts.base import FactsBase
 
+
 class Facts(FactsBase):
     """ The {{ network_os }} {{ resource }} fact class
     """
@@ -23,16 +24,16 @@ class Facts(FactsBase):
         :rtype: dictionary
         :returns: facts
         """
-        if module: #just for linting purposes
+        if module:
             pass
-        if connection:  #just for linting purposes
+        if connection:
             pass
 
         if not data:
-            data = "foo" # connection.get('show running-config | section ^interface')
+            data = "foo"
 
         # operate on a collection of resource x
-        config = [data] # data.split('interface ')
+        config = [data]
         objs = []
         for conf in config:
             if conf:

@@ -12,7 +12,7 @@ from copy import deepcopy
 from ansible.module_utils.six import iteritems
 
 
-class FactsBase(object): #pylint: disable=R0205
+class FactsBase(object):
     """
     The ios facts base class
     """
@@ -102,5 +102,5 @@ class FactsBase(object): #pylint: disable=R0205
 
         for key, val in iteritems(cfg_dict):
             if val:
-                final_cfg.update({key:val})
+                final_cfg.update({key: val})
         return final_cfg

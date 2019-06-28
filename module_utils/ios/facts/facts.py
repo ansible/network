@@ -20,7 +20,7 @@ from ansible.module_utils.ios.facts.l3_interfaces.l3_interfaces import L3_interf
 FACT_SUBSETS = {}
 
 
-class Facts(FactsArgs, FactsBase): #pylint: disable=R0903
+class Facts(FactsArgs, FactsBase):
     """ The fact class for ios l3 interface
     """
 

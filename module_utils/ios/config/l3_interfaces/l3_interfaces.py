@@ -11,13 +11,13 @@ created
 """
 
 from ansible.module_utils.network.common.utils import to_list
-from ansible.module_utils.network.common.utils import is_netmask, is_masklen, to_netmask, to_masklen
+from ansible.module_utils.network.common.utils import is_masklen, to_netmask
 from ansible.module_utils.six import iteritems
 
 from ansible.module_utils.ios.argspec.l3_interfaces.l3_interfaces import L3_InterfacesArgs
 from ansible.module_utils.ios.config.base import ConfigBase
 from ansible.module_utils.ios.facts.facts import Facts
-import q
+
 
 class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
     """
@@ -296,7 +296,8 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
                     ip_addr_want = L3_Interfaces.validate_n_expand_ipv4(module, each)
                     each['address'] = ip_addr_want
 
-        want_ipv4 = set(tuple({k:v for k,v in iteritems(address) if v is not None}.items()) for address in want.get("ipv4") or [])
+        want_ipv4 = set(tuple({k: v for k, v in iteritems(address) if v is not None}.items())
+                        for address in want.get("ipv4") or [])
         have_ipv4 = set(tuple(address.items()) for address in have.get("ipv4") or [])
         diff = want_ipv4 - have_ipv4
         for address in diff:
@@ -307,17 +308,19 @@ class L3_Interfaces(ConfigBase, L3_InterfacesArgs):
                     cmd += " secondary"
             elif address.get('address') == 'dhcp':
                 if address.get('dhcp_client') and address.get('dhcp_hostname'):
-                    cmd = "ip address dhcp client-id GigabitEthernet 0/{} hostname {}".format\
-                        (address.get('dhcp_client'),address.get('dhcp_hostname'))
+                    cmd = "ip address dhcp client-id GigabitEthernet 0/{} hostname {}".\
+                        format(address.get('dhcp_client'), address.get('dhcp_hostname'))
                 elif address.get('dhcp_client') and not address.get('dhcp_hostname'):
-                    cmd = "ip address dhcp client-id GigabitEthernet 0/{}".format(address.get('dhcp_client'))
+                    cmd = "ip address dhcp client-id GigabitEthernet 0/{}".\
+                        format(address.get('dhcp_client'))
                 elif not address.get('dhcp_client') and address.get('dhcp_hostname'):
                     cmd = "ip address dhcp hostname {}".format(address.get('dhcp_client'))
 
             L3_Interfaces._add_command_to_interface(interface, cmd, commands)
 
         # To handle L3 IPV6 configuration
-        want_ipv6 = set(tuple({k:v for k,v in iteritems(address) if v is not None}.items()) for address in want.get("ipv6") or [])
+        want_ipv6 = set(tuple({k: v for k, v in iteritems(address) if v is not None}.items())
+                        for address in want.get("ipv6") or [])
         have_ipv6 = set(tuple(address.items()) for address in have.get("ipv6") or [])
         diff = want_ipv6 - have_ipv6
         for address in diff:
