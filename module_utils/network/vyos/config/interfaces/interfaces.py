@@ -1,9 +1,8 @@
-#!/usr/bin/python
+#
 # -*- coding: utf-8 -*-
 # Copyright 2019 Red Hat
 # GNU General Public License v3.0+
-# (see COPYING or
-# https://www.gnu.org/licenses/gpl-3.0.txt)
+# (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 """
 The vyos_interfaces class
 It is in this file where the current configuration (as dict)
@@ -11,21 +10,15 @@ is compared to the provided configuration (as dict) and the command set
 necessary to bring the current configuration to it's desired end-state is
 created
 """
-
+from ansible.module_utils.network.common.cfg.base import ConfigBase
 from ansible.module_utils.network.common.utils import to_list, dict_diff
 from ansible.module_utils.six import iteritems
+from ansible.module_utils.network.vyos.facts.facts import Facts
 from ansible.module_utils.network. \
-    vyos.argspec.interfaces.interfaces import InterfacesArgs
-from ansible.module_utils.network. \
-    vyos. \
-    config.base import ConfigBase
-from ansible.module_utils.network. \
-    vyos.facts.facts import Facts
-from ansible.module_utils.network. \
-    vyos.utils.utils import search_obj_in_list
+    vyos.utils.utils import search_obj_in_list, get_interface_type
 
 
-class Interfaces(ConfigBase, InterfacesArgs):
+class Interfaces(ConfigBase):
     """
     The vyos_interfaces class
     """
@@ -36,14 +29,17 @@ class Interfaces(ConfigBase, InterfacesArgs):
     ]
 
     gather_network_resources = [
-        'interfaces',
+        'interfaces'
     ]
 
     # NOTE: Don't change the ordering of params list
     #       The last two items are used for VIFs.
     params = ['speed', 'duplex', 'description', 'mtu']
-    set_cmd = 'set interfaces ethernet '
-    del_cmd = 'delete interfaces ethernet '
+    set_cmd = 'set interfaces '
+    del_cmd = 'delete interfaces '
+
+    def __init__(self, module):
+        super(Interfaces, self).__init__(module)
 
     def get_interfaces_facts(self):
         """ Get the 'facts' (the current configuration)
@@ -51,10 +47,8 @@ class Interfaces(ConfigBase, InterfacesArgs):
         :rtype: A dictionary
         :returns: The current configuration as a dictionary
         """
-        facts, _warnings = Facts().get_facts(self._module,
-                                             self._connection,
-                                             self.gather_subset,
-                                             self.gather_network_resources)
+        facts, _warnings = Facts(self._module).get_facts(self.gather_subset,
+                                                         self.gather_network_resources)
         interfaces_facts = facts['ansible_network_resources'].get('interfaces')
         if not interfaces_facts:
             return []
@@ -62,8 +56,7 @@ class Interfaces(ConfigBase, InterfacesArgs):
 
     def execute_module(self):
         """ Execute the module
-
-        :rtype: A dictionary
+         :rtype: A dictionary
         :returns: The result from module execution
         """
         result = {'changed': False}
@@ -171,14 +164,24 @@ class Interfaces(ConfigBase, InterfacesArgs):
 
             if have_vifs:
                 for have_vif in have_vifs:
-                    want_vif = search_obj_in_list(
-                        have_vif['vlan_id'], want_vifs, key='vlan_id'
-                    ) if want_vifs else {}
+                    want_vif = {}
+                    if want_vifs:
+                        want_vif = search_obj_in_list(
+                            have_vif['vlan_id'], want_vifs, key='vlan_id'
+                        )
+                        if not want_vif:
+                            want_vif = {}
 
                     commands.extend(
                         Interfaces._render_del_commands(
-                            want_element={'intf': want_intf, 'vif': want_vif},
-                            have_element={'intf': have_intf, 'vif': have_vif}
+                            want_element={
+                                'intf': want_intf,
+                                'vif': want_vif
+                            },
+                            have_element={
+                                'intf': have_intf,
+                                'vif': have_vif
+                            }
                         )
                     )
 
@@ -246,9 +249,13 @@ class Interfaces(ConfigBase, InterfacesArgs):
 
             if want_vifs:
                 for want_vif in want_vifs:
-                    have_vif = search_obj_in_list(
-                        want_vif['vlan_id'], have_vifs, key='vlan_id'
-                    ) if have_vifs else {}
+                    have_vif = {}
+                    if have_vifs:
+                        have_vif = search_obj_in_list(
+                            want_vif['vlan_id'], have_vifs, key='vlan_id'
+                        )
+                        if not have_vif:
+                            have_vif = {}
 
                     if have_vif:
                         commands.extend(
@@ -309,16 +316,16 @@ class Interfaces(ConfigBase, InterfacesArgs):
 
         if have_element.get('vif'):
             isvif = True
-            del_cmd = Interfaces.del_cmd + intf_name + \
-                ' vif ' + have_element['vif']['vlan_id']
-            set_cmd = Interfaces.set_cmd + intf_name + \
-                ' vif ' + have_element['vif']['vlan_id']
+            del_cmd = Interfaces.del_cmd + get_interface_type(intf_name) + \
+                ' ' + intf_name + ' vif ' + have_element['vif']['vlan_id']
+            set_cmd = Interfaces.set_cmd + get_interface_type(intf_name) + \
+                ' ' + intf_name + ' vif ' + have_element['vif']['vlan_id']
             have_item = have_element['vif']
             want_item = want_element['vif']
         else:
             isvif = False
-            set_cmd = Interfaces.set_cmd + intf_name
-            del_cmd = Interfaces.del_cmd + intf_name
+            set_cmd = Interfaces.set_cmd + get_interface_type(intf_name) + ' ' + intf_name
+            del_cmd = Interfaces.del_cmd + get_interface_type(intf_name) + ' ' + intf_name
             have_item = have_element['intf']
             want_item = want_element['intf']
 
@@ -346,7 +353,8 @@ class Interfaces(ConfigBase, InterfacesArgs):
     def _render_set_commands(**kwargs):
         commands = []
         want_element = kwargs['want_element']
-        set_cmd = Interfaces.set_cmd + want_element['intf']['name']
+        intf_name = want_element['intf']['name']
+        set_cmd = Interfaces.set_cmd + get_interface_type(intf_name) + ' ' + intf_name
 
         if want_element.get('vif'):
             set_cmd = set_cmd + ' vif ' + want_element['vif']['vlan_id']
@@ -364,8 +372,8 @@ class Interfaces(ConfigBase, InterfacesArgs):
                 commands.append(
                     set_cmd + ' ' + attrib + " '" + str(value) + "'"
                 )
-            if not want_item['enable']:
-                commands.append(set_cmd + ' disable')
+        if not want_item['enable']:
+            commands.append(set_cmd + ' disable')
 
         return commands
 
@@ -374,18 +382,16 @@ class Interfaces(ConfigBase, InterfacesArgs):
         commands = []
         want_element = kwargs['want_element']
         have_element = kwargs['have_element']
-
-        del_cmd = Interfaces.del_cmd + have_element['intf']['name']
+        have_intf_name = have_element['intf']['name']
+        del_cmd = Interfaces.del_cmd + get_interface_type(have_intf_name) + ' ' + have_intf_name
 
         if have_element.get('vif'):
-            isvif = True
             del_cmd = del_cmd + ' vif ' + \
                 have_element['vif']['vlan_id'].strip("'")
             params = Interfaces.params[-2:]
             have_item = have_element['vif']
             want_item = want_element['vif']
         else:
-            isvif = False
             params = Interfaces.params
             have_item = have_element['intf']
             want_item = want_element['intf']
@@ -393,8 +399,6 @@ class Interfaces(ConfigBase, InterfacesArgs):
         for attrib in params:
             if have_item.get(attrib) and not want_item.get(attrib):
                 commands.append(del_cmd + ' ' + attrib)
-        if isvif and not want_item:
-            commands.append(del_cmd)
 
         return commands
 
@@ -402,7 +406,8 @@ class Interfaces(ConfigBase, InterfacesArgs):
     def _purge_attribs(**kwargs):
         commands = []
         intf = kwargs['intf']
-        del_intf = Interfaces.del_cmd + intf['name']
+        intf_name = intf['name']
+        del_intf = Interfaces.del_cmd + get_interface_type(intf_name) + ' ' + intf_name
 
         for item in Interfaces.params:
             if intf.get(item):
@@ -412,6 +417,10 @@ class Interfaces(ConfigBase, InterfacesArgs):
 
         if intf.get('vifs'):
             for vif in intf['vifs']:
-                commands.append(del_intf + ' vif ' + vif['vlan_id'])
+                for attrib in Interfaces.params[-2:]:
+                    if vif.get(attrib):
+                        commands.append(del_intf + ' vif ' + vif['vlan_id'] + ' ' + attrib)
+                if not vif['enable']:
+                    commands.append(del_intf + ' vif ' + vif['vlan_id'] + ' disable')
 
         return commands

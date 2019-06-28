@@ -2,6 +2,8 @@
 - debug:
       msg: "START vyos_interfaces replaced integration tests on connection={{ ansible_connection }}"
 
+- include_tasks: _remove_config.yaml
+
 - include_tasks: _populate.yaml
 
 - name: Replace device configurations of listed interfaces with provided configurations

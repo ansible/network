@@ -12,3 +12,16 @@ def search_obj_in_list(name, lst, key='name'):
         if item[key] == name:
             return item
     return None
+
+
+def get_interface_type(interface):
+    """Gets the type of interface
+    """
+    if interface.startswith('eth'):
+        return 'ethernet'
+    elif interface.startswith('bond'):
+        return 'bonding'
+    elif interface.startswith('vti'):
+        return 'vti'
+    elif interface.startswith('lo'):
+        return 'loopback'

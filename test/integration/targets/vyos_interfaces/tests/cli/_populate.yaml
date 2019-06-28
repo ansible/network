@@ -9,6 +9,7 @@
       set interfaces ethernet "{{ intf }}" duplex 'auto'
       set interfaces ethernet "{{ intf }}" mtu '1500'
       set interfaces ethernet "{{ intf }}" vif 200
+      set interfaces ethernet "{{ intf }}" vif 200 description 'VIF - 200'
   loop:
     - eth1
     - eth2

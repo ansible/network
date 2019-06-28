@@ -2,6 +2,8 @@
 - debug:
       msg: "START vyos_interfaces overridden integration tests on connection={{ ansible_connection }}"
 
+- include_tasks: _remove_config.yaml
+
 - include_tasks: _populate.yaml
 
 - name: Overrides all device configuration with provided configuration
