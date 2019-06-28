@@ -83,8 +83,10 @@ class LacpFacts(object):
             elif utils.get_xml_conf_arg(lacp_root, 'link-protection'):
                 config['link_protection'] = "non-revertive"
 
-        params = utils.validate_config(self.argument_spec, {'config': [config]})
-        facts['lacp'] = params['config']
+        params = utils.validate_config(self.argument_spec, {'config': [utils.remove_empties(config)]})
+        facts['lacp'] = []
+        for cfg in params['config']:
+            facts['lacp'].append(utils.remove_empties(cfg))
 
         ansible_facts['ansible_network_resources'].update(facts)
 

@@ -37,7 +37,6 @@ class LacpArgs(object):  # pylint: disable=R0903
     argument_spec = {'config': {'elements': 'dict',
             'options': {'link_protection': {'choices': ['revertive',
                                                         'non-revertive'],
-                                            'default': 'revertive',
                                             'type': 'str'},
                         'system_priority': {'type': 'int'}},
             'type': 'list'},
