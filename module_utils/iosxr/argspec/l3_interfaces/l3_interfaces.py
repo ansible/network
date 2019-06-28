@@ -33,7 +33,7 @@ class L3_InterfacesArgs(object):
         pass
 
     ipv4addr_spec = dict(address=dict(type=str),
-                         secondary=dict(type=bool))
+                         secondary=dict(type=bool, default=False))
 
     ipv6addr_spec = dict(address=dict(type=str))
 
