@@ -72,8 +72,10 @@ class Lag_interfacesFacts(object):
                     objs.append(obj)
         facts = {}
         if objs:
+            facts['lag_interfaces'] = []
             params = utils.validate_config(self.argument_spec, {'config': objs})
-            facts['lag_interfaces'] = params['config']
+            for cfg in params['config']:
+                facts['lag_interfaces'].append(utils.remove_empties(cfg))
         ansible_facts['ansible_network_resources'].update(facts)
         return ansible_facts
 
