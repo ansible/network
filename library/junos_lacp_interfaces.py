@@ -109,19 +109,360 @@ options:
     default: merged
 """
 EXAMPLES = """
+# Using merged
+# Before state:
+# -------------
+# user@junos01# show interfaces
+# ge-0/0/2 {
+#     ether-options {
+#         802.3ad ae4;
+#     }
+# }
+# ge-0/0/3 {
+#    ether-options {
+#         802.3ad ae0;
+#     }
+# }
+# ae0 {
+#     description "lag interface merged";
+#     aggregated-ether-options {
+#         lacp {
+#             passive;
+#         }
+#     }
+# }
+# ae4 {
+#     description "test aggregate interface";
+#     aggregated-ether-options {
+#         lacp {
+#             passive;
+#             link-protection;
+#         }
+#     }
+# }
 
+- name: Merge provided configuration with device configuration
+  junos_lacp_interfaces:
+    config:
+      - name: ae0
+        period: fast
+        sync_reset: enable
+        system:
+          priority: 100
+          mac: 00:00:00:00:00:02
+      - name: ge-0/0/3
+        port_priority: 100
+        force_up: True
+    state: merged
 
+# After state:
+# -------------
+# user@junos01# show interfaces
+# ge-0/0/2 {
+#     ether-options {
+#         802.3ad ae4;
+#     }
+# }
+# ge-0/0/3 {
+#     ether-options {
+#         802.3ad {
+#             lacp {
+#                 force-up;
+#                 port-priority 100;
+#             }
+#             ae0;
+#         }
+#     }
+# }
+# ae0 {
+#     description "lag interface merged";
+#     aggregated-ether-options {
+#         lacp {
+#             passive;
+#             periodic fast;
+#             sync-reset enable;
+#             system-priority 100;
+#             system-id 00:00:00:00:00:02;
+#         }
+#     }
+# }
+# ae4 {
+#     description "test aggregate interface";
+#     aggregated-ether-options {
+#         lacp {
+#             passive;
+#             link-protection;
+#         }
+#     }
+# }
 
+# Using replaced
+# Before state:
+# -------------
+# user@junos01# show interfaces
+# ge-0/0/2 {
+#     ether-options {
+#         802.3ad ae4;
+#     }
+# }
+# ge-0/0/3 {
+#     ether-options {
+#         802.3ad {
+#             lacp {
+#                 force-up;
+#                 port-priority 100;
+#             }
+#             ae0;
+#         }
+#     }
+# }
+# ae0 {
+#     description "lag interface merged";
+#     aggregated-ether-options {
+#         lacp {
+#             passive;
+#             periodic fast;
+#             sync-reset enable;
+#             system-priority 100;
+#             system-id 00:00:00:00:00:02;
+#         }
+#     }
+# }
+# ae4 {
+#     description "test aggregate interface";
+#     aggregated-ether-options {
+#         lacp {
+#             passive;
+#             link-protection;
+#         }
+#     }
+# }
 
+- name: Replace device LACP interfaces configuration with provided configuration
+  junos_lacp_interfaces:
+    config:
+      - name: ae0
+        period: slow
+    state: replaced
 
+# After state:
+# -------------
+# user@junos01# show interfaces
+# ge-0/0/2 {
+#     ether-options {
+#         802.3ad ae4;
+#     }
+# }
+# ge-0/0/3 {
+#     ether-options {
+#         802.3ad {
+#             lacp {
+#                 force-up;
+#                 port-priority 100;
+#             }
+#             ae0;
+#         }
+#     }
+# }
+# ae0 {
+#     description "lag interface merged";
+#     aggregated-ether-options {
+#         lacp {
+#             passive;
+#             periodic slow;
+#         }
+#     }
+# }
+# ae4 {
+#     description "test aggregate interface";
+#     aggregated-ether-options {
+#         lacp {
+#             passive;
+#             link-protection;
+#         }
+#     }
+# }
 
+# Using overridden
+# Before state:
+# -------------
+# user@junos01# show interfaces
+# ge-0/0/2 {
+#     ether-options {
+#         802.3ad ae4;
+#     }
+# }
+# ge-0/0/3 {
+#     ether-options {
+#         802.3ad {
+#             lacp {
+#                 force-up;
+#                 port-priority 100;
+#             }
+#             ae0;
+#         }
+#     }
+# }
+# ae0 {
+#     description "lag interface merged";
+#     aggregated-ether-options {
+#         lacp {
+#             passive;
+#             periodic slow;
+#         }
+#     }
+# }
+# ae4 {
+#     description "test aggregate interface";
+#     aggregated-ether-options {
+#         lacp {
+#             passive;
+#             link-protection;
+#         }
+#     }
+# }
 
+- name: Overrides all device LACP interfaces configuration with provided configuration
+  junos_lacp_interfaces:
+    config:
+      - name: ae0
+        system:
+          priority: 300
+          mac: 00:00:00:00:00:03
+      - name: ge-0/0/2
+        port_priority: 200
+        force_up: False
+    state: overridden
 
+# After state:
+# -------------
+# user@junos01# show interfaces
+# ge-0/0/2 {
+#     ether-options {
+#         802.3ad {
+#             lacp {
+#                 port-priority 200;
+#             }
+#             ae4;
+#         }
+#     }
+# }
+# ge-0/0/3 {
+#     ether-options {
+#         802.3ad {
+#             lacp {
+#                 force-up;
+#                 port-priority 100;
+#             }
+#             ae0;
+#         }
+#     }
+# }
+# ae0 {
+#     description "lag interface merged";
+#     aggregated-ether-options {
+#         lacp {
+#             passive;
+#             system-priority 300;
+#             system-id 00:00:00:00:00:03;
+#         }
+#     }
+# }
+# ae4 {
+#     description "test aggregate interface";
+#     aggregated-ether-options {
+#         lacp {
+#             passive;
+#             link-protection;
+#         }
+#     }
+# }
 
+# Using deleted
+# Before state:
+# -------------
+# user@junos01# show interfaces
+# ge-0/0/2 {
+#     ether-options {
+#         802.3ad {
+#             lacp {
+#                 port-priority 200;
+#             }
+#             ae4;
+#         }
+#     }
+# }
+# ge-0/0/3 {
+#     ether-options {
+#         802.3ad {
+#             lacp {
+#                 force-up;
+#                 port-priority 100;
+#             }
+#             ae0;
+#         }
+#     }
+# }
+# ae0 {
+#     description "lag interface merged";
+#     aggregated-ether-options {
+#         lacp {
+#             passive;
+#             system-priority 300;
+#             system-id 00:00:00:00:00:03;
+#         }
+#     }
+# }
+# ae4 {
+#     description "test aggregate interface";
+#     aggregated-ether-options {
+#         lacp {
+#             passive;
+#             link-protection;
+#         }
+#     }
+# }
 
+- name: Delete LACP interfaces attributes of given interfaces (Note: This won't delete the interface itself)
+  junos_lacp_interfaces:
+    config:
+      - name: ae0
+      - name: ge-0/0/3
+      - name: ge-0/0/2
+    state: deleted
 
-
+# After state:
+# -------------
+# user@junos01# show interfaces
+# ge-0/0/2 {
+#     ether-options {
+#         802.3ad ae4;
+#     }
+# }
+# ge-0/0/3 {
+#    ether-options {
+#         802.3ad ae0;
+#     }
+# }
+# ae0 {
+#     description "lag interface merged";
+#     aggregated-ether-options {
+#         lacp {
+#             passive;
+#         }
+#     }
+# }
+# ae4 {
+#     description "test aggregate interface";
+#     aggregated-ether-options {
+#         lacp {
+#             passive;
+#             link-protection;
+#         }
+#     }
+# }
 """
+
 RETURN = """
 before:
   description: The configuration prior to the model invocation.
