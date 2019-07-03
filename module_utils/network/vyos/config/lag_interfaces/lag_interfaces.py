@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#
 # -*- coding: utf-8 -*-
 # Copyright 2019 Red Hat
 # GNU General Public License v3.0+
@@ -10,25 +10,17 @@ is compared to the provided configuration (as dict) and the command set
 necessary to bring the current configuration to it's desired end-state is
 created
 """
-
+from ansible.module_utils.network.common.cfg.base import ConfigBase
+from ansible.module_utils.network.vyos.facts.facts import Facts
 from ansible.module_utils.network.common.utils import to_list, dict_diff
-
 from ansible.module_utils.six import iteritems
-from ansible.module_utils.network. \
-    vyos.argspec.lag_interfaces.lag_interfaces import Lag_interfacesArgs
-from ansible.module_utils.network. \
-    vyos. \
-    config.base import ConfigBase
-from ansible.module_utils.network. \
-    vyos.facts.facts import Facts
-
 from ansible.module_utils.network. \
     vyos.utils.utils import search_obj_in_list, \
     add_arp_monitor, add_bond_members, delete_bond_members, \
     delete_arp_monitor, update_bond_members, update_arp_monitor
 
 
-class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
+class Lag_interfaces(ConfigBase):
     """
     The vyos_lag_interfaces class
     """
@@ -46,16 +38,17 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
     set_cmd = 'set interfaces bonding '
     del_cmd = 'delete interfaces bonding '
 
+    def __init__(self, module):
+        super(Lag_interfaces, self).__init__(module)
+
     def get_lag_interfaces_facts(self):
         """ Get the 'facts' (the current configuration)
 
         :rtype: A dictionary
         :returns: The current configuration as a dictionary
         """
-        facts, _warnings = Facts().get_facts(self._module,
-                                             self._connection,
-                                             self.gather_subset,
-                                             self.gather_network_resources)
+        facts, _warnings = Facts(self._module).get_facts(self.gather_subset, \
+                                                         self.gather_network_resources)
         lag_interfaces_facts = facts['ansible_network_resources'].get('lag_interfaces')
         if not lag_interfaces_facts:
             return []

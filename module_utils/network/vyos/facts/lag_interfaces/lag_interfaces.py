@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#
 # -*- coding: utf-8 -*-
 # Copyright 2019 Red Hat
 # GNU General Public License v3.0+
@@ -9,17 +9,33 @@ It is in this file the configuration is collected from the device
 for a given resource, parsed, and the facts tree is populated
 based on the configuration.
 """
-from ansible.module_utils.network.vyos.vyos import run_commands
 from re import findall, search, M
-from ansible.module_utils.network. \
-    vyos.facts.base import FactsBase
+from copy import deepcopy
+
+from ansible.module_utils.network.common import utils
+from ansible.module_utils.network.vyos.argspec.lag_interfaces. \
+    lag_interfaces import Lag_interfacesArgs
 
 
-class Lag_interfacesFacts(FactsBase):
+class Lag_interfacesFacts(object):
     """ The vyos lag_interfaces fact class
     """
 
-    def populate_facts(self, module, connection, data=None):
+    def __init__(self, module, subspec='config', options='options'):
+        self._module = module
+        self.argument_spec = Lag_interfacesArgs.argument_spec
+        spec = deepcopy(self.argument_spec)
+        if subspec:
+            if options:
+                facts_argument_spec = spec[subspec][options]
+            else:
+                facts_argument_spec = spec[subspec]
+        else:
+            facts_argument_spec = spec
+
+        self.generated_spec = utils.generate_dict(facts_argument_spec)
+
+    def populate_facts(self, connection, ansible_facts, data=None):
         """ Populate the facts for lag_interfaces
         :param module: the module instance
         :param connection: the device connection
@@ -27,8 +43,6 @@ class Lag_interfacesFacts(FactsBase):
         :rtype: dictionary
         :returns: facts
         """
-        if module:  # just for linting purposes, remove
-            pass
         if connection:  # just for linting purposes, remove
             pass
 
@@ -43,17 +57,20 @@ class Lag_interfacesFacts(FactsBase):
                 cfg = findall(lag_regex, data, M)
                 obj = self.render_config(cfg)
 
-                output = run_commands(module, ['show interfaces bonding ' + lag + ' slaves'])
+                output = connection.run_commands(['show interfaces bonding ' + lag + ' slaves'])
                 lines = output[0].splitlines()
                 members = []
+                member = {}
                 if len(lines) > 1:
                     for line in lines[2:]:
                         splitted_line = line.split()
 
                         if len(splitted_line) > 1:
-                            members.append(splitted_line[0])
+                            member['member'] = splitted_line[0]
+                            members.append(member)
                         else:
                             members = []
+                        member = {}
                 obj['name'] = lag
                 obj['members'] = members
 
@@ -63,8 +80,8 @@ class Lag_interfacesFacts(FactsBase):
         facts = {}
         if objs:
             facts['lag_interfaces'] = objs
-        self.ansible_facts['ansible_network_resources'].update(facts)
-        return self.ansible_facts
+        ansible_facts['ansible_network_resources'].update(facts)
+        return ansible_facts
 
     def render_config(self, conf):
         """
@@ -83,19 +100,22 @@ class Lag_interfacesFacts(FactsBase):
         )
         config['arp-monitor'] = self.parse_arp_monitor(arp_monitor_conf)
 
-        return self.generate_final_config(config)
+        return utils.remove_empties(config)
 
     def parse_attribs(self, attribs, conf):
         config = {}
         for item in attribs:
-            value = self.parse_conf_arg(conf, item)
-            config[item] = value
+            value = utils.parse_conf_arg(conf, item)
+            if value:
+                config[item] = value.strip("'")
+            else:
+                config[item] = None
 
         if 'disable' in conf:
             config['enable'] = False
         else:
             config['enable'] = True
-        return self.generate_final_config(config)
+        return utils.remove_empties(config)
 
     def parse_arp_monitor(self, conf):
         arp_monitor = None

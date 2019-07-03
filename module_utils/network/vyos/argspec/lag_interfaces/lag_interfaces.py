@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#
 # -*- coding: utf-8 -*-
 # Copyright 2019 Red Hat
 # GNU General Public License v3.0+
@@ -47,7 +47,8 @@ class Lag_interfacesArgs(object):  # pylint: disable=R0903
                         'type': 'dict'},
                     'hash-policy': {'choices': ['layer2', 'layer2+3', 'layer3+4'],
                                     'type': 'str'},
-                    'members': {'type': 'list'},
+                    'members': {'elements': 'dict', 'options': {
+                        'member': {'type': 'str'}}, 'type': 'list'},
                     'mode': {'choices': ['802.3ad',
                                          'active-backup',
                                          'broadcast',

@@ -37,8 +37,8 @@ def get_member_diff(want_item, have_item):
     if not have_item:
         diff = want_item.get('members') or []
     else:
-        want_members = want_item.get('members') or []
-        have_members = have_item.get('members') or []
+        want_members = want_item.get('members') or {}
+        have_members = have_item.get('members') or {}
         diff = list_diff_want_only(want_members, have_members)
     return diff
 
@@ -67,11 +67,8 @@ def add_bond_members(want_item, have_item):
     commands = []
     bond_name = want_item['name']
     diff_members = get_member_diff(want_item, have_item)
-    if diff_members:
-        for m in diff_members:
-            commands.append(
-                'set interfaces ethernet ' + m + ' bond-group ' + bond_name
-            )
+    for key in diff_members:
+        commands.append('set interfaces ethernet ' + key['member'] + ' bond-group ' + bond_name)
     return commands
 
 
@@ -110,7 +107,7 @@ def delete_bond_members(lag):
     commands = []
     for member in lag['members']:
         commands.append(
-            'delete interfaces ethernet ' + member + ' bond-group ' + lag['name']
+            'delete interfaces ethernet ' + member['member'] + ' bond-group ' + lag['name']
         )
     return commands
 

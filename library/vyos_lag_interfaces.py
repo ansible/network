@@ -27,7 +27,7 @@ The module file for vyos_lag_interfaces
 """
 
 from __future__ import absolute_import, division, print_function
-__metaclass__ = type  # pylint: disable=C0103
+__metaclass__ = type
 
 ANSIBLE_METADATA = {
     'metadata_version': '1.1',
@@ -41,10 +41,10 @@ module: vyos_lag_interfaces
 version_added: 2.9
 short_description: Manages attributes of link aggregation groups on VyOS network devices.
 description: This module manages attributes of link aggregation groups on VyOS network devices.
-author: Rohit Thakur (@rthakur)
+author: Rohit Thakur (@rohitthakur2590)
 options:
   config:
-    description: The provided link aggregation group configurations.
+    description: A list of link aggregation group configurations.
     type: list
     elements: dict
     suboptions:
@@ -55,7 +55,7 @@ options:
         required: True
       mode:
         description:
-          - Link aggregation group (LAG) or bond mode.
+          - LAG or bond mode.
         type: str
         choices:
           - 802.3ad
@@ -67,8 +67,14 @@ options:
           - xor-hash
       members:
         description:
-          - Ethernet Interfaces that are part of the LAG (bond).
+          - List of member interfaces for the LAG (bond).
         type: list
+        elements: dict
+        suboptions:
+          member:
+            description:
+              - Name of the member interface.
+            type: str
       primary:
         description:
           - Primary device interfaces for the LAG (bond).
@@ -112,57 +118,102 @@ EXAMPLES = """
 # Before state:
 # -------------
 #
-# vyos:~$ show configuration commands | grep interfaces
-# set interfaces ethernet eth0 address 'dhcp'
-# set interfaces ethernet eth0 address 'dhcpv6'
-# set interfaces ethernet eth0 hw-id '08:00:27:30:f0:22'
-# set interfaces ethernet eth0 smp-affinity 'auto'
-# set interfaces ethernet eth1 hw-id '08:00:27:ea:0f:b9'
-# set interfaces ethernet eth1 smp-affinity 'auto'
-# set interfaces ethernet eth2 hw-id '08:00:27:c2:98:23'
-# set interfaces ethernet eth2 smp-affinity 'auto'
-# set interfaces ethernet eth3 hw-id '08:00:27:43:70:8c'
-# set interfaces ethernet eth3 smp-affinity 'auto'
-# set interfaces loopback lo
-
+# vyos@vyos:~$ show configuration  commands | grep bond
+# set interfaces bonding bond2
+# set interfaces bonding bond3
+#
 - name: Merge provided configuration with device configuration
   vyos_lag_interfaces:
     config:
-      - name: bond0
-        mode: 802.3ad
+      - name: bond2
+        mode: active-backup
         members:
-          - eth1
-          - eth3
+         - member: eth2
+         - member: eth1
         hash-policy: layer2
+        primary: eth2
 
-      - name: bond1
-        mode: xor-hash
-        members: eth2
-        hash-policy: layer2+3
+      - name: 'bond3'
+        mode: 'active-backup'
+        hash-policy: 'layer2+3'
+        members:
+         - member: eth3
+        primary: 'eth3'
     state: merged
-
+#
+#
+# -------------------------
+# Module Execution Result
+# -------------------------
+#
+#    "before": [
+#        {
+#            "enable": true,
+#            "members": [],
+#            "name": "bond2"
+#        },
+#        {
+#            "enable": true,
+#            "members": [],
+#            "name": "bond3"
+#        }
+#    ],
+#
+# "commands": [
+#        "set interfaces bonding bond2 hash-policy 'layer2'",
+#        "set interfaces bonding bond2 mode 'active-backup'",
+#        "set interfaces ethernet eth2 bond-group bond2",
+#        "set interfaces ethernet eth1 bond-group bond2",
+#        "set interfaces bonding bond2 primary 'eth2'",
+#        "set interfaces bonding bond3 hash-policy 'layer2+3'",
+#        "set interfaces bonding bond3 mode 'active-backup'",
+#        "set interfaces ethernet eth3 bond-group bond3",
+#        "set interfaces bonding bond3 primary 'eth3'"
+#    ]
+#
+#     "after": [
+#        {
+#            "enable": true,
+#            "hash-policy": "layer2",
+#            "members": [
+#                {
+#                    "member": "eth1"
+#                },
+#                {
+#                    "member": "eth2"
+#                }
+#            ],
+#            "mode": "active-backup",
+#            "name": "bond2",
+#            "primary": "eth2"
+#        },
+#        {
+#            "enable": true,
+#            "hash-policy": "layer2+3",
+#            "members": [
+#                {
+#                    "member": "eth3"
+#                }
+#            ],
+#            "mode": "active-backup",
+#            "name": "bond3",
+#            "primary": "eth3"
+#        }
+#    ]
+#
 # After state:
 # -------------
 #
-# vyos@vyos:~$ show configuration commands | grep interfaces
-# set interfaces bonding bond0 hash-policy 'layer2'
-# set interfaces bonding bond0 mode '802.3ad'
-# set interfaces bonding bond1 hash-policy 'layer2+3'
-# set interfaces bonding bond1 mode 'xor-hash'
-# set interfaces ethernet eth0 address 'dhcp'
-# set interfaces ethernet eth0 address 'dhcpv6'
-# set interfaces ethernet eth0 hw-id '08:00:27:30:f0:22'
-# set interfaces ethernet eth0 smp-affinity 'auto'
-# set interfaces ethernet eth1 bond-group 'bond0'
-# set interfaces ethernet eth1 hw-id '08:00:27:ea:0f:b9'
-# set interfaces ethernet eth1 smp-affinity 'auto'
-# set interfaces ethernet eth2 hw-id '08:00:27:c2:98:23'
-# set interfaces ethernet eth2 smp-affinity 'auto'
-# set interfaces ethernet eth2 bond-group 'bond1'
-# set interfaces ethernet eth3 bond-group 'bond0'
-# set interfaces ethernet eth3 hw-id '08:00:27:43:70:8c'
-# set interfaces ethernet eth3 smp-affinity 'auto'
-# set interfaces loopback lo
+# vyos@vyos:~$ show configuration  commands | grep bond
+# set interfaces bonding bond2 hash-policy 'layer2'
+# set interfaces bonding bond2 mode 'active-backup'
+# set interfaces bonding bond2 primary 'eth2'
+# set interfaces bonding bond3 hash-policy 'layer2+3'
+# set interfaces bonding bond3 mode 'active-backup'
+# set interfaces bonding bond3 primary 'eth3'
+# set interfaces ethernet eth1 bond-group 'bond2'
+# set interfaces ethernet eth2 bond-group 'bond2'
+# set interfaces ethernet eth3 bond-group 'bond3'
 
 
 # Using replaced
@@ -170,60 +221,109 @@ EXAMPLES = """
 # Before state:
 # -------------
 #
-# vyosvyos:~$ show configuration commands | grep interfaces
-# set interfaces bonding bond0 hash-policy 'layer2'
-# set interfaces bonding bond0 mode '802.3ad'
-# set interfaces bonding bond1 hash-policy 'layer2+3'
-# set interfaces bonding bond1 mode 'xor-hash'
-# set interfaces ethernet eth0 address 'dhcp'
-# set interfaces ethernet eth0 address 'dhcpv6'
-# set interfaces ethernet eth0 hw-id '08:00:27:30:f0:22'
-# set interfaces ethernet eth0 smp-affinity 'auto'
-# set interfaces ethernet eth1 bond-group 'bond0'
-# set interfaces ethernet eth1 hw-id '08:00:27:ea:0f:b9'
-# set interfaces ethernet eth1 smp-affinity 'auto'
-# set interfaces ethernet eth2 hw-id '08:00:27:c2:98:23'
-# set interfaces ethernet eth2 smp-affinity 'auto'
-# set interfaces ethernet eth2 bond-group 'bond1'
-# set interfaces ethernet eth3 bond-group 'bond0'
-# set interfaces ethernet eth3 hw-id '08:00:27:43:70:8c'
-# set interfaces ethernet eth3 smp-affinity 'auto'
-# set interfaces loopback lo
+# vyos@vyos:~$ show configuration  commands | grep bond
+# set interfaces bonding bond2 hash-policy 'layer2'
+# set interfaces bonding bond2 mode 'active-backup'
+# set interfaces bonding bond2 primary 'eth2'
+# set interfaces bonding bond3 hash-policy 'layer2+3'
+# set interfaces bonding bond3 mode 'active-backup'
+# set interfaces bonding bond3 primary 'eth3'
+# set interfaces ethernet eth1 bond-group 'bond2'
+# set interfaces ethernet eth2 bond-group 'bond2'
+# set interfaces ethernet eth3 bond-group 'bond3'
 #
 - name: Replace device configurations of listed LAGs with provided configurations
   vyos_lag_interfaces:
     config:
-      - name: bond0
-        mode: xor-hash
-        hash-policy: layer2+3
+      - name: bond3
+        mode: '802.3ad'
+        hash-policy: 'layer2'
         members:
-          - eth2
-          - eth3
-
-      - name: bond1
-        mode: 802.3ad
+         - member: eth3
     state: replaced
-
+#
+#
+# -------------------------
+# Module Execution Result
+# -------------------------
+#
+#    "before": [
+#        {
+#            "enable": true,
+#            "hash-policy": "layer2",
+#            "members": [
+#                {
+#                    "member": "eth1"
+#                },
+#                {
+#                    "member": "eth2"
+#                }
+#            ],
+#            "mode": "active-backup",
+#            "name": "bond2",
+#            "primary": "eth2"
+#        },
+#        {
+#            "enable": true,
+#            "hash-policy": "layer2+3",
+#            "members": [
+#                {
+#                    "member": "eth3"
+#                }
+#            ],
+#            "mode": "active-backup",
+#            "name": "bond3",
+#            "primary": "eth3"
+#        }
+#    ],
+#
+# "commands": [
+#        "delete interfaces bonding bond3 primary",
+#        "set interfaces bonding bond3 hash-policy 'layer2'",
+#        "set interfaces bonding bond3 mode '802.3ad'"
+#    ],
+#
+# "after": [
+#        {
+#            "enable": true,
+#            "hash-policy": "layer2",
+#            "members": [
+#                {
+#                    "member": "eth1"
+#                },
+#                {
+#                    "member": "eth2"
+#                }
+#            ],
+#            "mode": "active-backup",
+#            "name": "bond2",
+#            "primary": "eth2"
+#        },
+#        {
+#            "enable": true,
+#            "hash-policy": "layer2",
+#            "members": [
+#                {
+#                    "member": "eth3"
+#                }
+#            ],
+#            "mode": "802.3ad",
+#            "name": "bond3"
+#        }
+#    ],
+#
 # After state:
 # -------------
 #
-# vyos:~$ show configuration commands | grep eth
-# set interfaces bonding bond0 hash-policy 'layer2+3'
-# set interfaces bonding bond0 mode 'xor-hash'
-# set interfaces bonding bond1 mode '802.3ad'
-# set interfaces ethernet eth0 address 'dhcp'
-# set interfaces ethernet eth0 address 'dhcpv6'
-# set interfaces ethernet eth0 hw-id '08:00:27:30:f0:22'
-# set interfaces ethernet eth0 smp-affinity 'auto'
-# set interfaces ethernet eth1 hw-id '08:00:27:ea:0f:b9'
-# set interfaces ethernet eth1 smp-affinity 'auto'
-# set interfaces ethernet eth2 bond-group 'bond0'
-# set interfaces ethernet eth2 hw-id '08:00:27:c2:98:23'
-# set interfaces ethernet eth2 smp-affinity 'auto'
-# set interfaces ethernet eth3 hw-id '08:00:27:43:70:8c'
-# set interfaces ethernet eth3 smp-affinity 'auto'
-# set interfaces ethernet eth3 bond-group 'bond0'
-# set interfaces loopback lo
+# vyos@vyos:~$ show configuration  commands | grep bond
+# set interfaces bonding bond2 hash-policy 'layer2'
+# set interfaces bonding bond2 mode 'active-backup'
+# set interfaces bonding bond2 primary 'eth2'
+# set interfaces bonding bond3 hash-policy 'layer2'
+# set interfaces bonding bond3 mode '802.3ad'
+# set interfaces ethernet eth1 bond-group 'bond2'
+# set interfaces ethernet eth2 bond-group 'bond2'
+# set interfaces ethernet eth3 bond-group 'bond3'
 
 
 # Using overridden
@@ -231,58 +331,113 @@ EXAMPLES = """
 # Before state
 # --------------
 #
-# vyos@vyos:~$ show configuration commands | grep interfaces
-# set interfaces bonding bond0 hash-policy 'layer2'
-# set interfaces bonding bond0 mode '802.3ad'
-# set interfaces bonding bond1 hash-policy 'layer2+3'
-# set interfaces bonding bond1 mode 'xor-hash'
-# set interfaces ethernet eth0 address 'dhcp'
-# set interfaces ethernet eth0 address 'dhcpv6'
-# set interfaces ethernet eth0 hw-id '08:00:27:30:f0:22'
-# set interfaces ethernet eth0 smp-affinity 'auto'
-# set interfaces ethernet eth1 bond-group 'bond0'
-# set interfaces ethernet eth1 hw-id '08:00:27:ea:0f:b9'
-# set interfaces ethernet eth1 smp-affinity 'auto'
-# set interfaces ethernet eth2 hw-id '08:00:27:c2:98:23'
-# set interfaces ethernet eth2 smp-affinity 'auto'
-# set interfaces ethernet eth2 bond-group 'bond1'
-# set interfaces ethernet eth3 bond-group 'bond0'
-# set interfaces ethernet eth3 hw-id '08:00:27:43:70:8c'
-# set interfaces ethernet eth3 smp-affinity 'auto'
-# set interfaces loopback lo
-
+# vyos@vyos:~$ show configuration  commands | grep bond
+# set interfaces bonding bond2 hash-policy 'layer2'
+# set interfaces bonding bond2 mode 'active-backup'
+# set interfaces bonding bond2 primary 'eth2'
+# set interfaces bonding bond3 hash-policy 'layer2'
+# set interfaces bonding bond3 mode '802.3ad'
+# set interfaces ethernet eth1 bond-group 'bond2'
+# set interfaces ethernet eth2 bond-group 'bond2'
+# set interfaces ethernet eth3 bond-group 'bond3'
+#
 - name: Overrides all device configuration with provided configuration
   vyos_lag_interfaces:
     config:
       - name: bond3
         mode: active-backup
-        hash-policy: layer2
         members:
-          - eth1
-          - eth2
-          - eth3
+         - member: eth1
+         - member: eth2
+         - member: eth3
+        primary: eth3
+        hash-policy: layer2
     state: overridden
-
+#
+#
+# -------------------------
+# Module Execution Result
+# -------------------------
+#
+#    "before": [
+#        {
+#            "enable": true,
+#            "hash-policy": "layer2",
+#            "members": [
+#                {
+#                    "member": "eth1"
+#                },
+#                {
+#                    "member": "eth2"
+#                }
+#            ],
+#            "mode": "active-backup",
+#            "name": "bond2",
+#            "primary": "eth2"
+#        },
+#        {
+#            "enable": true,
+#            "hash-policy": "layer2",
+#            "members": [
+#                {
+#                    "member": "eth3"
+#                }
+#            ],
+#            "mode": "802.3ad",
+#            "name": "bond3"
+#        }
+#    ],
+#
+#    "commands": [
+#        "delete interfaces bonding bond2 hash-policy",
+#        "delete interfaces ethernet eth1 bond-group bond2",
+#        "delete interfaces ethernet eth2 bond-group bond2",
+#        "delete interfaces bonding bond2 mode",
+#        "delete interfaces bonding bond2 primary",
+#        "set interfaces bonding bond3 mode 'active-backup'",
+#        "set interfaces ethernet eth1 bond-group bond3",
+#        "set interfaces ethernet eth2 bond-group bond3",
+#        "set interfaces bonding bond3 primary 'eth3'"
+#    ],
+#
+# "after": [
+#        {
+#            "enable": true,
+#            "members": [],
+#            "name": "bond2"
+#        },
+#        {
+#            "enable": true,
+#            "hash-policy": "layer2",
+#            "members": [
+#                {
+#                    "member": "eth1"
+#                },
+#                {
+#                    "member": "eth2"
+#                },
+#                {
+#                    "member": "eth3"
+#                }
+#            ],
+#            "mode": "active-backup",
+#            "name": "bond3",
+#            "primary": "eth3"
+#        }
+#    ],
+#
+#
 # After state
 # ------------
 #
-# vyos@vyos:~$ show configuration commands | grep interfaces
-# set interfaces bonding bond3 hash-policy 'layer2'
-# set interfaces bonding bond3 mode 'active-backup'
-# set interfaces ethernet eth0 address 'dhcp'
-# set interfaces ethernet eth0 address 'dhcpv6'
-# set interfaces ethernet eth0 hw-id '08:00:27:30:f0:22'
-# set interfaces ethernet eth0 smp-affinity 'auto'
-# set interfaces ethernet eth1 bond-group 'bond3'
-# set interfaces ethernet eth1 hw-id '08:00:27:ea:0f:b9'
-# set interfaces ethernet eth1 smp-affinity 'auto'
-# set interfaces ethernet eth2 hw-id '08:00:27:c2:98:23'
-# set interfaces ethernet eth2 smp-affinity 'auto'
-# set interfaces ethernet eth2 bond-group 'bond3'
-# set interfaces ethernet eth3 bond-group 'bond3'
-# set interfaces ethernet eth3 hw-id '08:00:27:43:70:8c'
-# set interfaces ethernet eth3 smp-affinity 'auto'
-# set interfaces loopback lo
+vyos@vyos:~$ show configuration  commands | grep bond
+set interfaces bonding bond2
+set interfaces bonding bond3 hash-policy 'layer2'
+set interfaces bonding bond3 mode 'active-backup'
+set interfaces bonding bond3 primary 'eth3'
+set interfaces ethernet eth1 bond-group 'bond3'
+set interfaces ethernet eth2 bond-group 'bond3'
+set interfaces ethernet eth3 bond-group 'bond3'
 
 
 # Using deleted
@@ -290,47 +445,88 @@ EXAMPLES = """
 # Before state
 # -------------
 #
-# vyos@vyos:~$ show configuration commands | grep interfaces
-# set interfaces bonding bond0 hash-policy 'layer2'
-# set interfaces bonding bond0 mode '802.3ad'
-# set interfaces bonding bond1 hash-policy 'layer2+3'
-# set interfaces bonding bond1 mode 'xor-hash'
-# set interfaces ethernet eth0 address 'dhcp'
-# set interfaces ethernet eth0 address 'dhcpv6'
-# set interfaces ethernet eth0 hw-id '08:00:27:30:f0:22'
-# set interfaces ethernet eth0 smp-affinity 'auto'
-# set interfaces ethernet eth1 bond-group 'bond0'
-# set interfaces ethernet eth1 hw-id '08:00:27:ea:0f:b9'
-# set interfaces ethernet eth1 smp-affinity 'auto'
-# set interfaces ethernet eth2 hw-id '08:00:27:c2:98:23'
-# set interfaces ethernet eth2 smp-affinity 'auto'
-# set interfaces ethernet eth2 bond-group 'bond1'
-# set interfaces ethernet eth3 bond-group 'bond0'
-# set interfaces ethernet eth3 hw-id '08:00:27:43:70:8c'
-# set interfaces ethernet eth3 smp-affinity 'auto'
-# set interfaces loopback lo
-
-- name: Delete Link Aggregation Groups from the device
+# vyos@vyos:~$ show configuration  commands | grep bond
+# set interfaces bonding bond2 hash-policy 'layer2'
+# set interfaces bonding bond2 mode 'active-backup'
+# set interfaces bonding bond2 primary 'eth2'
+# set interfaces bonding bond3 hash-policy 'layer2+3'
+# set interfaces bonding bond3 mode 'active-backup'
+# set interfaces bonding bond3 primary 'eth3'
+# set interfaces ethernet eth1 bond-group 'bond2'
+# set interfaces ethernet eth2 bond-group 'bond2'
+# set interfaces ethernet eth3 bond-group 'bond3'
+#
+- name: Delete LAG attributes of given interfaces (Note: This won't delete the interface itself)
   vyos_lag_interfaces:
     config:
-      - name: bond0
-      - name: bond1
+      - name: bond2
+      - name: bond3
     state: deleted
-
+#
+#
+# ------------------------
+# Module Execution Results
+# ------------------------
+#
+# "before": [
+#        {
+#            "enable": true,
+#            "hash-policy": "layer2",
+#            "members": [
+#                {
+#                    "member": "eth1"
+#                },
+#                {
+#                    "member": "eth2"
+#                }
+#            ],
+#            "mode": "active-backup",
+#            "name": "bond2",
+#            "primary": "eth2"
+#        },
+#        {
+#            "enable": true,
+#            "hash-policy": "layer2+3",
+#            "members": [
+#                {
+#                    "member": "eth3"
+#                }
+#            ],
+#            "mode": "active-backup",
+#            "name": "bond3",
+#            "primary": "eth3"
+#        }
+#    ],
+# "commands": [
+#        "delete interfaces bonding bond2 hash-policy",
+#        "delete interfaces ethernet eth1 bond-group bond2",
+#        "delete interfaces ethernet eth2 bond-group bond2",
+#        "delete interfaces bonding bond2 mode",
+#        "delete interfaces bonding bond2 primary",
+#        "delete interfaces bonding bond3 hash-policy",
+#        "delete interfaces ethernet eth3 bond-group bond3",
+#        "delete interfaces bonding bond3 mode",
+#        "delete interfaces bonding bond3 primary"
+#    ],
+#
+# "after": [
+#        {
+#            "enable": true,
+#            "members": [],
+#            "name": "bond2"
+#        },
+#        {
+#            "enable": true,
+#            "members": [],
+#            "name": "bond3"
+#        }
+#    ],
+#
 # After state
 # ------------
-# vyos@vyos-appliance:~$ show configuration commands | grep interfaces
-# set interfaces ethernet eth0 address 'dhcp'
-# set interfaces ethernet eth0 address 'dhcpv6'
-# set interfaces ethernet eth0 hw-id '08:00:27:30:f0:22'
-# set interfaces ethernet eth0 smp-affinity 'auto'
-# set interfaces ethernet eth1 hw-id '08:00:27:ea:0f:b9'
-# set interfaces ethernet eth1 smp-affinity 'auto'
-# set interfaces ethernet eth2 hw-id '08:00:27:c2:98:23'
-# set interfaces ethernet eth2 smp-affinity 'auto'
-# set interfaces ethernet eth3 hw-id '08:00:27:43:70:8c'
-# set interfaces ethernet eth3 smp-affinity 'auto'
-# set interfaces loopback lo
+# vyos@vyos:~$ show configuration  commands | grep bond
+# set interfaces bonding bond2
+# set interfaces bonding bond3
 
 
 """
@@ -355,11 +551,10 @@ commands:
 """
 
 
-# pylint: disable=C0413
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.network. \
-    vyos.config.lag_interfaces.lag_interfaces import Lag_interfaces
-# pylint: enable=C0413
+from ansible.module_utils.network.vyos.argspec.lag_interfaces. \
+    lag_interfaces import Lag_interfacesArgs
+from ansible.module_utils.network.vyos.config.lag_interfaces.lag_interfaces import Lag_interfaces
 
 
 def main():
@@ -368,7 +563,7 @@ def main():
 
     :returns: the result form module invocation
     """
-    module = AnsibleModule(argument_spec=Lag_interfaces.argument_spec,
+    module = AnsibleModule(argument_spec=Lag_interfacesArgs.argument_spec,
                            supports_check_mode=True)
 
     result = Lag_interfaces(module).execute_module()

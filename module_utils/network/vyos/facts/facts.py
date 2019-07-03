@@ -10,16 +10,10 @@ calls the appropriate facts gathering function
 """
 import platform
 import re
-
-from ansible.module_utils.six import iteritems
-from ansible.module_utils.network. \
-    vyos.argspec.facts.facts import FactsArgs
-from ansible.module_utils.network. \
-    vyos.argspec.lag_interfaces.lag_interfaces import Lag_interfacesArgs
-from ansible.module_utils.network. \
-    vyos.facts.base import FactsBase
-from ansible.module_utils.network. \
-    vyos.facts.lag_interfaces.lag_interfaces import Lag_interfacesFacts
+from ansible.module_utils.network.vyos.argspec.facts.facts import FactsArgs
+from ansible.module_utils.network.common.facts.facts import FactsBase
+from ansible.module_utils.network.vyos.facts.lag_interfaces. \
+    lag_interfaces import Lag_interfacesFacts
 from ansible.module_utils. \
     network.vyos.vyos import run_commands, get_capabilities
 
@@ -166,127 +160,41 @@ class Neighbors(LegacyFactsBase):
             return match.group(1)
 
 
-FACT_SUBSETS = dict(
+FACT_LEGACY_SUBSETS = dict(
     default=Default,
     neighbors=Neighbors,
     config=Config
 )
+FACT_RESOURCE_SUBSETS = dict(
+    lag_interfaces=Lag_interfacesFacts,
+)
 
 
-class Facts(FactsArgs, FactsBase):  # pylint: disable=R0903
+class Facts(FactsBase):
     """ The fact class for vyos
     """
 
-    VALID_GATHER_SUBSETS = frozenset(FACT_SUBSETS.keys())
+    VALID_LEGACY_GATHER_SUBSETS = frozenset(FACT_LEGACY_SUBSETS.keys())
+    VALID_RESOURCE_SUBSETS = frozenset(FACT_RESOURCE_SUBSETS.keys())
 
-    @staticmethod
-    def gen_runable(module, subsets, valid_subsets):
-        """ Generate the runable subset
+    def __init__(self, module):
+        super(Facts, self).__init__(module)
 
-        :param module: The module instance
-        :param subsets: The provided subsets
-        :param valid_subsets: The valid subsets
-        :rtype: list
-        :returns: The runable subsets
-        """
-        runable_subsets = set()
-        exclude_subsets = set()
-        minimal_gather_subset = frozenset(['default'])
-
-        for subset in subsets:
-            if subset == 'all':
-                runable_subsets.update(valid_subsets)
-                continue
-            if subset == 'min' and minimal_gather_subset:
-                runable_subsets.update(minimal_gather_subset)
-                continue
-            if subset.startswith('!'):
-                subset = subset[1:]
-                if subset == 'min':
-                    exclude_subsets.update(minimal_gather_subset)
-                    continue
-                if subset == 'all':
-                    exclude_subsets.update(
-                        valid_subsets - minimal_gather_subset)
-                    continue
-                exclude = True
-            else:
-                exclude = False
-
-            if subset not in valid_subsets:
-                module.fail_json(msg='Bad subset')
-
-            if exclude:
-                exclude_subsets.add(subset)
-            else:
-                runable_subsets.add(subset)
-
-        if not runable_subsets:
-            runable_subsets.update(valid_subsets)
-        runable_subsets.difference_update(exclude_subsets)
-
-        return runable_subsets
-
-    def get_facts(self, module, connection, gather_subset=None,
-                  gather_network_resources=None):
+    def get_facts(self, legacy_facts_type=None, resource_facts_type=None, data=None):
         """ Collect the facts for vyos
 
-        :param module: The module instance
-        :param connection: The device connection
-        :param gather_subset: The facts subset to collect
-        :param gather_network_resources: The resource subset to collect
+        :param legacy_facts_type: List of legacy facts types
+        :param resource_facts_type: List of resource fact types
+        :param data: previously collected conf
         :rtype: dict
-        :returns: the facts gathered
+        :return: the facts gathered
         """
-        if not gather_subset:
-            gather_subset = ['!config']
-        if not gather_network_resources:
-            gather_network_resources = ['all']
-        warnings = []
-        self.ansible_facts['gather_network_resources'] = list()
-        self.ansible_facts['gather_subset'] = list()
-        self.ansible_facts['ansible_network_resources'] = {}
+        netres_choices = FactsArgs.argument_spec['gather_network_resources'].get('choices', [])
+        if self.VALID_RESOURCE_SUBSETS:
+            self.get_network_resources_facts(netres_choices, FACT_RESOURCE_SUBSETS, \
+                                             resource_facts_type, data)
 
-        valnetres = self.argument_spec['gather_network_resources'].\
-            get('choices', [])
-        if valnetres:
-            if 'all' in valnetres:
-                valnetres.remove('all')
+        if self.VALID_LEGACY_GATHER_SUBSETS:
+            self.get_network_legacy_facts(FACT_LEGACY_SUBSETS, legacy_facts_type)
 
-        if valnetres:
-            restorun = self.gen_runable(module, gather_network_resources,
-                                        valnetres)
-            if restorun:
-                self.ansible_facts['gather_network_resources'] = list(restorun)
-                for attr in restorun:
-                    getattr(self, '_get_%s' % attr, {})(module, connection)
-
-        if self.VALID_GATHER_SUBSETS:
-            runable_subsets = self.gen_runable(module,
-                                               gather_subset,
-                                               self.VALID_GATHER_SUBSETS)
-
-            if runable_subsets:
-                facts = dict()
-                self.ansible_facts['gather_subset'] = list(runable_subsets)
-
-                instances = list()
-                for key in runable_subsets:
-                    instances.append(FACT_SUBSETS[key](module))
-
-                for inst in instances:
-                    inst.populate()
-                    facts.update(inst.facts)
-                    warnings.extend(inst.warnings)
-
-                for key, value in iteritems(facts):
-                    key = 'ansible_net_%s' % key
-                    self.ansible_facts[key] = value
-
-        return self.ansible_facts, warnings
-
-    @staticmethod
-    def _get_lag_interfaces(module, connection):
-        return Lag_interfacesFacts(
-            Lag_interfacesArgs.argument_spec,
-            'config', 'options').populate_facts(module, connection)
+        return self.ansible_facts, self._warnings
