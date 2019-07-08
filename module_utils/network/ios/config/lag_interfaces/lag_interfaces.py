@@ -102,7 +102,7 @@ class Lag_interfaces(ConfigBase):
             kwargs = {'want': want, 'have': have}
             commands = self._state_overridden(**kwargs)
         elif state == 'deleted':
-            kwargs = {'want': want, 'have': have}
+            kwargs = {'want': want, 'have': have, 'state': state}
             commands = self._state_deleted(**kwargs)
         elif state == 'merged':
             kwargs = {'want': want, 'have': have}
@@ -207,15 +207,16 @@ class Lag_interfaces(ConfigBase):
         commands = []
         want = kwargs['want']
         have = kwargs['have']
+        state = kwargs['state']
 
         for interface in want:
             for each in have:
                 port_channel = 'port-channel{}'.format(interface.get('name'))
                 if interface.get('name') == each.get('name'):
-                    kwargs = {'want': interface, 'have': each}
+                    kwargs = {'want': interface, 'have': each, 'state': state}
                     commands.extend(Lag_interfaces.clear_interface(**kwargs))
                 elif port_channel == each.get('members').get('member'):
-                    kwargs = {'want': interface, 'have': each}
+                    kwargs = {'want': interface, 'have': each, 'state': state}
                     commands.extend(Lag_interfaces.clear_interface(**kwargs))
                 else:
                     continue
@@ -263,7 +264,6 @@ class Lag_interfaces(ConfigBase):
         want_members = set(tuple({k: v for k, v in iteritems(member) if v is not None}.items())
                            for member in want.get("members") or [])
         have_member = set(tuple({k:v for k, v in iteritems(have['members']) if v is not None}.items()))
-
         # Get the diff between want and have members
         for each_member in want_members:
             if dict(each_member)['member'] == dict(have_member)['member']:
@@ -274,18 +274,17 @@ class Lag_interfaces(ConfigBase):
         flowcontrol = dict(member_diff).get('flowcontrol')
 
         # Compare the value and set the commands
-        if want.get('name') != have.get('name'):
-            cmd = 'channel-group {} mode {}'.format(want['name'], want['members'][0]['mode'])
-            Lag_interfaces._add_command_to_interface(interface, cmd, commands)
         if mode:
             cmd = 'channel-group {} mode {}'.format(want['name'], mode)
             Lag_interfaces._add_command_to_interface(interface, cmd, commands)
         elif link:
             cmd = 'channel-group {} mode {}'.format(want['name'], link)
             Lag_interfaces._add_command_to_interface(interface, cmd, commands)
-        if flowcontrol and not have.get('members').get('flowcontrol'):
-            cmd = 'flowcontrol receive {}'.format(flowcontrol)
-            Lag_interfaces._add_command_to_interface(interface, cmd, commands)
+        if flowcontrol:
+            if have.get('members').get('flowcontrol') == 'on' and flowcontrol == 'off':
+                Lag_interfaces._add_command_to_interface(interface, 'flowcontrol receive off', commands)
+            elif not have.get('members').get('flowcontrol') and flowcontrol == 'on':
+                Lag_interfaces._add_command_to_interface(interface, 'flowcontrol receive on', commands)
 
         return commands
 
@@ -295,12 +294,22 @@ class Lag_interfaces(ConfigBase):
         commands = []
         want = kwargs['want']
         have = kwargs['have']
+        state = kwargs['state'] if kwargs.get('state') else ''
         interface = 'interface ' + have['members']['member']
 
-        if have.get('members').get('flowcontrol'):
-            cmd = 'flowcontrol receive'
-            Lag_interfaces._remove_command_from_interface(interface, cmd, commands)
-        if have.get('name') and want.get('name'):
+        if want.get('members'):
+            for each in want.get('members'):
+                if have['members']['member'] == each['member']:
+                    if have.get('members').get('flowcontrol') and \
+                            have.get('members').get('flowcontrol') != each.get('flowcontrol'):
+                        Lag_interfaces._remove_command_from_interface(interface, 'flowcontrol receive', commands)
+                    break
+                elif have['members'].get('flowcontrol'):
+                    Lag_interfaces._remove_command_from_interface(interface, 'flowcontrol receive', commands)
+        else:
+            if have.get('members').get('flowcontrol'):
+                Lag_interfaces._remove_command_from_interface(interface, 'flowcontrol receive', commands)
+        if have.get('name') and (have.get('name') != want.get('name') or state == 'deleted'):
             Lag_interfaces._remove_command_from_interface(interface, 'channel-group', commands)
 
         return commands
