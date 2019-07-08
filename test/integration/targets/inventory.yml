@@ -1,0 +1,11 @@
+---
+all:
+  hosts:
+    vyos101:
+      ansible_network_os: vyos
+      ansible_user: vyos
+      ansible_password: password
+      ansible_become: true
+      ansible_become_method: enable
+      ansible_become_pass: password
+      ansible_facts_modules: vyos_facts

@@ -72,7 +72,8 @@ class Lag_interfacesFacts(object):
                             members = []
                         member = {}
                 obj['name'] = lag
-                obj['members'] = members
+                if members:
+                    obj['members'] = members
 
                 if obj:
                     objs.append(obj)
@@ -110,11 +111,6 @@ class Lag_interfacesFacts(object):
                 config[item] = value.strip("'")
             else:
                 config[item] = None
-
-        if 'disable' in conf:
-            config['enable'] = False
-        else:
-            config['enable'] = True
         return utils.remove_empties(config)
 
     def parse_arp_monitor(self, conf):

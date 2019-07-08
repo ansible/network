@@ -254,7 +254,6 @@ class Lag_interfaces(ConfigBase):
         lag_name = have_element['lag']['name']
 
         set_cmd = Lag_interfaces.set_cmd + lag_name
-        del_cmd = Lag_interfaces.del_cmd + lag_name
         have_item = have_element['lag']
         want_item = want_element['lag']
 
@@ -262,12 +261,7 @@ class Lag_interfaces(ConfigBase):
 
         if updates:
             for key, value in iteritems(updates):
-                if key == 'enable':
-                    if value:
-                        commands.append(del_cmd + ' disable')
-                    else:
-                        commands.append(set_cmd + ' disable')
-                elif value:
+                if value:
                     if key == 'members':
                         commands.extend(add_bond_members(want_item, have_item))
                     elif key == 'arp-monitor':
@@ -317,8 +311,6 @@ class Lag_interfaces(ConfigBase):
                     commands.extend(delete_arp_monitor(del_lag, del_arp_monitor))
                 elif item != 'name':
                     commands.append(del_lag + ' ' + item)
-            if not lag['enable']:
-                commands.append(lag + ' disable')
         return commands
 
     @staticmethod
