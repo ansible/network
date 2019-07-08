@@ -272,7 +272,7 @@ class Lacp_Interfaces(ConfigBase):
         have = kwargs['have']
         interface = 'interface ' + have['name']
 
-        if have.get('port_priority'):
+        if have.get('port_priority') and have.get('port_priority') != want.get('port_priority'):
             cmd = 'lacp port-priority'
             Lacp_Interfaces._remove_command_from_interface(interface, cmd, commands)
 
