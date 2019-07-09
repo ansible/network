@@ -39,7 +39,7 @@ class VlansArgs(object):
                                             'vlan_id': {'required': True, 'type': int},
                                             'mtu': {'type': int},
                                             'state':{'type': 'str', 'choices':['active', 'suspend']},
-                                            'shutdown': {type: bool}},
+                                            'shutdown': {'type': bool}},
                                 'type': 'list'},
                      'state': {'choices': ['merged', 'replaced', 'overridden', 'deleted'],
                                'default': 'merged',
