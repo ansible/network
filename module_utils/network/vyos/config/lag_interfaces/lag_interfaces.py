@@ -118,7 +118,7 @@ class Lag_interfaces(ConfigBase):
                 obj_in_have = search_obj_in_list(name, have)
                 commands.extend(
                     self._state_deleted(
-                        want_lag=item, have_lag=obj_in_have
+                        have_lag=obj_in_have
                     )
                 )
         elif state == 'merged':
