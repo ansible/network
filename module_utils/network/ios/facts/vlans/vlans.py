@@ -9,12 +9,12 @@ It is in this file the configuration is collected from the device
 for a given resource, parsed, and the facts tree is populated
 based on the configuration.
 """
-import re
+
 from copy import deepcopy
 
 from ansible.module_utils.network.common import utils
 from ansible.module_utils.network.ios.argspec.vlans.vlans import VlansArgs
-import q
+
 
 class VlansFacts(object):
     """ The ios vlans fact class
@@ -46,13 +46,14 @@ class VlansFacts(object):
             pass
 
         objs = []
+        mtu_objs = []
+        final_objs = []
         if not data:
             data = connection.get('show vlan')
         # operate on a collection of resource x
 
         config = data.split('\n')
-        q(config)
-        #
+        # Get individual vlan configs separately
         vlan_info = ''
         for conf in config:
             if 'Name' in conf:
@@ -63,17 +64,19 @@ class VlansFacts(object):
                 vlan_info = 'Remote'
             if conf and not ' ' in filter(None,conf.split('-')):
                 obj = self.render_config(self.generated_spec, conf, vlan_info)
-                if obj:
+                if 'mtu' in obj:
+                    mtu_objs.append(obj)
+                elif obj:
                     objs.append(obj)
+        # Appending MTU value to the retrieved dictionary
+        for o, m in zip(objs, mtu_objs):
+            o.update(m)
+            final_objs.append(o)
 
         facts = {}
-
-        if objs:
+        if final_objs:
             facts['vlans'] = []
-            # params = utils.validate_config(self.argument_spec, {'config': objs})
-
-            params = {'config': objs}
-
+            params = {'config': final_objs}
             for cfg in params['config']:
                 facts['vlans'].append(cfg)
         ansible_facts['ansible_network_resources'].update(facts)
@@ -94,20 +97,18 @@ class VlansFacts(object):
 
         if vlan_info == 'Name' and 'Name' not in conf:
             conf = filter(None, conf.split(' '))
-            q("Name: ", conf)
-            config['vlan_id'] = conf[0]
+            config['vlan_id'] = int(conf[0])
             config['name'] = conf[1]
             if len(conf[2].split('/')) > 1:
-                config['state'] = conf[2].split('/')[0]
+                if conf[2].split('/')[0] == 'sus':
+                    config['state'] = 'suspend'
+                elif conf[2].split('/')[0] == 'act':
+                    config['state'] = 'active'
                 config['shutdown'] = True
             else:
                 config['state'] = conf[2]
         elif vlan_info == 'Type' and 'Type' not in conf:
             conf = filter(None, conf.split(' '))
-            q("Type: ", conf)
-            config['mtu'] = conf[3]
-                # config['name'] = normalize_interface(intf)
-        # port_priority = utils.parse_conf_arg(conf, 'lacp port-priority')
-        # config['port_priority'] = port_priority
+            config['mtu'] = int(conf[3])
 
         return utils.remove_empties(config)
