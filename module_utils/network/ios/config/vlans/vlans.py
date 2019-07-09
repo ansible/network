@@ -10,10 +10,13 @@ is compared to the provided configuration (as dict) and the command set
 necessary to bring the current configuration to it's desired end-state is
 created
 """
+
+from ansible.module_utils.six import iteritems
+
 from ansible.module_utils.network.common.cfg.base import ConfigBase
 from ansible.module_utils.network.common.utils import to_list
 from ansible.module_utils.network.ios.facts.facts import Facts
-import q
+
 
 class Vlans(ConfigBase):
     """
@@ -117,6 +120,26 @@ class Vlans(ConfigBase):
                   to the desired configuration
         """
         commands = []
+        want = kwargs['want']
+        have = kwargs['have']
+
+        check = False
+        for each in want:
+            for every in have:
+                if every['vlan_id'] == each['vlan_id']:
+                    check = True
+                    break
+                else:
+                    continue
+            if check:
+                kwargs = {'want': each, 'have': every}
+            else:
+                kwargs = {'want': each, 'have': {}}
+            commands.extend(Vlans.clear_interface(**kwargs))
+            commands.extend(Vlans.set_interface(**kwargs))
+        # Remove the duplicate interface call
+        commands = Vlans._remove_duplicate_interface(commands)
+
         return commands
 
     @staticmethod
@@ -128,6 +151,31 @@ class Vlans(ConfigBase):
                   to the desired configuration
         """
         commands = []
+        want = kwargs['want']
+        have = kwargs['have']
+
+        check = False
+        for every in have:
+            for each in want:
+                if each['vlan_id'] == every['vlan_id']:
+                    check = True
+                    break
+            else:
+                # We didn't find a matching desired state, which means we can
+                # pretend we recieved an empty desired state.
+                #interface = dict(name=each['name'])
+                kwargs = {'want': each, 'have': every}
+                commands.extend(Vlans.clear_interface(**kwargs))
+                continue
+            if check:
+                kwargs = {'want': each, 'have': every}
+            else:
+                kwargs = {'want': each, 'have': {}}
+            commands.extend(Vlans.clear_interface(**kwargs))
+            commands.extend(Vlans.set_interface(**kwargs))
+        # Remove the duplicate interface call
+        commands = Vlans._remove_duplicate_interface(commands)
+
         return commands
 
     @staticmethod
@@ -139,6 +187,23 @@ class Vlans(ConfigBase):
                   the current configuration
         """
         commands = []
+        want = kwargs['want']
+        have = kwargs['have']
+
+        check = False
+        for each in want:
+            for every in have:
+                if each.get('vlan_id') == every.get('vlan_id'):
+                    check = True
+                    break
+                else:
+                    continue
+            if check:
+                kwargs = {'want': each, 'have': every}
+            else:
+                kwargs = {'want': each, 'have': {}}
+            commands.extend(Vlans.set_interface(**kwargs))
+
         return commands
 
     @staticmethod
@@ -150,21 +215,50 @@ class Vlans(ConfigBase):
                   of the provided objects
         """
         commands = []
+        want = kwargs['want']
+        have = kwargs['have']
+
+        check = False
+        for each in want:
+            for every in have:
+                if each.get('vlan_id') == every.get('vlan_id'):
+                    check = True
+                    break
+                else:
+                    continue
+            if check:
+                kwargs = {'want': each, 'have': every}
+            else:
+                kwargs = {'want': each, 'have': {}}
+            commands.extend(Vlans.clear_interface(**kwargs))
+
         return commands
 
     @staticmethod
-    def _remove_command_from_interface(interface, cmd, commands):
-        if interface not in commands:
-            commands.insert(0, interface)
-        commands.append('no %s' % cmd)
+    def _remove_command_from_interface(vlan, commands):
+        commands.append('no %s' % vlan)
         return commands
 
     @staticmethod
-    def _add_command_to_interface(interface, cmd, commands):
-        if interface not in commands:
-            commands.insert(0, interface)
+    def _add_command_to_interface(vlan_id, cmd, commands):
+        if vlan_id not in commands:
+            commands.insert(0, vlan_id)
         if cmd not in commands:
             commands.append(cmd)
+
+    @staticmethod
+    def _remove_duplicate_interface(commands):
+        # Remove duplicate interface from commands
+        set_cmd = []
+        for each in commands:
+            if 'interface' in each:
+                interface = each
+                if interface not in set_cmd:
+                    set_cmd.append(each)
+            else:
+                set_cmd.append(each)
+
+        return set_cmd
 
     @staticmethod
     def set_interface(**kwargs):
@@ -172,6 +266,29 @@ class Vlans(ConfigBase):
         commands = []
         want = kwargs['want']
         have = kwargs['have']
+        vlan = 'vlan {}'.format(want.get('vlan_id'))
+
+        # Get the diff b/w want n have
+        want_dict = set(tuple({k: v for k, v in iteritems(want) if v is not None}.items()))
+        have_dict = set(tuple({k: v for k, v in iteritems(have) if v is not None}.items()))
+        diff = want_dict - have_dict
+
+        if diff:
+            name = dict(diff).get('name')
+            state = dict(diff).get('state')
+            shutdown = dict(diff).get('shutdown')
+            mtu = dict(diff).get('mtu')
+            if name:
+                cmd = 'name {}'.format(name)
+                Vlans._add_command_to_interface(vlan, cmd, commands)
+            if state:
+                cmd = 'state {}'.format(state)
+                Vlans._add_command_to_interface(vlan, cmd, commands)
+            if shutdown:
+                Vlans._add_command_to_interface(vlan, 'shutdown', commands)
+            if mtu:
+                cmd = 'mtu {}'.format(mtu)
+                Vlans._add_command_to_interface(vlan, cmd, commands)
 
         return commands
 
@@ -181,5 +298,9 @@ class Vlans(ConfigBase):
         commands = []
         want = kwargs['want']
         have = kwargs['have']
+        vlan = 'vlan {}'.format(have.get('vlan_id'))
+
+        if have.get('vlan_id') and have.get('vlan_id') != want.get('vlan_id'):
+            Vlans._remove_command_from_interface(vlan, commands)
 
         return commands
