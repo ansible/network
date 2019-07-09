@@ -179,7 +179,7 @@ commands:
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.network.ios.argspec.vlans.vlans import VlansArgs
 from ansible.module_utils.network.ios.config.vlans.vlans import Vlans
-import q
+
 
 def main():
     """
@@ -187,7 +187,6 @@ def main():
 
     :returns: the result form module invocation
     """
-    q("ios_vlans")
     module = AnsibleModule(argument_spec=VlansArgs.argument_spec,
                            supports_check_mode=True)
 
