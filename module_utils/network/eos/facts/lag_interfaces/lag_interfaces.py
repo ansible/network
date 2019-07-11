@@ -37,15 +37,19 @@ class Lag_interfacesFacts(FactsBase):
                                                    data,
                                                    re.DOTALL)]
 
-        objs = []
+        objs = {}
         for resource in resources:
             if resource:
                 obj = self.render_config(self.generated_spec, resource)
                 if obj:
-                    objs.append(obj)
+                    group_name = obj['name']
+                    if group_name in objs:
+                        objs[group_name]['members'].extend(obj['members'])
+                    else:
+                        objs[group_name] = obj
         facts = {}
         if objs:
-            facts['lag_interfaces'] = objs
+            facts['lag_interfaces'] = list(objs.values())
         self.ansible_facts['ansible_network_resources'].update(facts)
         return self.ansible_facts
 
@@ -61,10 +65,11 @@ class Lag_interfacesFacts(FactsBase):
         """
         config = deepcopy(spec)
 
-        config['name'] = self.parse_conf_arg(conf, 'interface')
+        interface = {'member': self.parse_conf_arg(conf, 'interface')}
 
         match = re.match(r'.*channel-group (\d+) mode (\S+)', conf, re.MULTILINE | re.DOTALL)
         if match:
-            config['name'], config['mode'] = match.groups()
+            config['name'], interface['mode'] = match.groups()
+            config['members'] = [interface]
 
         return self.generate_final_config(config)
