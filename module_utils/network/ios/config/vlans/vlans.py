@@ -101,7 +101,7 @@ class Vlans(ConfigBase):
             kwargs = {'want': want, 'have': have}
             commands = self._state_overridden(**kwargs)
         elif state == 'deleted':
-            kwargs = {'want': want, 'have': have}
+            kwargs = {'want': want, 'have': have, 'state': state}
             commands = self._state_deleted(**kwargs)
         elif state == 'merged':
             kwargs = {'want': want, 'have': have}
@@ -217,6 +217,7 @@ class Vlans(ConfigBase):
         commands = []
         want = kwargs['want']
         have = kwargs['have']
+        state = kwargs['state']
 
         check = False
         for each in want:
@@ -227,16 +228,21 @@ class Vlans(ConfigBase):
                 else:
                     continue
             if check:
-                kwargs = {'want': each, 'have': every}
+                kwargs = {'want': each, 'have': every, 'state': state}
             else:
-                kwargs = {'want': each, 'have': {}}
+                kwargs = {'want': each, 'have': {}, 'state': state}
             commands.extend(Vlans.clear_interface(**kwargs))
 
         return commands
 
     @staticmethod
-    def _remove_command_from_interface(vlan, commands):
-        commands.append('no %s' % vlan)
+    def _remove_command_from_interface(vlan, cmd, commands):
+        if vlan not in commands and cmd != 'vlan':
+            commands.insert(0, vlan)
+        elif cmd == 'vlan':
+            commands.append('no %s' % vlan)
+            return commands
+        commands.append('no %s' % cmd)
         return commands
 
     @staticmethod
@@ -251,9 +257,9 @@ class Vlans(ConfigBase):
         # Remove duplicate interface from commands
         set_cmd = []
         for each in commands:
-            if 'interface' in each:
-                interface = each
-                if interface not in set_cmd:
+            if 'vlan' in each:
+                vlan = each
+                if vlan not in set_cmd:
                     set_cmd.append(each)
             else:
                 set_cmd.append(each)
@@ -278,17 +284,20 @@ class Vlans(ConfigBase):
             state = dict(diff).get('state')
             shutdown = dict(diff).get('shutdown')
             mtu = dict(diff).get('mtu')
+            remote_span = dict(diff).get('remote_span')
             if name:
                 cmd = 'name {}'.format(name)
                 Vlans._add_command_to_interface(vlan, cmd, commands)
             if state:
                 cmd = 'state {}'.format(state)
                 Vlans._add_command_to_interface(vlan, cmd, commands)
-            if shutdown:
-                Vlans._add_command_to_interface(vlan, 'shutdown', commands)
             if mtu:
                 cmd = 'mtu {}'.format(mtu)
                 Vlans._add_command_to_interface(vlan, cmd, commands)
+            if remote_span:
+                Vlans._add_command_to_interface(vlan, 'remote-span', commands)
+            if shutdown:
+                Vlans._add_command_to_interface(vlan, 'shutdown', commands)
 
         return commands
 
@@ -298,9 +307,19 @@ class Vlans(ConfigBase):
         commands = []
         want = kwargs['want']
         have = kwargs['have']
+        state = kwargs['state']
         vlan = 'vlan {}'.format(have.get('vlan_id'))
 
-        if have.get('vlan_id') and have.get('vlan_id') != want.get('vlan_id'):
-            Vlans._remove_command_from_interface(vlan, commands)
+        if have.get('vlan_id') and (have.get('vlan_id') != want.get('vlan_id') or state == 'deleted'):
+            Vlans._remove_command_from_interface(vlan, 'vlan', commands)
+        else:
+            if have.get('mtu') != want.get('mtu'):
+                Vlans._remove_command_from_interface(vlan, 'mtu', commands)
+            if have.get('remote_span') != want.get('remote_span') and want.get('remote_span'):
+                Vlans._remove_command_from_interface(vlan, 'remote-span', commands)
+            if have.get('shutdown') != want.get('shutdown') and want.get('shutdown'):
+                Vlans._remove_command_from_interface(vlan, 'shutdown', commands)
+            if have.get('state') != want.get('state') and want.get('state'):
+                Vlans._remove_command_from_interface(vlan, 'state', commands)
 
         return commands
