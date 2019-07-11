@@ -73,6 +73,10 @@ module: ios_vlans
           choices:
           - active
           - suspend
+        remote_span:
+          description:
+          - Configure as Remote SPAN VLAN
+          type: bool
         shutdown:
           description:
           - Shutdown VLAN switching.
@@ -91,68 +95,262 @@ module: ios_vlans
 EXAMPLES = """
 # Using deleted
 
-<placeholder for the configuration example prior to module invocation>
+# Before state:
+# -------------
+#
+# vios#show vlan
+# VLAN Name                             Status    Ports
+# ---- -------------------------------- --------- -------------------------------
+# 1    default                          active    Gi0/1, Gi0/2
+# 10   vlan_10                          active
+# 20   vlan_20                          act/lshut
+# 30   vlan_30                          sus/lshut
+# 1002 fddi-default                     act/unsup
+# 1003 token-ring-default               act/unsup
+# 1004 fddinet-default                  act/unsup
+# 1005 trnet-default                    act/unsup
+#
+# VLAN Type  SAID       MTU   Parent RingNo BridgeNo Stp  BrdgMode Trans1 Trans2
+# ---- ----- ---------- ----- ------ ------ -------- ---- -------- ------ ------
+# 1    enet  100001     1500  -      -      -        -    -        0      0
+# 10   enet  100010     1500  -      -      -        -    -        0      0
+# 20   enet  100020     610   -      -      -        -    -        0      0
+# 30   enet  100030     1500  -      -      -        -    -        0      0
+# 1002 fddi  101002     1500  -      -      -        -    -        0      0
+# 1003 tr    101003     1500  -      -      -        -    -        0      0
+# 1004 fdnet 101004     1500  -      -      -        ieee -        0      0
+# 1005 trnet 101005     1500  -      -      -        ibm  -        0      0
+#
+# Remote SPAN VLANs
+# ------------------------------------------------------------------------------
+# 10
 
-- name: Configure vlans
-  myos_interfaces:
-    operation: deleted
+- name: Delete attributes of given VLANs
+  ios_vlans:
+    config:
+      - vlan_id: 10
+      - vlan_id: 20
+      - vlan_id: 30
+    state: deleted
 
-<placeholder for the configuration example after module invocation>
-
+# After state:
+# -------------
+#
+# vios#show vlan
+# VLAN Name                             Status    Ports
+# ---- -------------------------------- --------- -------------------------------
+# 1    default                          active    Gi0/1, Gi0/2
+# 1002 fddi-default                     act/unsup
+# 1003 token-ring-default               act/unsup
+# 1004 fddinet-default                  act/unsup
+# 1005 trnet-default                    act/unsup
+#
+# VLAN Type  SAID       MTU   Parent RingNo BridgeNo Stp  BrdgMode Trans1 Trans2
+# ---- ----- ---------- ----- ------ ------ -------- ---- -------- ------ ------
+# 1    enet  100001     1500  -      -      -        -    -        0      0
+# 1002 fddi  101002     1500  -      -      -        -    -        0      0
+# 1003 tr    101003     1500  -      -      -        -    -        0      0
+# 1004 fdnet 101004     1500  -      -      -        ieee -        0      0
+# 1005 trnet 101005     1500  -      -      -        ibm  -        0      0
 
 # Using merged
 
-<placeholder for the configuration example prior to module invocation>
+# Using merged
+  
+# Before state:
+# -------------
+#
+# vios#show vlan
+# VLAN Name                             Status    Ports
+# ---- -------------------------------- --------- -------------------------------
+# 1    default                          active    Gi0/1, Gi0/2
+# 1002 fddi-default                     act/unsup
+# 1003 token-ring-default               act/unsup
+# 1004 fddinet-default                  act/unsup
+# 1005 trnet-default                    act/unsup
+#
+# VLAN Type  SAID       MTU   Parent RingNo BridgeNo Stp  BrdgMode Trans1 Trans2
+# ---- ----- ---------- ----- ------ ------ -------- ---- -------- ------ ------
+# 1    enet  100001     1500  -      -      -        -    -        0      0
+# 1002 fddi  101002     1500  -      -      -        -    -        0      0
+# 1003 tr    101003     1500  -      -      -        -    -        0      0
+# 1004 fdnet 101004     1500  -      -      -        ieee -        0      0
+# 1005 trnet 101005     1500  -      -      -        ibm  -        0      0
 
-- name: Configure vlans
-  nxos_interfaces:
+- name: Merge provided configuration with device configuration
+  ios_vlans:
     config:
-      - name: Ethernet1/1
-        description: 'Configured by Ansible'
-        enable: True
-      - name: Ethernet1/2
-        description: 'Configured by Ansible'
-        enable: False
-    operation: merged
+      - name: Vlan_10
+        vlan_id: 10
+        state: active
+        shutdown: False
+        remote_span: 10
+      - name: Vlan_20
+        vlan_id: 20
+        mtu: 610
+        state: active
+        shutdown: True
+      - name: Vlan_30
+        vlan_id: 30
+        state: suspend
+        shutdown: True
+    state: merged
 
-<placeholder for the configuration example after module invocation>
-
+# After state:
+# ------------
+#
+# vios#show vlan
+# VLAN Name                             Status    Ports
+# ---- -------------------------------- --------- -------------------------------
+# 1    default                          active    Gi0/1, Gi0/2
+# 10   vlan_10                          active
+# 20   vlan_20                          act/lshut
+# 30   vlan_30                          sus/lshut
+# 1002 fddi-default                     act/unsup
+# 1003 token-ring-default               act/unsup
+# 1004 fddinet-default                  act/unsup
+# 1005 trnet-default                    act/unsup
+#
+# VLAN Type  SAID       MTU   Parent RingNo BridgeNo Stp  BrdgMode Trans1 Trans2
+# ---- ----- ---------- ----- ------ ------ -------- ---- -------- ------ ------
+# 1    enet  100001     1500  -      -      -        -    -        0      0
+# 10   enet  100010     1500  -      -      -        -    -        0      0
+# 20   enet  100020     610   -      -      -        -    -        0      0
+# 30   enet  100030     1500  -      -      -        -    -        0      0
+# 1002 fddi  101002     1500  -      -      -        -    -        0      0
+# 1003 tr    101003     1500  -      -      -        -    -        0      0
+# 1004 fdnet 101004     1500  -      -      -        ieee -        0      0
+# 1005 trnet 101005     1500  -      -      -        ibm  -        0      0
+#
+# Remote SPAN VLANs
+# ------------------------------------------------------------------------------
+# 10
 
 # Using overridden
+  
+# Before state:
+# -------------
+#
+# vios#show vlan
+# VLAN Name                             Status    Ports
+# ---- -------------------------------- --------- -------------------------------
+# 1    default                          active    Gi0/1, Gi0/2
+# 10   vlan_10                          active
+# 20   vlan_20                          act/lshut
+# 30   vlan_30                          sus/lshut
+# 1002 fddi-default                     act/unsup
+# 1003 token-ring-default               act/unsup
+# 1004 fddinet-default                  act/unsup
+# 1005 trnet-default                    act/unsup
+#
+# VLAN Type  SAID       MTU   Parent RingNo BridgeNo Stp  BrdgMode Trans1 Trans2
+# ---- ----- ---------- ----- ------ ------ -------- ---- -------- ------ ------
+# 1    enet  100001     1500  -      -      -        -    -        0      0
+# 10   enet  100010     1500  -      -      -        -    -        0      0
+# 20   enet  100020     610   -      -      -        -    -        0      0
+# 30   enet  100030     1500  -      -      -        -    -        0      0
+# 1002 fddi  101002     1500  -      -      -        -    -        0      0
+# 1003 tr    101003     1500  -      -      -        -    -        0      0
+# 1004 fdnet 101004     1500  -      -      -        ieee -        0      0
+# 1005 trnet 101005     1500  -      -      -        ibm  -        0      0
+#
+# Remote SPAN VLANs
+# ------------------------------------------------------------------------------
+# 10
 
-<placeholder for the configuration example prior to module invocation>
-
-- name: Configure vlans
-  myos_interfaces:
+- name: Override device configuration of all VLANs with provided configuration
+  ios_vlans:
     config:
-      - name: Ethernet1/1
-        description: 'Configured by Ansible'
-        enable: True
-      - name: Ethernet1/2
-        description: 'Configured by Ansible'
-        enable: False
-    operation: overridden
+      - name: Vlan_10
+        vlan_id: 10
+        mtu: 1000
+    state: overridden
 
-<placeholder for the configuration example after module invocation>
-
+# After state:
+# ------------
+#
+# vios#show vlan
+# VLAN Name                             Status    Ports
+# ---- -------------------------------- --------- -------------------------------
+# 10   Vlan_10                          active
+#
+# VLAN Type  SAID       MTU   Parent RingNo BridgeNo Stp  BrdgMode Trans1 Trans2
+# ---- ----- ---------- ----- ------ ------ -------- ---- -------- ------ ------
+# 10   enet  100010     1000  -      -      -        -    -        0      0
 
 # Using replaced
 
-<placeholder for the configuration example prior to module invocation>
+# Before state:
+# -------------
+#
+# vios#show vlan
+# VLAN Name                             Status    Ports
+# ---- -------------------------------- --------- -------------------------------
+# 1    default                          active    Gi0/1, Gi0/2
+# 10   vlan_10                          active
+# 20   vlan_20                          act/lshut
+# 30   vlan_30                          sus/lshut
+# 1002 fddi-default                     act/unsup
+# 1003 token-ring-default               act/unsup
+# 1004 fddinet-default                  act/unsup
+# 1005 trnet-default                    act/unsup
+#
+# VLAN Type  SAID       MTU   Parent RingNo BridgeNo Stp  BrdgMode Trans1 Trans2
+# ---- ----- ---------- ----- ------ ------ -------- ---- -------- ------ ------
+# 1    enet  100001     1500  -      -      -        -    -        0      0
+# 10   enet  100010     1500  -      -      -        -    -        0      0
+# 20   enet  100020     610   -      -      -        -    -        0      0
+# 30   enet  100030     1500  -      -      -        -    -        0      0
+# 1002 fddi  101002     1500  -      -      -        -    -        0      0
+# 1003 tr    101003     1500  -      -      -        -    -        0      0
+# 1004 fdnet 101004     1500  -      -      -        ieee -        0      0
+# 1005 trnet 101005     1500  -      -      -        ibm  -        0      0
+#
+# Remote SPAN VLANs
+# ------------------------------------------------------------------------------
+# 10
 
-- name: Configure vlans
-  nxos_interfaces:
+- name: Replaces device configuration of listed VLANs with provided configuration
+  ios_vlans:
     config:
-      - name: Ethernet1/1
-        description: 'Configured by Ansible'
-        enable: True
-      - name: Ethernet1/2
-        description: 'Configured by Ansible'
-        enable: False
-    operation: replaced
+      - name: Test_VLAN20
+        vlan_id: 20
+        mtu: 700
+        shutdown: False
+      - vlan_id: 30
+        name: Test_VLAN30
+        mtu: 1000
+    state: replaced
 
-<placeholder for the configuration example after module invocation>
-
+# After state:
+# ------------
+#
+# vios#show vlan
+# VLAN Name                             Status    Ports
+# ---- -------------------------------- --------- -------------------------------
+# 1    default                          active    Gi0/1, Gi0/2
+# 10   vlan_10                          active
+# 20   Test_VLAN20                      active
+# 30   Test_VLAN30                      sus/lshut
+# 1002 fddi-default                     act/unsup
+# 1003 token-ring-default               act/unsup
+# 1004 fddinet-default                  act/unsup
+# 1005 trnet-default                    act/unsup
+#
+# VLAN Type  SAID       MTU   Parent RingNo BridgeNo Stp  BrdgMode Trans1 Trans2
+# ---- ----- ---------- ----- ------ ------ -------- ---- -------- ------ ------
+# 1    enet  100001     1500  -      -      -        -    -        0      0
+# 10   enet  100010     1500  -      -      -        -    -        0      0
+# 20   enet  100020     700   -      -      -        -    -        0      0
+# 30   enet  100030     1000  -      -      -        -    -        0      0
+# 1002 fddi  101002     1500  -      -      -        -    -        0      0
+# 1003 tr    101003     1500  -      -      -        -    -        0      0
+# 1004 fdnet 101004     1500  -      -      -        ieee -        0      0
+# 1005 trnet 101005     1500  -      -      -        ibm  -        0      0
+#
+# Remote SPAN VLANs
+# ------------------------------------------------------------------------------
+# 10
 
 """
 RETURN = """
