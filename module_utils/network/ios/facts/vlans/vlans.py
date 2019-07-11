@@ -47,11 +47,11 @@ class VlansFacts(object):
 
         objs = []
         mtu_objs = []
+        remote_objs = []
         final_objs = []
         if not data:
             data = connection.get('show vlan')
         # operate on a collection of resource x
-
         config = data.split('\n')
         # Get individual vlan configs separately
         vlan_info = ''
@@ -66,12 +66,22 @@ class VlansFacts(object):
                 obj = self.render_config(self.generated_spec, conf, vlan_info)
                 if 'mtu' in obj:
                     mtu_objs.append(obj)
+                elif 'remote_span' in obj:
+                    remote_objs = obj
                 elif obj:
                     objs.append(obj)
         # Appending MTU value to the retrieved dictionary
         for o, m in zip(objs, mtu_objs):
             o.update(m)
             final_objs.append(o)
+
+        # Appending Remote Span value to related VLAN:
+        if remote_objs.get('remote_span'):
+            for each in remote_objs.get('remote_span'):
+                for every in final_objs:
+                    if each == every.get('vlan_id'):
+                        every.update({'remote_span': True})
+                        break
 
         facts = {}
         if final_objs:
@@ -106,9 +116,21 @@ class VlansFacts(object):
                     config['state'] = 'active'
                 config['shutdown'] = True
             else:
-                config['state'] = conf[2]
+                if conf[2] == 'suspended':
+                    config['state'] = 'suspend'
         elif vlan_info == 'Type' and 'Type' not in conf:
             conf = filter(None, conf.split(' '))
             config['mtu'] = int(conf[3])
+        elif vlan_info == 'Remote':
+            if len(conf.split('-')[0]) == 2 or len(conf.split(',')) > 1:
+                remote_span_vlan = []
+                if len(conf.split(',')) > 1:
+                    remote_span_vlan = conf.split(',')
+                else:
+                    remote_span_vlan.append(conf)
+                remote_span = []
+                for each in remote_span_vlan:
+                    remote_span.append(int(each))
+                config['remote_span'] = remote_span
 
         return utils.remove_empties(config)
