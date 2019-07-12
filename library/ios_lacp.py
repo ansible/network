@@ -43,8 +43,8 @@ DOCUMENTATION = """
 ---
 module: ios_lacp
 version_added: 2.9
-short_description: Manage Link Aggregation Control Protocol (LACP) on Cisco IOS devices.
-description: This module provides declarative management of LACP on Cisco IOS network devices.
+short_description: Manage Global Link Aggregation Control Protocol (LACP) on Cisco IOS devices.
+description: This module provides declarative management of Global LACP on Cisco IOS network devices.
 author: Sumit Jaiswal (@justjais)
 notes:
   - 'Tested against Cisco IOSv Version 15.2 on VIRL
@@ -69,52 +69,85 @@ options:
     - deleted
     default: merged
 """
+
 EXAMPLES = """
-# Using deleted
+# Using Deleted
+#
+# Before state:
+# -------------
+#
+# vios#show lacp sys-id
+# 123, 5e00.0000.8000
 
-<placeholder for the configuration example prior to module invocation>
+- name: Delete Global LACP attribute with config
+  ios_lacp:
+    config:
+    - system_priority: 123
+    state: deleted
 
-- name: Configure lacp
-  myos_interfaces:
-    operation: deleted
+# After state:
+# -------------
+#
+# vios#show lacp sys-id
+# 32768, 5e00.0000.8000
 
-<placeholder for the configuration example after module invocation>
+# Using Deleted
+#
+# Before state:
+# -------------
+#
+# vios#show lacp sys-id
+# 123, 5e00.0000.8000
 
+- name: Delete Global LACP attribute without config
+  ios_lacp:
+    state: deleted
+
+# After state:
+# -------------
+#
+# vios#show lacp sys-id
+# 32768, 5e00.0000.8000
 
 # Using merged
+#
+# Before state:
+# -------------
+#
+# vios#show lacp sys-id
+# 250, 5e00.0000.8000
 
-<placeholder for the configuration example prior to module invocation>
-
-- name: Configure lacp
-  nxos_interfaces:
+- name: Merge provided configuration with device configuration
+  ios_lacp:
     config:
-      - name: Ethernet1/1
-        description: 'Configured by Ansible'
-        enable: True
-      - name: Ethernet1/2
-        description: 'Configured by Ansible'
-        enable: False
-    operation: merged
+    - system_priority: 123
+    state: merged
 
-<placeholder for the configuration example after module invocation>
+# After state:
+# ------------
+#
+# vios#show lacp sys-id
+# 123, 5e00.0000.8000
 
 # Using replaced
+#
+# Before state:
+# -------------
+#
+# vios#show lacp sys-id
+# 32768, 5e00.0000.8000
 
-<placeholder for the configuration example prior to module invocation>
-
-- name: Configure lacp
-  nxos_interfaces:
+- name: Replaces Global LACP configuration
+  ios_lacp:
     config:
-      - name: Ethernet1/1
-        description: 'Configured by Ansible'
-        enable: True
-      - name: Ethernet1/2
-        description: 'Configured by Ansible'
-        enable: False
-    operation: replaced
+    - system_priority: 123
+    state: replaced
 
-<placeholder for the configuration example after module invocation>
-
+# After state:
+# ------------
+#
+# vios#show lacp sys-id
+# 123, 5e00.0000.8000
 
 """
 RETURN = """
