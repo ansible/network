@@ -96,13 +96,51 @@ EXAMPLES = """
 #  shutdown
 #  lacp port-priority 30
 
-- name: Delete LAG attributes of given lacp_interfaces (Note: This won't delete the interface itself)
+- name: Delete LACP attributes of given interfaces (Note: This won't delete the interface itself)
   ios_lacp_interfaces:
     config:
       - name: GigabitEthernet0/1
-      - name: GigabitEthernet0/2
-      - name: GigabitEthernet0/3
-    operation: deleted
+    state: deleted
+
+# After state:
+# -------------
+#
+# vios#show running-config | section ^interface
+# interface Port-channel10
+# interface Port-channel20
+# interface Port-channel30
+# interface GigabitEthernet0/1
+#  shutdown
+# interface GigabitEthernet0/2
+#  shutdown
+#  lacp port-priority 20
+# interface GigabitEthernet0/3
+#  shutdown
+#  lacp port-priority 30
+
+# Using Deleted
+#
+# Before state:
+# -------------
+#
+# vios#show running-config | section ^interface
+# interface Port-channel10
+#  flowcontrol receive on
+# interface Port-channel20
+# interface Port-channel30
+# interface GigabitEthernet0/1
+#  shutdown
+#  lacp port-priority 10
+# interface GigabitEthernet0/2
+#  shutdown
+#  lacp port-priority 20
+# interface GigabitEthernet0/3
+#  shutdown
+#  lacp port-priority 30
+
+- name: Delete LACP attributes for all configured interfaces (Note: This won't delete the interface itself)
+  ios_lacp_interfaces:
+    state: deleted
 
 # After state:
 # -------------
@@ -143,7 +181,7 @@ EXAMPLES = """
         port_priority: 20
       - name: GigabitEthernet0/3
         port_priority: 30
-    operation: merged
+    state: merged
 
 # After state:
 # ------------
@@ -188,7 +226,7 @@ EXAMPLES = """
     config:
       - name: GigabitEthernet0/1
         port_priority: 20
-    operation: overridden
+    state: overridden
 
 # After state:
 # ------------
@@ -231,7 +269,7 @@ EXAMPLES = """
     config:
       - name: GigabitEthernet0/3
         port_priority: 40
-    operation: replaced
+    state: replaced
 
 # After state:
 # ------------
