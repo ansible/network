@@ -209,17 +209,22 @@ class Lag_interfaces(ConfigBase):
         have = kwargs['have']
         state = kwargs['state']
 
-        for interface in want:
+        if want:
+            for interface in want:
+                for each in have:
+                    port_channel = 'port-channel{}'.format(interface.get('name'))
+                    if interface.get('name') == each.get('name'):
+                        kwargs = {'want': interface, 'have': each, 'state': state}
+                        commands.extend(Lag_interfaces.clear_interface(**kwargs))
+                    elif port_channel == each.get('members').get('member'):
+                        kwargs = {'want': interface, 'have': each, 'state': state}
+                        commands.extend(Lag_interfaces.clear_interface(**kwargs))
+                    else:
+                        continue
+        else:
             for each in have:
-                port_channel = 'port-channel{}'.format(interface.get('name'))
-                if interface.get('name') == each.get('name'):
-                    kwargs = {'want': interface, 'have': each, 'state': state}
-                    commands.extend(Lag_interfaces.clear_interface(**kwargs))
-                elif port_channel == each.get('members').get('member'):
-                    kwargs = {'want': interface, 'have': each, 'state': state}
-                    commands.extend(Lag_interfaces.clear_interface(**kwargs))
-                else:
-                    continue
+                kwargs = {'want': {}, 'have': each, 'state': state}
+                commands.extend(Lag_interfaces.clear_interface(**kwargs))
 
         return commands
 
