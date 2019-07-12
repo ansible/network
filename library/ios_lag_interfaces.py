@@ -360,7 +360,7 @@ EXAMPLES = """
 #  shutdown
 #  channel-group 30 mode active
 
-- name: Delete LAG attributes of all configured interfaces (Note: This won't delete the interface itself)
+- name: Delete LAG attributes for all configured interfaces (Note: This won't delete the interface itself)
   ios_lag_interfaces:
     state: deleted
 
