@@ -164,8 +164,12 @@ class Lacp(ConfigBase):
         have = kwargs['have']
         state = kwargs['state']
 
-        for w, h in zip(want, have):
-            kwargs = {'want': w, 'have': h, 'state': state}
+        if want:
+            for w, h in zip(want, have):
+                kwargs = {'want': w, 'have': h, 'state': state}
+        else:
+            for each in have:
+                kwargs = {'want': {}, 'have': each, 'state': state}
         commands.extend(Lacp.clear_interface(**kwargs))
 
         return commands
