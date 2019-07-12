@@ -144,7 +144,7 @@ EXAMPLES = """
           member: GigabitEthernet0/4
           mode: active
           flowcontrol: on
-    operation: merged
+    state: merged
 
 # After state:
 # ------------
@@ -204,7 +204,7 @@ EXAMPLES = """
           flowcontrol: on
           member: GigabitEthernet0/3
           mode: auto
-    operation: overridden
+    state: overridden
 
 # After state:
 # ------------
@@ -258,7 +258,7 @@ EXAMPLES = """
           member: GigabitEthernet0/3
           mode: auto
           flowcontrol: on
-    operation: replaced
+    state: replaced
 
 # After state:
 # ------------
@@ -316,8 +316,53 @@ EXAMPLES = """
     config:
       - name: 10
       - name: 20
-      - name: 30
-    operation: deleted
+    state: deleted
+
+# After state:
+# -------------
+#
+# vios#show running-config | section ^interface
+# interface Port-channel10
+# interface Port-channel20
+# interface Port-channel30
+# interface GigabitEthernet0/1
+#  shutdown
+# interface GigabitEthernet0/2
+#  shutdown
+# interface GigabitEthernet0/3
+#  shutdown
+# interface GigabitEthernet0/4
+#  shutdown
+#  channel-group 30 mode active
+
+# Using Deleted
+#
+# Before state:
+# -------------
+#
+# vios#show running-config | section ^interface
+# interface Port-channel10
+#  flowcontrol receive on
+# interface Port-channel20
+# interface Port-channel30
+# interface GigabitEthernet0/1
+#  shutdown
+#  flowcontrol receive on
+#  channel-group 10 mode auto
+# interface GigabitEthernet0/2
+#  shutdown
+#  flowcontrol receive on
+#  channel-group 10 mode auto
+# interface GigabitEthernet0/3
+#  shutdown
+#  channel-group 20 mode on
+# interface GigabitEthernet0/4
+#  shutdown
+#  channel-group 30 mode active
+
+- name: Delete LAG attributes of all configured interfaces (Note: This won't delete the interface itself)
+  ios_lag_interfaces:
+    state: deleted
 
 # After state:
 # -------------
