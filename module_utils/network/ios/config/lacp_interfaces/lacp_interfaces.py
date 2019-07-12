@@ -206,16 +206,22 @@ class Lacp_Interfaces(ConfigBase):
         want = kwargs['want']
         have = kwargs['have']
 
-        for interface in want:
+        if want:
+            for interface in want:
+                for each in have:
+                    if each['name'] == interface['name']:
+                        break
+                else:
+                    continue
+                interface = dict(name=interface['name'])
+                kwargs = {'want': interface, 'have': each}
+                commands.extend(Lacp_Interfaces.clear_interface(**kwargs))
+        else:
             for each in have:
-                if each['name'] == interface['name']:
-                    break
-            else:
-                continue
-            interface = dict(name=interface['name'])
-            kwargs = {'want': interface, 'have': each}
-            commands.extend(Lacp_Interfaces.clear_interface(**kwargs))
-
+                kwargs = {'want': {}, 'have': each}
+                commands.extend(Lacp_Interfaces.clear_interface(**kwargs))
+        q(commands)
+        commands=[]
         return commands
 
     @staticmethod
