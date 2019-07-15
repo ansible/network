@@ -55,11 +55,11 @@ DOCUMENTATION = """
       type: list
       elements: dict
       suboptions:
-        name:
+        id:
           description:
           - ID of Ethernet Channel of interfaces. Note, Port-channel group number must be in
             between 1-48.
-          type: str
+          type: int
           required: True
         members:
           description:
@@ -128,18 +128,18 @@ EXAMPLES = """
 - name: Merge provided configuration with device configuration
   ios_lag_interfaces:
     config:
-      - name: 10
+      - id: 10
         members:
           member: GigabitEthernet0/1
           mode: auto
           flowcontrol: on
           member: GigabitEthernet0/2
           mode: auto
-      - name: 20
+      - id: 20
         members:
           member: GigabitEthernet0/3
           mode: on
-      - name: 30
+      - id: 30
         members:
           member: GigabitEthernet0/4
           mode: active
@@ -197,7 +197,7 @@ EXAMPLES = """
 - name: Override device configuration of all interfaces with provided configuration
   ios_lag_interfaces:
     config:
-      - name: 20
+      - id: 20
         members:
           member: GigabitEthernet0/2
           mode: auto
@@ -253,7 +253,7 @@ EXAMPLES = """
 - name: Replaces device configuration of listed interfaces with provided configuration
   ios_lag_interfaces:
     config:
-      - name: 40
+      - id: 40
         members:
           member: GigabitEthernet0/3
           mode: auto
@@ -314,8 +314,8 @@ EXAMPLES = """
 - name: Delete LAG attributes of given interfaces (Note: This won't delete the interface itself)
   ios_lag_interfaces:
     config:
-      - name: 10
-      - name: 20
+      - id: 10
+      - id: 20
     state: deleted
 
 # After state:
@@ -360,7 +360,7 @@ EXAMPLES = """
 #  shutdown
 #  channel-group 30 mode active
 
-- name: Delete LAG attributes for all configured interfaces (Note: This won't delete the interface itself)
+- name: Delete all configured LAG attributes for interfaces (Note: This won't delete the interface itself)
   ios_lag_interfaces:
     state: deleted
 
