@@ -212,8 +212,8 @@ class Lag_interfaces(ConfigBase):
         if want:
             for interface in want:
                 for each in have:
-                    port_channel = 'port-channel{}'.format(interface.get('name'))
-                    if interface.get('name') == each.get('name'):
+                    port_channel = 'port-channel{}'.format(interface.get('id'))
+                    if interface.get('id') == each.get('id'):
                         kwargs = {'want': interface, 'have': each, 'state': state}
                         commands.extend(Lag_interfaces.clear_interface(**kwargs))
                     elif port_channel == each.get('members').get('member'):
@@ -280,10 +280,10 @@ class Lag_interfaces(ConfigBase):
 
         # Compare the value and set the commands
         if mode:
-            cmd = 'channel-group {} mode {}'.format(want['name'], mode)
+            cmd = 'channel-group {} mode {}'.format(want['id'], mode)
             Lag_interfaces._add_command_to_interface(interface, cmd, commands)
         elif link:
-            cmd = 'channel-group {} mode {}'.format(want['name'], link)
+            cmd = 'channel-group {} link {}'.format(want['id'], link)
             Lag_interfaces._add_command_to_interface(interface, cmd, commands)
         if flowcontrol:
             if have.get('members').get('flowcontrol') == 'on' and flowcontrol == 'off':
@@ -314,7 +314,7 @@ class Lag_interfaces(ConfigBase):
         else:
             if have.get('members').get('flowcontrol'):
                 Lag_interfaces._remove_command_from_interface(interface, 'flowcontrol receive', commands)
-        if have.get('name') and (have.get('name') != want.get('name') or state == 'deleted'):
+        if have.get('id') and (have.get('id') != want.get('id') or state == 'deleted'):
             Lag_interfaces._remove_command_from_interface(interface, 'channel-group', commands)
 
         return commands
