@@ -52,7 +52,7 @@ options:
     suboptions:
       name:
         description:
-          - ID of the link aggregation group (LAG). Must be between 1-2000.
+          - Name of the port-channel interface of the link aggregation group (LAG) e.g., Port-Channel5.
         type: str
         required: True
       members:
@@ -71,7 +71,7 @@ options:
             type: str
             choices:
               - active
-              - on
+              - "on"
               - passive
   state:
     description:
