@@ -92,8 +92,7 @@ class Lag_interfacesFacts(object):
 
         if channel_group:
             channel_group = channel_group.split(' ')
-            config['name'] = channel_group[0]
-            #config['mode'] = channel_group[2]
+            config['id'] = int(channel_group[0])
             if 'mode' in channel_group:
                 mode = channel_group[2]
                 members.update({'mode': mode})
@@ -103,8 +102,6 @@ class Lag_interfacesFacts(object):
         flowcontrol = utils.parse_conf_arg(conf, 'flowcontrol receive')
         if flowcontrol:
             members.update({'flowcontrol': flowcontrol})
-        # else:
-        #     members.update({'flowcontrol': 'off'})
 
         member = normalize_interface(intf)
 
