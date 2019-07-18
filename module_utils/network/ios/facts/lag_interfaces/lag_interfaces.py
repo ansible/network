@@ -56,14 +56,14 @@ class Lag_interfacesFacts(object):
             if conf:
                 obj = self.render_config(self.generated_spec, conf)
                 if obj:
+                    if not obj.get('members'):
+                        obj.update({'members': []})
                     objs.append(obj)
         facts = {}
 
         if objs:
             facts['lag_interfaces'] = []
-            #params = utils.validate_config(self.argument_spec, {'config': objs})
-
-            params = {'config': objs}
+            params = utils.validate_config(self.argument_spec, {'config': objs})
 
             for cfg in params['config']:
                 facts['lag_interfaces'].append(cfg)
@@ -87,26 +87,23 @@ class Lag_interfacesFacts(object):
 
         if get_interface_type(intf) == 'unknown':
             return {}
-        members = {}
+        member_config = {}
         channel_group = utils.parse_conf_arg(conf, 'channel-group')
-
-        if channel_group:
-            channel_group = channel_group.split(' ')
-            config['id'] = int(channel_group[0])
-            if 'mode' in channel_group:
-                mode = channel_group[2]
-                members.update({'mode': mode})
-            if 'link' in channel_group:
-                link = channel_group[2]
-                members.update({'link': link})
-        flowcontrol = utils.parse_conf_arg(conf, 'flowcontrol receive')
-        if flowcontrol:
-            members.update({'flowcontrol': flowcontrol})
-
-        member = normalize_interface(intf)
-
-        members.update({'member': member})
-        config['members'] = members
+        if intf.startswith('Gi'):
+            config['name'] = intf
+            config['members'] = []
+            if channel_group:
+                channel_group = channel_group.split(' ')
+                id = channel_group[0]
+                config['name'] = 'Port-channel{}'.format(str(id))
+                if 'mode' in channel_group:
+                    mode = channel_group[2]
+                    member_config.update({'mode': mode})
+                if 'link' in channel_group:
+                    link = channel_group[2]
+                    member_config.update({'link': link})
+            if member_config.get('mode') or member_config.get('link'):
+                member_config['member'] = normalize_interface(intf)
+                config['members'].append(member_config)
 
         return utils.remove_empties(config)
-
