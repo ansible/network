@@ -11,6 +11,7 @@ necessary to bring the current configuration to it's desired end-state is
 created
 """
 
+import re
 from ansible.module_utils.six import iteritems
 
 from ansible.module_utils.network.common.cfg.base import ConfigBase
@@ -98,17 +99,18 @@ class Lag_interfaces(ConfigBase):
         """
 
         state = self._module.params['state']
+        module = self._module
         if state == 'overridden':
-            kwargs = {'want': want, 'have': have}
+            kwargs = {'want': want, 'have': have, 'module': module}
             commands = self._state_overridden(**kwargs)
         elif state == 'deleted':
             kwargs = {'want': want, 'have': have, 'state': state}
             commands = self._state_deleted(**kwargs)
         elif state == 'merged':
-            kwargs = {'want': want, 'have': have}
+            kwargs = {'want': want, 'have': have, 'module': module}
             commands = self._state_merged(**kwargs)
         elif state == 'replaced':
-            kwargs = {'want': want, 'have': have}
+            kwargs = {'want': want, 'have': have, 'module': module}
             commands = self._state_replaced(**kwargs)
         return commands
 
@@ -123,17 +125,19 @@ class Lag_interfaces(ConfigBase):
         commands = []
         want = kwargs['want']
         have = kwargs['have']
+        module = kwargs['module']
 
         for interface in want:
             for each_interface in interface.get('members'):
                 for each in have:
-                    if each['members']['member'] == each_interface['member']:
-                        break
+                    if each['members']:
+                        if each['members'][0]['member'] == each_interface['member']:
+                            break
                 else:
                     continue
                 kwargs = {'want': interface, 'have': each}
                 commands.extend(Lag_interfaces.clear_interface(**kwargs))
-                kwargs = {'want': interface, 'have': each}
+                kwargs = {'want': interface, 'have': each, 'module': module}
                 commands.extend(Lag_interfaces.set_interface(**kwargs))
         # Remove the duplicate interface call
         commands = Lag_interfaces._remove_duplicate_interface(commands)
@@ -151,12 +155,18 @@ class Lag_interfaces(ConfigBase):
         commands = []
         want = kwargs['want']
         have = kwargs['have']
+        module = kwargs['module']
 
         for interface in want:
             for each_interface in interface.get('members'):
                 for each in have:
-                    if each['members']['member'] == each_interface.get('member'):
-                        break
+                    if each['members']:
+                        if each['members'][0]['member'] == each_interface['member']:
+                            break
+                        else:
+                            kwargs = {'want': interface, 'have': each}
+                            commands.extend(Lag_interfaces.clear_interface(**kwargs))
+                            continue
                     else:
                         # We didn't find a matching desired state, which means we can
                         # pretend we recieved an empty desired state.
@@ -165,7 +175,7 @@ class Lag_interfaces(ConfigBase):
                         continue
                 kwargs = {'want': interface, 'have': each}
                 commands.extend(Lag_interfaces.clear_interface(**kwargs))
-                kwargs = {'want': interface, 'have': each, 'commands': commands}
+                kwargs = {'want': interface, 'have': each, 'commands': commands, 'module': module}
                 commands.extend(Lag_interfaces.set_interface(**kwargs))
         # Remove the duplicate interface call
         commands = Lag_interfaces._remove_duplicate_interface(commands)
@@ -183,15 +193,20 @@ class Lag_interfaces(ConfigBase):
         commands = []
         want = kwargs['want']
         have = kwargs['have']
+        module = kwargs['module']
 
         for interface in want:
             for each_interface in interface.get('members'):
                 for each in have:
-                    if each['members']['member'] == each_interface['member']:
-                        break
+                    if each['members']:
+                        if each['members'][0]['member'] == each_interface['member']:
+                            break
+                    else:
+                        if each.get('name') == each_interface['member']:
+                            break
                 else:
                     continue
-                kwargs = {'want': interface, 'have': each}
+                kwargs = {'want': interface, 'have': each, 'module': module}
                 commands.extend(Lag_interfaces.set_interface(**kwargs))
 
         return commands
@@ -212,15 +227,12 @@ class Lag_interfaces(ConfigBase):
         if want:
             for interface in want:
                 for each in have:
-                    port_channel = 'port-channel{}'.format(interface.get('id'))
-                    if interface.get('id') == each.get('id'):
-                        kwargs = {'want': interface, 'have': each, 'state': state}
-                        commands.extend(Lag_interfaces.clear_interface(**kwargs))
-                    elif port_channel == each.get('members').get('member'):
-                        kwargs = {'want': interface, 'have': each, 'state': state}
-                        commands.extend(Lag_interfaces.clear_interface(**kwargs))
-                    else:
-                        continue
+                    if each.get('name') == interface['name']:
+                        break
+                else:
+                    continue
+                kwargs = {'want': interface, 'have': each, 'state': state}
+                commands.extend(Lag_interfaces.clear_interface(**kwargs))
         else:
             for each in have:
                 kwargs = {'want': {}, 'have': each, 'state': state}
@@ -261,35 +273,71 @@ class Lag_interfaces(ConfigBase):
     def set_interface(**kwargs):
         # Set the interface config based on the want and have config
         commands = []
+        channel_name_diff = False
         want = kwargs['want']
         have = kwargs['have']
-        interface = 'interface ' + have['members']['member']
-        member_diff = None
+        module = kwargs['module']
+        if have['members']:
+            interface = 'interface ' + have['members'][0]['member']
+        else:
+            interface = 'interface ' + have['name']
+        member_diff = {}
+        want_each_member = {}
 
+        # To check if channel-group differs in want n have
+        if have.get('name') != want.get('name'):
+            channel_name_diff = True
+
+        # Create Set for want and have field for diff comparison
         want_members = set(tuple({k: v for k, v in iteritems(member) if v is not None}.items())
                            for member in want.get("members") or [])
-        have_member = set(tuple({k:v for k, v in iteritems(have['members']) if v is not None}.items()))
+        if have['members']:
+            have_member = set(tuple({k:v for k, v in iteritems(have['members'][0]) if v is not None}.items()))
+        else:
+            have_member = set(tuple({k:v for k, v in iteritems(have) if v}.items()))
+
         # Get the diff between want and have members
         for each_member in want_members:
-            if dict(each_member)['member'] == dict(have_member)['member']:
-                member_diff = dict(set(each_member) - have_member)
-                break
+            if dict(each_member)['member'] == dict(have_member).get('member'):
+                want_each_member = each_member
+                if have_member:
+                    member_diff = dict(set(each_member) - have_member)
+                    break
+                else:
+                    member_diff = dict(set(each_member))
+                    break
+            elif dict(each_member)['member'] == dict(have_member).get('name'):
+                want_each_member = each_member
+        # To get the diff channel mode n link config from computed diff
         mode = dict(member_diff).get('mode')
         link = dict(member_diff).get('link')
-        flowcontrol = dict(member_diff).get('flowcontrol')
-
+        # To get the channel-group ID from the interface Port-Channel
+        channel_name = re.search('(\d+)', want.get('name'))
+        if channel_name:
+            channel_id = channel_name.group()
+        else:
+            module.fail_json(msg="Lag Interface Name is not correct!")
         # Compare the value and set the commands
         if mode:
-            cmd = 'channel-group {} mode {}'.format(want['id'], mode)
+            cmd = 'channel-group {} mode {}'.format(channel_id, mode)
             Lag_interfaces._add_command_to_interface(interface, cmd, commands)
         elif link:
-            cmd = 'channel-group {} link {}'.format(want['id'], link)
+            cmd = 'channel-group {} link {}'.format(channel_id, link)
             Lag_interfaces._add_command_to_interface(interface, cmd, commands)
-        if flowcontrol:
-            if have.get('members').get('flowcontrol') == 'on' and flowcontrol == 'off':
-                Lag_interfaces._add_command_to_interface(interface, 'flowcontrol receive off', commands)
-            elif not have.get('members').get('flowcontrol') and flowcontrol == 'on':
-                Lag_interfaces._add_command_to_interface(interface, 'flowcontrol receive on', commands)
+        elif channel_name_diff and not member_diff:
+            # In Merge case if want n have channel ID differs and channel mode config is kept same
+            if want_each_member:
+                final_dict = dict(want_each_member)
+            else:
+                final_dict = dict(have_member)
+            mode = final_dict.get('mode')
+            link = final_dict.get('link')
+            if mode:
+                cmd = 'channel-group {} mode {}'.format(channel_id, mode)
+                Lag_interfaces._add_command_to_interface(interface, cmd, commands)
+            elif link:
+                cmd = 'channel-group {} link {}'.format(channel_id, link)
+                Lag_interfaces._add_command_to_interface(interface, cmd, commands)
 
         return commands
 
@@ -300,21 +348,10 @@ class Lag_interfaces(ConfigBase):
         want = kwargs['want']
         have = kwargs['have']
         state = kwargs['state'] if kwargs.get('state') else ''
-        interface = 'interface ' + have['members']['member']
 
-        if want.get('members'):
-            for each in want.get('members'):
-                if have['members']['member'] == each['member']:
-                    if have.get('members').get('flowcontrol') and \
-                            have.get('members').get('flowcontrol') != each.get('flowcontrol'):
-                        Lag_interfaces._remove_command_from_interface(interface, 'flowcontrol receive', commands)
-                    break
-                elif have['members'].get('flowcontrol'):
-                    Lag_interfaces._remove_command_from_interface(interface, 'flowcontrol receive', commands)
-        else:
-            if have.get('members').get('flowcontrol'):
-                Lag_interfaces._remove_command_from_interface(interface, 'flowcontrol receive', commands)
-        if have.get('id') and (have.get('id') != want.get('id') or state == 'deleted'):
-            Lag_interfaces._remove_command_from_interface(interface, 'channel-group', commands)
+        if have['members']:
+            interface = 'interface ' + have['members'][0]['member']
+            if have.get('name') and (have.get('name') != want.get('name') or state == 'deleted'):
+                Lag_interfaces._remove_command_from_interface(interface, 'channel-group', commands)
 
         return commands
