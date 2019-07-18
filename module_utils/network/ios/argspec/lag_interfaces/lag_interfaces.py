@@ -33,11 +33,10 @@ class Lag_interfacesArgs(object):
         pass
 
     argument_spec = {'config': {'elements': 'dict',
-                                'options': {'id': {'required': True, 'type': 'int'},
+                                'options': {'name': {'required': True, 'type': 'str'},
                                             'members': {'elements': 'dict',
                                                         'options': {
                                                             'member': {'type': 'str'},
-                                                            'flowcontrol': {'choices': ['on', 'off']},
                                                             'mode': {'choices': ['auto', 'on', 'desirable',
                                                                                  'active', 'passive'],
                                                                      'type': 'str', 'required': True},
