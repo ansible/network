@@ -55,7 +55,7 @@ DOCUMENTATION = """
       type: list
       elements: dict
       suboptions:
-        id:
+        name:
           description:
           - ID of Ethernet Channel of interfaces. Note, Port-channel group number must be in
             between 1-48.
@@ -69,16 +69,6 @@ DOCUMENTATION = """
               description:
               - Interface member of the link aggregation group.
               type: str
-            flowcontrol:
-              description:
-              - To configure the flow control on a given interface, use the flow control interface
-                (Ethernet, Port Channel) configuration mode command. Flow control is a feature that
-                allows the receiving device to send a signal to the sending device that it is congested.
-                This tells the sending device to temporarily stop transmitting to help ease the congestion.
-              type: str
-              choices:
-              - on
-              - off
             mode:
               description:
               - Etherchannel Mode of the interface for link aggregation.
@@ -128,22 +118,20 @@ EXAMPLES = """
 - name: Merge provided configuration with device configuration
   ios_lag_interfaces:
     config:
-      - id: 10
+      - name: 10
         members:
           member: GigabitEthernet0/1
           mode: auto
-          flowcontrol: on
           member: GigabitEthernet0/2
           mode: auto
-      - id: 20
+      - name: 20
         members:
           member: GigabitEthernet0/3
           mode: on
-      - id: 30
+      - name: 30
         members:
           member: GigabitEthernet0/4
           mode: active
-          flowcontrol: on
     state: merged
 
 # After state:
@@ -151,12 +139,10 @@ EXAMPLES = """
 #
 # vios#show running-config | section ^interface
 # interface Port-channel10
-#  flowcontrol receive on
 # interface Port-channel20
 # interface Port-channel30
 # interface GigabitEthernet0/1
 #  shutdown
-#  flowcontrol receive on
 #  channel-group 10 mode auto
 # interface GigabitEthernet0/2
 #  shutdown
@@ -166,7 +152,6 @@ EXAMPLES = """
 #  channel-group 20 mode on
 # interface GigabitEthernet0/4
 #  shutdown
-#  flowcontrol receive on
 #  channel-group 30 mode active
 
 # Using overridden
@@ -176,16 +161,13 @@ EXAMPLES = """
 #
 # vios#show running-config | section ^interface
 # interface Port-channel10
-#  flowcontrol receive on
 # interface Port-channel20
 # interface Port-channel30
 # interface GigabitEthernet0/1
 #  shutdown
-#  flowcontrol receive on
 #  channel-group 10 mode auto
 # interface GigabitEthernet0/2
 #  shutdown
-#  flowcontrol receive on
 #  channel-group 10 mode auto
 # interface GigabitEthernet0/3
 #  shutdown
@@ -197,11 +179,10 @@ EXAMPLES = """
 - name: Override device configuration of all interfaces with provided configuration
   ios_lag_interfaces:
     config:
-      - id: 20
+      - name: 20
         members:
           member: GigabitEthernet0/2
           mode: auto
-          flowcontrol: on
           member: GigabitEthernet0/3
           mode: auto
     state: overridden
@@ -217,7 +198,6 @@ EXAMPLES = """
 #  shutdown
 # interface GigabitEthernet0/2
 #  shutdown
-#  flowcontrol receive on
 #  channel-group 20 mode auto
 # interface GigabitEthernet0/3
 #  shutdown
@@ -232,16 +212,13 @@ EXAMPLES = """
 #
 # vios#show running-config | section ^interface
 # interface Port-channel10
-#  flowcontrol receive on
 # interface Port-channel20
 # interface Port-channel30
 # interface GigabitEthernet0/1
 #  shutdown
-#  flowcontrol receive on
 #  channel-group 10 mode auto
 # interface GigabitEthernet0/2
 #  shutdown
-#  flowcontrol receive on
 #  channel-group 10 mode auto
 # interface GigabitEthernet0/3
 #  shutdown
@@ -253,11 +230,10 @@ EXAMPLES = """
 - name: Replaces device configuration of listed interfaces with provided configuration
   ios_lag_interfaces:
     config:
-      - id: 40
+      - name: 40
         members:
           member: GigabitEthernet0/3
           mode: auto
-          flowcontrol: on
     state: replaced
 
 # After state:
@@ -265,22 +241,17 @@ EXAMPLES = """
 #
 # vios#show running-config | section ^interface
 # interface Port-channel10
-#  flowcontrol receive on
 # interface Port-channel20
 # interface Port-channel30
 # interface Port-channel40
-#  flowcontrol receive off
 # interface GigabitEthernet0/1
 #  shutdown
-#  flowcontrol receive on
 #  channel-group 10 mode auto
 # interface GigabitEthernet0/2
 #  shutdown
-#  flowcontrol receive on
 #  channel-group 10 mode auto
 # interface GigabitEthernet0/3
 #  shutdown
-#  flowcontrol receive on
 #  channel-group 40 mode on
 # interface GigabitEthernet0/4
 #  shutdown
@@ -293,16 +264,13 @@ EXAMPLES = """
 #
 # vios#show running-config | section ^interface
 # interface Port-channel10
-#  flowcontrol receive on
 # interface Port-channel20
 # interface Port-channel30
 # interface GigabitEthernet0/1
 #  shutdown
-#  flowcontrol receive on
 #  channel-group 10 mode auto
 # interface GigabitEthernet0/2
 #  shutdown
-#  flowcontrol receive on
 #  channel-group 10 mode auto
 # interface GigabitEthernet0/3
 #  shutdown
@@ -314,8 +282,8 @@ EXAMPLES = """
 - name: Delete LAG attributes of given interfaces (Note: This won't delete the interface itself)
   ios_lag_interfaces:
     config:
-      - id: 10
-      - id: 20
+      - name: 10
+      - name: 20
     state: deleted
 
 # After state:
@@ -342,16 +310,13 @@ EXAMPLES = """
 #
 # vios#show running-config | section ^interface
 # interface Port-channel10
-#  flowcontrol receive on
 # interface Port-channel20
 # interface Port-channel30
 # interface GigabitEthernet0/1
 #  shutdown
-#  flowcontrol receive on
 #  channel-group 10 mode auto
 # interface GigabitEthernet0/2
 #  shutdown
-#  flowcontrol receive on
 #  channel-group 10 mode auto
 # interface GigabitEthernet0/3
 #  shutdown
