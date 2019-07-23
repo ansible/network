@@ -43,7 +43,10 @@ class Lag_interfacesFacts(FactsBase):
                 obj = self.render_config(self.generated_spec, resource)
                 if obj:
                     group_name = obj['name']
-                    if group_name in objs:
+                    if group_name in objs and "members" in obj:
+                        config = objs[group_name]
+                        if "members" not in config:
+                            config["members"] = []
                         objs[group_name]['members'].extend(obj['members'])
                     else:
                         objs[group_name] = obj
@@ -64,12 +67,16 @@ class Lag_interfacesFacts(FactsBase):
         :returns: The generated config
         """
         config = deepcopy(spec)
+        interface_name = self.parse_conf_arg(conf, 'interface')
+        if interface_name.startswith("Port-Channel"):
+            config["name"] = interface_name
+            return self.generate_final_config(config)
 
-        interface = {'member': self.parse_conf_arg(conf, 'interface')}
-
+        interface = {'member': interface_name}
         match = re.match(r'.*channel-group (\d+) mode (\S+)', conf, re.MULTILINE | re.DOTALL)
         if match:
             config['name'], interface['mode'] = match.groups()
+            config["name"] = "Port-Channel" + config["name"]
             config['members'] = [interface]
 
         return self.generate_final_config(config)
