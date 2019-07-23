@@ -1,0 +1,16 @@
+---
+- hosts: eos
+  connection: network_cli
+  become: yes
+  roles:
+    - network
+
+  tasks:
+    - import_tasks: merged.yaml
+      tags: merged
+    - import_tasks: overridden.yaml
+      tags: overridden
+    - import_tasks: replaced.yaml
+      tags: replaced
+    - import_tasks: deleted.yaml
+      tags: deleted
