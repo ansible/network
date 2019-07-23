@@ -198,9 +198,10 @@ def set_config(want, have):
     commands = []
     to_set = dict_diff(have, want)
     for member in to_set.get("members", []):
+        channel_id = want["name"][12:]
         commands.extend([
             "interface {}".format(member["member"]),
-            "channel-group {} mode {}".format(want["name"], member["mode"]),
+            "channel-group {} mode {}".format(channel_id, member["mode"]),
         ])
 
     return commands
@@ -209,7 +210,7 @@ def set_config(want, have):
 def remove_config(want, have):
     commands = []
     if not want.get("members"):
-        return ["no interface Port-Channel {}".format(want["name"])]
+        return ["no interface {}".format(want["name"])]
 
     to_remove = dict_diff(want, have)
     for member in to_remove.get("members", []):
