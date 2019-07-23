@@ -11,15 +11,11 @@ necessary to bring the current configuration to it's desired end-state is
 created
 """
 
-from ansible.module_utils.network.common.utils import to_list
+from ansible.module_utils.network.common.utils import to_list, dict_diff
 
-from ansible.module_utils.network. \
-    eos.argspec.lag_interfaces.lag_interfaces import Lag_interfacesArgs
-from ansible.module_utils.network. \
-    eos. \
-    config.base import ConfigBase
-from ansible.module_utils.network. \
-    eos.facts.facts import Facts
+from ansible.module_utils.network.eos.argspec.lag_interfaces.lag_interfaces import Lag_interfacesArgs
+from ansible.module_utils.network.eos.config.base import ConfigBase
+from ansible.module_utils.network.eos.facts.facts import Facts
 
 
 class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
@@ -102,59 +98,124 @@ class Lag_interfaces(ConfigBase, Lag_interfacesArgs):
         """
         state = self._module.params['state']
         if state == 'overridden':
-            kwargs = {}
-            commands = self._state_overridden(**kwargs)
+            commands = self._state_overridden(want, have)
         elif state == 'deleted':
-            kwargs = {}
-            commands = self._state_deleted(**kwargs)
+            commands = self._state_deleted(want, have)
         elif state == 'merged':
-            kwargs = {}
-            commands = self._state_merged(**kwargs)
+            commands = self._state_merged(want, have)
         elif state == 'replaced':
-            kwargs = {}
-            commands = self._state_replaced(**kwargs)
+            commands = self._state_replaced(want, have)
         return commands
 
     @staticmethod
-    def _state_replaced(**kwargs):
+    def _state_replaced(want, have):
         """ The command generator when state is replaced
-
         :rtype: A list
         :returns: the commands necessary to migrate the current configuration
                   to the desired configuration
         """
         commands = []
+        for interface in want:
+            for extant in have:
+                if extant["name"] == interface["name"]:
+                    break
+            else:
+                extant = dict(name=interface["name"])
+
+            commands.extend(set_config(interface, extant))
+            commands.extend(remove_config(interface, extant))
+
         return commands
 
     @staticmethod
-    def _state_overridden(**kwargs):
+    def _state_overridden(want, have):
         """ The command generator when state is overridden
-
         :rtype: A list
         :returns: the commands necessary to migrate the current configuration
                   to the desired configuration
         """
         commands = []
+        for extant in have:
+            for interface in want:
+                if interface["name"] == extant["name"]:
+                    break
+            else:
+                interface = dict(name=extant["name"])
+            commands.extend(remove_config(interface, extant))
+
+        for interface in want:
+            for extant in have:
+                if extant["name"] == interface["name"]:
+                    break
+            else:
+                extant = dict(name=interface["name"])
+            commands.extend(set_config(interface, extant))
+
         return commands
 
     @staticmethod
-    def _state_merged(**kwargs):
+    def _state_merged(want, have):
         """ The command generator when state is merged
-
         :rtype: A list
         :returns: the commands necessary to merge the provided into
                   the current configuration
         """
         commands = []
+        for interface in want:
+            for extant in have:
+                if extant["name"] == interface["name"]:
+                    break
+            else:
+                extant = dict(name=interface["name"])
+
+            commands.extend(set_config(interface, extant))
+
         return commands
 
     @staticmethod
-    def _state_deleted(**kwargs):
+    def _state_deleted(want, have):
         """ The command generator when state is deleted
-
         :rtype: A list
         :returns: the commands necessary to remove the current configuration
                   of the provided objects
         """
         commands = []
+        for interface in want:
+            for extant in have:
+                if extant["name"] == interface["name"]:
+                    break
+            else:
+                continue
+
+            # Clearing all args, send empty dictionary
+            interface = dict(name=interface["name"])
+            commands.extend(remove_config(interface, extant))
+
         return commands
+
+
+def set_config(want, have):
+    commands = []
+    to_set = dict_diff(have, want)
+    for member in to_set.get("members", []):
+        commands.extend([
+            "interface {}".format(member["member"]),
+            "channel-group {} mode {}".format(want["name"], member["mode"]),
+        ])
+
+    return commands
+
+
+def remove_config(want, have):
+    commands = []
+    if not want.get("members"):
+        return ["no interface Port-Channel {}".format(want["name"])]
+
+    to_remove = dict_diff(want, have)
+    for member in to_remove.get("members", []):
+        commands.extend([
+            "interface {}".format(member["member"]),
+            "no channel-group",
+        ])
+
+    return commands
