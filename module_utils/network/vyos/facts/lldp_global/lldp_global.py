@@ -4,7 +4,7 @@
 # GNU General Public License v3.0+
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 """
-The vyos lldp fact class
+The vyos lldp_global fact class
 It is in this file the configuration is collected from the device
 for a given resource, parsed, and the facts tree is populated
 based on the configuration.
@@ -13,16 +13,16 @@ from re import findall, M
 from copy import deepcopy
 
 from ansible.module_utils.network.common import utils
-from ansible.module_utils.network.vyos.argspec.lldp.lldp import LldpArgs
+from ansible.module_utils.network.vyos.argspec.lldp_global.lldp_global import Lldp_globalArgs
 
 
-class LldpFacts(object):
-    """ The vyos lldp fact class
+class Lldp_globalFacts(object):
+    """ The vyos lldp_global fact class
     """
 
     def __init__(self, module, subspec='config', options='options'):
         self._module = module
-        self.argument_spec = LldpArgs.argument_spec
+        self.argument_spec = Lldp_globalArgs.argument_spec
         spec = deepcopy(self.argument_spec)
         if subspec:
             if options:
@@ -35,7 +35,7 @@ class LldpFacts(object):
         self.generated_spec = utils.generate_dict(facts_argument_spec)
 
     def populate_facts(self, connection, ansible_facts, data=None):
-        """ Populate the facts for lldp
+        """ Populate the facts for lldp_global
         :param connection: the device connection
         :param ansible_facts: Facts dictionary
         :param data: previously collected conf
@@ -48,7 +48,7 @@ class LldpFacts(object):
         if not data:
             data = connection.get_config()
 
-        objs = []
+        objs = {}
         lldp_output = findall(r'^set service lldp (\S+)', data, M)
         if lldp_output:
             for item in set(lldp_output):
@@ -56,16 +56,16 @@ class LldpFacts(object):
                 cfg = findall(lldp_regex, data, M)
                 obj = self.render_config(cfg)
                 if obj:
-                    objs.append(obj)
-        lldp_service = findall(r'^set service lldp', data, M)
-        if lldp_service:
+                    objs.update(obj)
+        lldp_service = findall(r"^set service (lldp)?('lldp')", data, M)
+        if lldp_service or lldp_output:
             lldp_obj = {}
             lldp_obj['enable'] = True
-            objs.append(lldp_obj)
+            objs.update(lldp_obj)
 
         facts = {}
         if objs:
-            facts['lldp'] = objs
+            facts['lldp_global'] = objs
         ansible_facts['ansible_network_resources'].update(facts)
         return ansible_facts
 
@@ -93,7 +93,7 @@ class LldpFacts(object):
             if protocols:
                 protocol_support = []
                 for protocol in protocols:
-                    protocol_support.append(protocol)
+                    protocol_support.append(protocol.strip("'"))
         return protocol_support
 
     def parse_attribs(self, attribs, conf):

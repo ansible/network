@@ -23,7 +23,7 @@
 #############################################
 
 """
-The module file for vyos_lldp
+The module file for vyos_lldp_global
 """
 
 from __future__ import absolute_import, division, print_function
@@ -37,7 +37,7 @@ ANSIBLE_METADATA = {
 
 DOCUMENTATION = """
 ---
-module: vyos_lldp
+module: vyos_lldp_global
 version_added: 2.9
 short_description: Manage link layer discovery protocol (LLDP) attributes on VyOS devices..
 description: This module manages link layer discovery protocol (LLDP) attributes on VyOS devices.
@@ -90,7 +90,7 @@ EXAMPLES = """
 # vyos@vyos:~$
 #
 - name: Merge provided configuration with device configuration
-  vyos_lldp:
+  vyos_lldp_global:
     config:
       legacy_protocols:
         - 'fdp'
@@ -151,7 +151,7 @@ EXAMPLES = """
 # set service lldp snmp enable
 #
 - name: Replace device configurations with provided configurations
-  vyos_lldp:
+  vyos_lldp_global:
     config:
       legacy_protocols:
         - 'edp'
@@ -228,7 +228,7 @@ EXAMPLES = """
 # set service lldp management-address '172.16.113.104'
 #
 - name: Delete attributes of given lldp service (Note: This won't delete the LLDP service itself)
-  vyos_lldp:
+  vyos_lldp_global:
     config:
     state: deleted
 #
@@ -293,8 +293,8 @@ commands:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.network.vyos.argspec.lldp.lldp import LldpArgs
-from ansible.module_utils.network.vyos.config.lldp.lldp import Lldp
+from ansible.module_utils.network.vyos.argspec.lldp_global.lldp_global import Lldp_globalArgs
+from ansible.module_utils.network.vyos.config.lldp_global.lldp_global import Lldp_global
 
 
 def main():
@@ -303,10 +303,10 @@ def main():
 
     :returns: the result form module invocation
     """
-    module = AnsibleModule(argument_spec=LldpArgs.argument_spec,
+    module = AnsibleModule(argument_spec=Lldp_globalArgs.argument_spec,
                            supports_check_mode=True)
 
-    result = Lldp(module).execute_module()
+    result = Lldp_global(module).execute_module()
     module.exit_json(**result)
 
 

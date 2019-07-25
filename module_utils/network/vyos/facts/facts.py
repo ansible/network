@@ -13,9 +13,9 @@ import platform
 import re
 from ansible.module_utils.network.vyos.argspec.facts.facts import FactsArgs
 from ansible.module_utils.network.common.facts.facts import FactsBase
-from ansible.module_utils.network.vyos.facts.lldp.lldp import LldpFacts
-from ansible.module_utils.network.vyos.vyos import run_commands, get_capabilities
-
+from ansible.module_utils.network.vyos.facts.lldp_global.lldp_global import Lldp_globalFacts
+from ansible.module_utils. \
+    network.vyos.vyos import run_commands, get_capabilities
 
 class LegacyFactsBase(object):
 
@@ -165,7 +165,7 @@ FACT_LEGACY_SUBSETS = dict(
     config=Config
 )
 FACT_RESOURCE_SUBSETS = dict(
-    lldp=LldpFacts,
+    lldp_global=Lldp_globalFacts,
 )
 
 

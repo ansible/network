@@ -58,23 +58,23 @@ EXAMPLES = """
     gather_subset: all
     gather_network_resources: all
 
-# Collect only the lldp facts
+# Collect only the lldp_global facts
 - vyos_facts:
     gather_subset:
       - !all
       - !min
     gather_network_resources:
-      - lldp
+      - lldp_global
 
-# Do not collect lldp facts
+# Do not collect lldp_global facts
 - vyos_facts:
     gather_network_resources:
-      - "!lldp"
+      - "!lldp_global"
 
-# Collect lldp and minimal default facts
+# Collect lldp_global and minimal default facts
 - vyos_facts:
     gather_subset: min
-    gather_network_resources: lldp
+    gather_network_resources: lldp_global
 """
 
 RETURN = """

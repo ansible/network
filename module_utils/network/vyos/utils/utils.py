@@ -7,12 +7,6 @@
 # utils
 
 
-def merge_two_dicts(dict1, dict2):
-    dict = dict1.copy()   # start with dict1's keys and values
-    dict.update(dict2)    # modifies dict with dict2's keys and values & returns None
-    return dict
-
-
 def search_obj_in_list(name, lst):
     for item in lst:
         for it in item:
