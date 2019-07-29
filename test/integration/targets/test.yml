@@ -1,0 +1,8 @@
+---
+- hosts: iosxr-01
+  gather_facts: false
+  pre_tasks:
+  - import_role:
+      name: "~/collections/network"
+  roles:
+    - iosxr_lacp_interfaces
