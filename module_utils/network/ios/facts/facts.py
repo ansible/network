@@ -16,7 +16,7 @@ from ansible.module_utils.network.ios.facts.vlans.vlans import VlansFacts
 
 FACT_LEGACY_SUBSETS = {}
 FACT_RESOURCE_SUBSETS = dict(
-    interfaces=VlansFacts,
+    vlans=VlansFacts,
 )
 
 

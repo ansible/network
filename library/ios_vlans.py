@@ -41,56 +41,61 @@ COPYRIGHT = "Copyright 2019 Red Hat"
 
 DOCUMENTATION = """
 module: ios_vlans
-  version_added: 2.9
-  short_description: Manage VLANs on Cisco IOS devices.
-  description: This module provides declarative management of VLANs on Cisco IOS network devices.
-  author: Sumit Jaiswal (@justjais)
-  notes:
-  - Tested against Cisco IOSv Version 15.2 on VIRL
-  options:
-    config:
-      description: A dictionary of VLANs options
-      type: list
-      elements: dict
-      suboptions:
-        name:
-          description:
-          - Ascii name of the VLAN.
-          type: str
-        vlan_id:
-          description:
-          - ID of the VLAN. Range 1-4094
-          type: int
-          required: True
-        mtu:
-          description:
-          - VLAN Maximum Transmission Unit. Range 576-18190.
-          type: int
-        state:
-          description:
-          - Operational state of the VLAN
-          type: str
-          choices:
-          - active
-          - suspend
-        remote_span:
-          description:
-          - Configure as Remote SPAN VLAN
-          type: bool
-        shutdown:
-          description:
-          - Shutdown VLAN switching.
-          type: bool
+version_added: 2.9
+short_description: Manage VLANs on Cisco IOS devices.
+description: This module provides declarative management of VLANs on Cisco IOS network devices.
+author: Sumit Jaiswal (@justjais)
+notes:
+- Tested against Cisco IOSv Version 15.2 on VIRL
+options:
+config:
+  description: A dictionary of VLANs options
+  type: list
+  elements: dict
+  suboptions:
+    name:
+      description:
+      - Ascii name of the VLAN.
+      - NOTE, I(name) should not be named/appended with I(default) as it is reserved for device default vlans.
+      type: str
+    vlan_id:
+      description:
+      - ID of the VLAN. Range 1-4094
+      type: int
+      required: True
+    mtu:
+      description:
+      - VLAN Maximum Transmission Unit.
+      - Refer to vendor documentation for valid values.
+      type: int
     state:
       description:
-      - The state the configuration should be left in
+      - Operational state of the VLAN
       type: str
       choices:
-      - merged
-      - replaced
-      - overridden
-      - deleted
-      default: merged
+      - active
+      - suspend
+    remote_span:
+      description:
+      - Configure as Remote SPAN VLAN
+      type: bool
+    shutdown:
+      description:
+      - Shutdown VLAN switching.
+      type: str
+      choices:
+      - enabled
+      - disabled
+state:
+  description:
+  - The state the configuration should be left in
+  type: str
+  choices:
+  - merged
+  - replaced
+  - overridden
+  - deleted
+  default: merged
 """
 EXAMPLES = """
 # Using deleted
@@ -183,17 +188,17 @@ EXAMPLES = """
       - name: Vlan_10
         vlan_id: 10
         state: active
-        shutdown: False
+        shutdown: disabled
         remote_span: 10
       - name: Vlan_20
         vlan_id: 20
         mtu: 610
         state: active
-        shutdown: True
+        shutdown: enabled
       - name: Vlan_30
         vlan_id: 30
         state: suspend
-        shutdown: True
+        shutdown: enabled
     state: merged
 
 # After state:
@@ -316,7 +321,7 @@ EXAMPLES = """
       - name: Test_VLAN20
         vlan_id: 20
         mtu: 700
-        shutdown: False
+        shutdown: disabled
       - vlan_id: 30
         name: Test_VLAN30
         mtu: 1000
@@ -357,12 +362,14 @@ RETURN = """
 before:
   description: The configuration prior to the model invocation.
   returned: always
+  type: list
   sample: >
     The configuration returned will always be in the same format
      of the parameters above.
 after:
   description: The resulting configuration model invocation.
   returned: when changed
+  type: list
   sample: >
     The configuration returned will always be in the same format
      of the parameters above.
@@ -370,7 +377,7 @@ commands:
   description: The set of commands pushed to the remote device.
   returned: always
   type: list
-  sample: ['command 1', 'command 2', 'command 3']
+  sample: ['vlan 20', 'name vlan_20', 'mtu 600', 'remote-span']
 """
 
 

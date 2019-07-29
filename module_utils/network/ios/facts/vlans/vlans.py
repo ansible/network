@@ -76,19 +76,21 @@ class VlansFacts(object):
             final_objs.append(o)
 
         # Appending Remote Span value to related VLAN:
-        if remote_objs.get('remote_span'):
-            for each in remote_objs.get('remote_span'):
-                for every in final_objs:
-                    if each == every.get('vlan_id'):
-                        every.update({'remote_span': True})
-                        break
+        if remote_objs:
+            if remote_objs.get('remote_span'):
+                for each in remote_objs.get('remote_span'):
+                    for every in final_objs:
+                        if each == every.get('vlan_id'):
+                            every.update({'remote_span': True})
+                            break
 
         facts = {}
         if final_objs:
             facts['vlans'] = []
-            params = {'config': final_objs}
+            params = utils.validate_config(self.argument_spec, {'config': objs})
+
             for cfg in params['config']:
-                facts['vlans'].append(cfg)
+                facts['vlans'].append(utils.remove_empties(cfg))
         ansible_facts['ansible_network_resources'].update(facts)
 
         return ansible_facts
@@ -114,15 +116,18 @@ class VlansFacts(object):
                     config['state'] = 'suspend'
                 elif conf[2].split('/')[0] == 'act':
                     config['state'] = 'active'
-                config['shutdown'] = True
+                config['shutdown'] = 'enabled'
             else:
                 if conf[2] == 'suspended':
                     config['state'] = 'suspend'
+                elif conf[2] == 'active':
+                    config['state'] = 'active'
+                config['shutdown'] = 'disabled'
         elif vlan_info == 'Type' and 'Type' not in conf:
             conf = filter(None, conf.split(' '))
             config['mtu'] = int(conf[3])
         elif vlan_info == 'Remote':
-            if len(conf.split('-')[0]) == 2 or len(conf.split(',')) > 1:
+            if len(conf.split(',')) > 1 or conf.isdigit():
                 remote_span_vlan = []
                 if len(conf.split(',')) > 1:
                     remote_span_vlan = conf.split(',')

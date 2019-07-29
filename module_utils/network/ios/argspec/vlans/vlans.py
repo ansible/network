@@ -40,7 +40,7 @@ class VlansArgs(object):
                                             'mtu': {'type': int},
                                             'remote_span': {'type': bool},
                                             'state':{'type': 'str', 'choices':['active', 'suspend']},
-                                            'shutdown': {'type': bool}},
+                                            'shutdown': {'type': 'str', 'choices':['enabled', 'disabled']}},
                                 'type': 'list'},
                      'state': {'choices': ['merged', 'replaced', 'overridden', 'deleted'],
                                'default': 'merged',

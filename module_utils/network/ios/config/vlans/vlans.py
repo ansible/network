@@ -29,7 +29,7 @@ class Vlans(ConfigBase):
     ]
 
     gather_network_resources = [
-        'interfaces',
+        'vlans',
     ]
 
     def __init__(self, module):
@@ -98,21 +98,17 @@ class Vlans(ConfigBase):
         """
         state = self._module.params['state']
         if state == 'overridden':
-            kwargs = {'want': want, 'have': have}
-            commands = self._state_overridden(**kwargs)
+            commands = self._state_overridden(want, have, state)
         elif state == 'deleted':
-            kwargs = {'want': want, 'have': have, 'state': state}
-            commands = self._state_deleted(**kwargs)
+            commands = self._state_deleted(want, have, state)
         elif state == 'merged':
-            kwargs = {'want': want, 'have': have}
-            commands = self._state_merged(**kwargs)
+            commands = self._state_merged(want, have)
         elif state == 'replaced':
-            kwargs = {'want': want, 'have': have}
-            commands = self._state_replaced(**kwargs)
+            commands = self._state_replaced(want, have)
         return commands
 
     @staticmethod
-    def _state_replaced(**kwargs):
+    def _state_replaced(want, have):
         """ The command generator when state is replaced
 
         :rtype: A list
@@ -120,8 +116,6 @@ class Vlans(ConfigBase):
                   to the desired configuration
         """
         commands = []
-        want = kwargs['want']
-        have = kwargs['have']
 
         check = False
         for each in want:
@@ -135,15 +129,12 @@ class Vlans(ConfigBase):
                 kwargs = {'want': each, 'have': every}
             else:
                 kwargs = {'want': each, 'have': {}}
-            commands.extend(Vlans.clear_interface(**kwargs))
             commands.extend(Vlans.set_interface(**kwargs))
-        # Remove the duplicate interface call
-        commands = Vlans._remove_duplicate_interface(commands)
 
         return commands
 
     @staticmethod
-    def _state_overridden(**kwargs):
+    def _state_overridden(want, have, state):
         """ The command generator when state is overridden
 
         :rtype: A list
@@ -151,35 +142,29 @@ class Vlans(ConfigBase):
                   to the desired configuration
         """
         commands = []
-        want = kwargs['want']
-        have = kwargs['have']
 
         check = False
-        for every in have:
-            for each in want:
+        for each in want:
+            for every in have:
                 if each['vlan_id'] == every['vlan_id']:
                     check = True
                     break
-            else:
-                # We didn't find a matching desired state, which means we can
-                # pretend we recieved an empty desired state.
-                #interface = dict(name=each['name'])
-                kwargs = {'want': each, 'have': every}
-                commands.extend(Vlans.clear_interface(**kwargs))
-                continue
+                else:
+                    # We didn't find a matching desired state, which means we can
+                    # pretend we recieved an empty desired state.
+                    kwargs = {'want': each, 'have': every, 'state': state}
+                    commands.extend(Vlans.clear_interface(**kwargs))
+                    continue
             if check:
                 kwargs = {'want': each, 'have': every}
             else:
                 kwargs = {'want': each, 'have': {}}
-            commands.extend(Vlans.clear_interface(**kwargs))
             commands.extend(Vlans.set_interface(**kwargs))
-        # Remove the duplicate interface call
-        commands = Vlans._remove_duplicate_interface(commands)
 
         return commands
 
     @staticmethod
-    def _state_merged(**kwargs):
+    def _state_merged(want, have):
         """ The command generator when state is merged
 
         :rtype: A list
@@ -187,8 +172,6 @@ class Vlans(ConfigBase):
                   the current configuration
         """
         commands = []
-        want = kwargs['want']
-        have = kwargs['have']
 
         check = False
         for each in want:
@@ -207,7 +190,7 @@ class Vlans(ConfigBase):
         return commands
 
     @staticmethod
-    def _state_deleted(**kwargs):
+    def _state_deleted(want, have, state):
         """ The command generator when state is deleted
 
         :rtype: A list
@@ -215,23 +198,24 @@ class Vlans(ConfigBase):
                   of the provided objects
         """
         commands = []
-        want = kwargs['want']
-        have = kwargs['have']
-        state = kwargs['state']
 
-        check = False
-        for each in want:
-            for every in have:
-                if each.get('vlan_id') == every.get('vlan_id'):
-                    check = True
-                    break
-                else:
-                    continue
-            if check:
-                kwargs = {'want': each, 'have': every, 'state': state}
-            else:
-                kwargs = {'want': each, 'have': {}, 'state': state}
-            commands.extend(Vlans.clear_interface(**kwargs))
+        if want:
+            check = False
+            for each in want:
+                for every in have:
+                    if each.get('vlan_id') == every.get('vlan_id'):
+                        check = True
+                        break
+                    else:
+                        check = False
+                        continue
+                if check:
+                    kwargs = {'want': each, 'have': every, 'state': state}
+                    commands.extend(Vlans.clear_interface(**kwargs))
+        else:
+            for each in have:
+                kwargs = {'want': {}, 'have': each, 'state': state}
+                commands.extend(Vlans.clear_interface(**kwargs))
 
         return commands
 
@@ -253,18 +237,14 @@ class Vlans(ConfigBase):
             commands.append(cmd)
 
     @staticmethod
-    def _remove_duplicate_interface(commands):
-        # Remove duplicate interface from commands
-        set_cmd = []
-        for each in commands:
-            if 'vlan' in each:
-                vlan = each
-                if vlan not in set_cmd:
-                    set_cmd.append(each)
-            else:
-                set_cmd.append(each)
-
-        return set_cmd
+    def dict_diff(sample_dict):
+        # Generate a set with passed dictionary for comparison
+        test_dict = {}
+        for k, v in iteritems(sample_dict):
+            if v is not None:
+                test_dict.update({k: v})
+        return_set = set(tuple(test_dict.items()))
+        return return_set
 
     @staticmethod
     def set_interface(**kwargs):
@@ -275,8 +255,8 @@ class Vlans(ConfigBase):
         vlan = 'vlan {}'.format(want.get('vlan_id'))
 
         # Get the diff b/w want n have
-        want_dict = set(tuple({k: v for k, v in iteritems(want) if v is not None}.items()))
-        have_dict = set(tuple({k: v for k, v in iteritems(have) if v is not None}.items()))
+        want_dict = Vlans.dict_diff(want)
+        have_dict = Vlans.dict_diff(have)
         diff = want_dict - have_dict
 
         if diff:
@@ -296,8 +276,10 @@ class Vlans(ConfigBase):
                 Vlans._add_command_to_interface(vlan, cmd, commands)
             if remote_span:
                 Vlans._add_command_to_interface(vlan, 'remote-span', commands)
-            if shutdown:
+            if shutdown == 'enabled':
                 Vlans._add_command_to_interface(vlan, 'shutdown', commands)
+            elif shutdown == 'disabled':
+                Vlans._add_command_to_interface(vlan, 'no shutdown', commands)
 
         return commands
 
@@ -310,9 +292,10 @@ class Vlans(ConfigBase):
         state = kwargs['state']
         vlan = 'vlan {}'.format(have.get('vlan_id'))
 
-        if have.get('vlan_id') and (have.get('vlan_id') != want.get('vlan_id') or state == 'deleted'):
+        if have.get('vlan_id') and 'default' not in have.get('name')\
+                and (have.get('vlan_id') != want.get('vlan_id') or state == 'deleted'):
             Vlans._remove_command_from_interface(vlan, 'vlan', commands)
-        else:
+        elif 'default' not in have.get('name'):
             if have.get('mtu') != want.get('mtu'):
                 Vlans._remove_command_from_interface(vlan, 'mtu', commands)
             if have.get('remote_span') != want.get('remote_span') and want.get('remote_span'):
