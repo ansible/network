@@ -1,0 +1,34 @@
+---
+- debug:
+      msg: "START ios_interfaces Deleted integration tests on connection={{ ansible_connection }}"
+
+- include_tasks: reset_config.yaml
+
+- name: Delete attributes of given interfaces (Note: This won't delete the interface itself)
+  ios_interfaces:
+    config:
+      - name: GigabitEthernet0/1
+      - name: GigabitEthernet0/2
+    state: deleted
+
+- ios_facts:
+    gather_subset: net_configuration_interfaces
+
+- set_fact:
+    expected_output:
+      - name: GigabitEthernet0/1
+        duplex: auto
+        enable: True
+      - name: GigabitEthernet0/2
+        duplex: auto
+        enable: True
+      - name: GigabitEthernet0/3
+        description: 'Configured by Ansible-Network'
+        duplex: auto
+        enable: True
+
+- assert:
+    that:
+      - "ansible_facts.net_configuration.interfaces == expected_output"
+
+- include_tasks: reset_config.yaml

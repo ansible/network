@@ -1,0 +1,15 @@
+---
+- hosts: ios
+  gather_subset:
+    - net_configuration_interfaces
+
+  tasks:
+    - import_role:
+        name: ./network
+
+    - include_tasks: "{{ item }}.yaml"
+      loop:
+        - merged
+        - replaced
+        - overridden
+        - deleted
