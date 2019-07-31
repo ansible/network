@@ -79,7 +79,7 @@ class InterfacesFacts(object):
         config = deepcopy(spec)
         match = re.search(r'^(\S+)', conf)
         intf = match.group(1)
-
+        import q
         if get_interface_type(intf) == 'unknown':
             return {}
         # populate the facts from the configuration
@@ -89,6 +89,7 @@ class InterfacesFacts(object):
         config['mtu'] = utils.parse_conf_arg(conf, 'mtu')
         config['duplex'] = utils.parse_conf_arg(conf, 'duplex')
         enabled = utils.parse_conf_cmd_arg(conf, 'shutdown', False)
-        config['enabled'] = enabled if enabled is not None else config['enabled']
+        config['enabled'] = enabled if enabled is not None else True
+        q(config['name'], enabled, config['enabled'])
 
         return utils.remove_empties(config)

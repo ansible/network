@@ -16,7 +16,7 @@ from ansible.module_utils.network.ios.facts.facts import Facts
 from ansible.module_utils.network.ios.utils.utils import get_interface_type, dict_diff
 from ansible.module_utils.network.ios.utils.utils import remove_command_from_interface, add_command_to_interface
 from ansible.module_utils.network.ios.utils.utils import filter_dict_having_none_value, remove_duplicate_interface
-
+import q
 
 class Interfaces(ConfigBase):
     """
@@ -240,18 +240,27 @@ class Interfaces(ConfigBase):
         want = kwargs['want']
         have = kwargs['have']
         interface = 'interface ' + want['name']
+        q(want, have, interface)
 
+        # if want.get('enabled') and want.get('enabled') != have.get('enabled'):
+        #     add_command_to_interface(interface, 'no shutdown', commands)
+        # elif not want.get('enabled') and want.get('enabled') != have.get('enabled'):
+        #     add_command_to_interface(interface, 'shutdown', commands)
         # Get the diff b/w want and have
         want_dict = dict_diff(want)
         have_dict = dict_diff(have)
         diff = want_dict - have_dict
-
+        q(want_dict, have_dict, diff)
         if diff:
             diff = dict(diff)
             for item in Interfaces.params:
                 if diff.get(item):
                     cmd = item + ' ' + str(want.get(item))
                     add_command_to_interface(interface, cmd, commands)
+            if diff.get('enabled'):# and want.get('enabled') != have.get('enabled'):
+                add_command_to_interface(interface, 'no shutdown', commands)
+            elif diff.get('enabled') is False:
+                add_command_to_interface(interface, 'shutdown', commands)
 
         return commands
 
