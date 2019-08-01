@@ -1,0 +1,40 @@
+---
+- name: Reset initial config
+  cli_config:
+    config: |
+      interface GigabitEthernet0/0/0/1
+        description Ansible-Network configured
+        shutdown
+        duplex auto
+        speed 100
+      interface GigabitEthernet0/0/0/2
+        duplex auto
+        speed auto
+        mtu 1000
+      interface GigabitEthernet0/0/0/3
+        description Ansible-Network configured
+        duplex auto
+        speed auto
+
+- iosxr_facts:
+    gather_subset: net_configuration_interfaces
+
+- set_fact:
+    expected_output:
+      - name: GigabitEthernet0/0/0/1
+        description: 'Ansible-Network configured'
+        speed: 100
+        duplex: auto
+        enable: False
+      - name: GigabitEthernet0/0/0/2
+        duplex: auto
+        enable: True
+        mtu: 1000
+      - name: GigabitEthernet0/0/0/3
+        description: 'Configured by Ansible-Network'
+        duplex: auto
+        enable: True
+
+- assert:
+    that:
+      - "ansible_facts.net_configuration.interfaces == expected_output"
