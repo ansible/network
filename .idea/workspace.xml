@@ -1,0 +1,508 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="0ddc5d5f-1c4d-4c36-aacf-2e13cc63bba5" name="Default" comment="">
+      <change afterPath="$PROJECT_DIR$/module_utils/network/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/library/iosxr_l2_interface.py" beforeDir="false" afterPath="$PROJECT_DIR$/library/iosxr_l2_interfaces.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/argspec/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/argspec/facts/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/argspec/facts/facts.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/argspec/l2_interfaces/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/argspec/l2_interfaces/l2_interfaces.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/argspec/resource/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/argspec/resource/resource.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/config/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/config/base.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/config/l2_interfaces/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/config/l2_interfaces/l2_interfaces.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/config/resource/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/config/resource/resource.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/facts/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/facts/base.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/facts/facts.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/facts/l2_interfaces/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/facts/l2_interfaces/l2_interfaces.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/facts/resource/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/facts/resource/resource.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/utils/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module_utils/iosxr/utils/utils.py" beforeDir="false" />
+    </list>
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="TRACKING_ENABLED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileEditorManager">
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file leaf-file-name="iosxr_l2_interfaces.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/library/iosxr_l2_interfaces.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-4063">
+              <caret line="101" column="20" selection-start-line="101" selection-start-column="20" selection-end-line="101" selection-end-column="20" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="iosxr_facts.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/library/iosxr_facts.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="797">
+              <caret line="116" selection-start-line="116" selection-end-line="116" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="l2_interfaces.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/module_utils/network/iosxr/argspec/l2_interfaces/l2_interfaces.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="150">
+              <caret line="10" column="34" lean-forward="true" selection-start-line="10" selection-start-column="34" selection-end-line="10" selection-end-column="34" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="l2_interfaces.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/module_utils/network/iosxr/config/l2_interfaces/l2_interfaces.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="315">
+              <caret line="21" lean-forward="true" selection-start-line="21" selection-end-line="21" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="utils.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/module_utils/network/iosxr/utils/utils.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="412">
+              <caret line="35" column="27" lean-forward="true" selection-start-line="35" selection-start-column="27" selection-end-line="35" selection-end-column="27" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="l2_interfaces.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/module_utils/network/iosxr/facts/l2_interfaces/l2_interfaces.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="266">
+              <caret line="20" lean-forward="true" selection-start-line="20" selection-end-line="20" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="facts.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/module_utils/network/iosxr/facts/facts.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="797">
+              <caret line="62" selection-start-line="62" selection-end-line="62" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>id</find>
+      <find>after</find>
+      <find>from __future__</find>
+      <find>https://www.visa.go.kr/openPage.do?MENU_ID=10101&amp;LANG_TYPE=EN</find>
+      <find>exit_json</find>
+      <find>int(</find>
+      <find>flowcontrol</find>
+      <find>interfaces</find>
+      <find>vlan</find>
+      <find>!/usr/bin/python</find>
+      <find>get_interfaces_facts</find>
+      <find>_clear_in</find>
+      <find>filter_dict_having_none_value</find>
+      <find>Interfaces.</find>
+      <find>re.</find>
+      <find>get_interface_type</find>
+      <find>normalize_interface</find>
+      <find>parse_conf_arg</find>
+      <find>clear_interface</find>
+      <find>l2protocol</find>
+      <find>l2ptotocol_type</find>
+      <find>l2protocol_</find>
+      <find>propagate</find>
+      <find>re.search</find>
+      <find>dot1q native vla</find>
+      <find>l2_protocol_diff</find>
+      <find>int</find>
+      <find>ios</find>
+      <find>import q</find>
+      <find>q(</find>
+    </findStrings>
+    <replaceStrings>
+      <replace>state</replace>
+      <replace>name</replace>
+      <replace>_set_config</replace>
+      <replace>_clear_config</replace>
+    </replaceStrings>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/library/ios_lag_interfaces.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/ios/argspec/lag_interfaces/lag_interfaces.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/ios/facts/lag_interfaces/lag_interfaces.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/ios/config/lag_interfaces/lag_interfaces.py" />
+        <option value="$PROJECT_DIR$/library/ios_lacp.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/ios/config/lacp/lacp.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/ios/facts/lacp/lacp.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/ios/argspec/lacp/lacp.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/ios/config/lacp_interfaces/lacp_interfaces.py" />
+        <option value="$PROJECT_DIR$/library/ios_lacp_interfaces.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/ios/facts/lacp_interfaces/lacp_interfaces.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/ios/argspec/facts/facts.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/ios/facts/facts.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/ios/argspec/vlans/vlans.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/ios/config/vlans/vlans.py" />
+        <option value="$PROJECT_DIR$/library/ios_vlans.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/ios/facts/vlans/vlans.py" />
+        <option value="$PROJECT_DIR$/library/ios_facts.py" />
+        <option value="$PROJECT_DIR$/module_utils/ios/argspec/facts/facts.py" />
+        <option value="$PROJECT_DIR$/module_utils/ios/facts/facts.py" />
+        <option value="$PROJECT_DIR$/module_utils/ios/facts/interfaces/interfaces.py" />
+        <option value="$PROJECT_DIR$/module_utils/ios/utils/utils.py" />
+        <option value="$PROJECT_DIR$/module_utils/ios/config/interfaces/interfaces.py" />
+        <option value="$PROJECT_DIR$/module_utils/ios/argspec/interfaces/interfaces.py" />
+        <option value="$PROJECT_DIR$/library/ios_interfaces.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/ios/utils/utils.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/ios/argspec/interfaces/interfaces.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/ios/config/interfaces/interfaces.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/ios/facts/interfaces/interfaces.py" />
+        <option value="$PROJECT_DIR$/library/iosxr_interfaces.py" />
+        <option value="$PROJECT_DIR$/library/iosxr_facts.py" />
+        <option value="$PROJECT_DIR$/module_utils/iosxr/facts/facts.py" />
+        <option value="$PROJECT_DIR$/module_utils/iosxr/facts/interfaces/interfaces.py" />
+        <option value="$PROJECT_DIR$/module_utils/iosxr/argspec/interfaces/interfaces.py" />
+        <option value="$PROJECT_DIR$/module_utils/iosxr/argspec/facts/facts.py" />
+        <option value="$PROJECT_DIR$/module_utils/iosxr/utils/utils.py" />
+        <option value="$PROJECT_DIR$/module_utils/iosxr/config/interfaces/interfaces.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/iosxr/argspec/interfaces/interfaces.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/iosxr/facts/interfaces/interfaces.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/iosxr/config/interfaces/interfaces.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/__init__.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/iosxr/argspec/facts/facts.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/iosxr/facts/facts.py" />
+        <option value="$PROJECT_DIR$/library/iosxr_l2_interface.py" />
+        <option value="$PROJECT_DIR$/library/iosxr_l2_interfaces.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/iosxr/utils/utils.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/iosxr/argspec/l2_interfaces/l2_interfaces.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/iosxr/config/l2_interfaces/l2_interfaces.py" />
+        <option value="$PROJECT_DIR$/module_utils/network/iosxr/facts/l2_interfaces/l2_interfaces.py" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectFrameBounds">
+    <option name="y" value="23" />
+    <option name="width" value="1680" />
+    <option name="height" value="974" />
+  </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectView">
+    <navigator proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="network" type="b2602c69:ProjectViewProjectNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="network" type="b2602c69:ProjectViewProjectNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="library" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="network" type="b2602c69:ProjectViewProjectNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="module_utils" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="network" type="b2602c69:ProjectViewProjectNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="module_utils" type="462c0819:PsiDirectoryNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="network" type="b2602c69:ProjectViewProjectNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="module_utils" type="462c0819:PsiDirectoryNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="iosxr" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="network" type="b2602c69:ProjectViewProjectNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="module_utils" type="462c0819:PsiDirectoryNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="iosxr" type="462c0819:PsiDirectoryNode" />
+              <item name="argspec" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="network" type="b2602c69:ProjectViewProjectNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="module_utils" type="462c0819:PsiDirectoryNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="iosxr" type="462c0819:PsiDirectoryNode" />
+              <item name="argspec" type="462c0819:PsiDirectoryNode" />
+              <item name="facts" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="network" type="b2602c69:ProjectViewProjectNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="module_utils" type="462c0819:PsiDirectoryNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="iosxr" type="462c0819:PsiDirectoryNode" />
+              <item name="argspec" type="462c0819:PsiDirectoryNode" />
+              <item name="l2_interfaces" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="network" type="b2602c69:ProjectViewProjectNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="module_utils" type="462c0819:PsiDirectoryNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="iosxr" type="462c0819:PsiDirectoryNode" />
+              <item name="config" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="network" type="b2602c69:ProjectViewProjectNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="module_utils" type="462c0819:PsiDirectoryNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="iosxr" type="462c0819:PsiDirectoryNode" />
+              <item name="config" type="462c0819:PsiDirectoryNode" />
+              <item name="l2_interfaces" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="network" type="b2602c69:ProjectViewProjectNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="module_utils" type="462c0819:PsiDirectoryNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="iosxr" type="462c0819:PsiDirectoryNode" />
+              <item name="facts" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="network" type="b2602c69:ProjectViewProjectNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="module_utils" type="462c0819:PsiDirectoryNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="iosxr" type="462c0819:PsiDirectoryNode" />
+              <item name="facts" type="462c0819:PsiDirectoryNode" />
+              <item name="l2_interfaces" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="network" type="b2602c69:ProjectViewProjectNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="module_utils" type="462c0819:PsiDirectoryNode" />
+              <item name="network" type="462c0819:PsiDirectoryNode" />
+              <item name="iosxr" type="462c0819:PsiDirectoryNode" />
+              <item name="utils" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+      <pane id="Scope" />
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="configurable.group.editor" />
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="0ddc5d5f-1c4d-4c36-aacf-2e13cc63bba5" name="Default" comment="" />
+      <created>1562520202828</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1562520202828</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="0" y="23" width="1680" height="974" extended-state="0" />
+    <editor active="true" />
+    <layout>
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
+      <window_info anchor="bottom" id="Run" order="2" />
+      <window_info anchor="bottom" id="Version Control" order="7" />
+      <window_info anchor="bottom" id="Python Console" order="7" />
+      <window_info anchor="bottom" id="Terminal" order="7" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.25" />
+      <window_info anchor="right" id="R Packages" order="3" />
+      <window_info anchor="right" id="R Graphics" order="3" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.3295325" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
+      <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="bottom" id="Messages" order="7" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+    </layout>
+  </component>
+  <component name="VcsContentAnnotationSettings">
+    <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <option name="time" value="5" />
+    </breakpoint-manager>
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/module_utils/network/iosxr/facts/facts.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="930">
+          <caret line="62" lean-forward="true" selection-start-line="62" selection-end-line="62" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/module_utils/network/iosxr/utils/utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="150">
+          <caret line="10" selection-start-line="10" selection-end-line="10" selection-end-column="46" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/module_utils/network/iosxr/facts/l2_interfaces/l2_interfaces.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="900">
+          <caret line="60" lean-forward="true" selection-start-line="60" selection-end-line="60" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/module_utils/network/ios/facts/lag_interfaces/lag_interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/ios/config/lag_interfaces/lag_interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/library/ios_lag_interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/library/ios_lacp.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/ios/argspec/lacp/lacp.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/ios/config/lacp/lacp.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/ios/facts/lacp/lacp.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/ios/argspec/lacp_interfaces/lacp_interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/ios/config/lacp_interfaces/lacp_interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/library/ios_lacp_interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/ios/facts/lacp_interfaces/lacp_interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/ios/argspec/facts/facts.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/ios/argspec/vlans/vlans.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/ios/config/vlans/vlans.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/ios/facts/vlans/vlans.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/ios/facts/facts.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/ios/facts/interfaces/interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/ios/utils/utils.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/ios/argspec/interfaces/interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/ios/argspec/facts/facts.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/ios/config/interfaces/interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/library/ios_facts.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/ios/facts/base.py" />
+    <entry file="file://$PROJECT_DIR$/library/ios_vlans.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/ios/facts/facts.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/ios/utils/utils.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/ios/argspec/interfaces/interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/ios/config/interfaces/interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/ios/facts/interfaces/interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/library/ios_interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/library/iosxr_interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/iosxr/facts/facts.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/iosxr/facts/interfaces/interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/iosxr/argspec/interfaces/interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/iosxr/argspec/facts/facts.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/iosxr/utils/utils.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/iosxr/config/interfaces/interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/iosxr/argspec/interfaces/interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/iosxr/config/interfaces/interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/iosxr/facts/interfaces/interfaces.py" />
+    <entry file="file://$PROJECT_DIR$/module_utils/network/iosxr/argspec/facts/facts.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="345">
+          <caret line="23" column="8" lean-forward="true" selection-start-line="23" selection-start-column="8" selection-end-line="23" selection-end-column="24" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/library/iosxr_facts.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="797">
+          <caret line="116" selection-start-line="116" selection-end-line="116" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/module_utils/network/iosxr/facts/facts.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="797">
+          <caret line="62" selection-start-line="62" selection-end-line="62" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/library/iosxr_l2_interfaces.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-4063">
+          <caret line="101" column="20" selection-start-line="101" selection-start-column="20" selection-end-line="101" selection-end-column="20" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/module_utils/network/iosxr/utils/utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="412">
+          <caret line="35" column="27" lean-forward="true" selection-start-line="35" selection-start-column="27" selection-end-line="35" selection-end-column="27" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/module_utils/network/iosxr/argspec/l2_interfaces/l2_interfaces.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="150">
+          <caret line="10" column="34" lean-forward="true" selection-start-line="10" selection-start-column="34" selection-end-line="10" selection-end-column="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/module_utils/network/iosxr/config/l2_interfaces/l2_interfaces.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="315">
+          <caret line="21" lean-forward="true" selection-start-line="21" selection-end-line="21" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/module_utils/network/iosxr/facts/l2_interfaces/l2_interfaces.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="266">
+          <caret line="20" lean-forward="true" selection-start-line="20" selection-end-line="20" />
+        </state>
+      </provider>
+    </entry>
+  </component>
+</project>
