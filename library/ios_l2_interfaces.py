@@ -67,27 +67,28 @@ DOCUMENTATION = """
             vlan:
               description:
               - Configure given VLAN in access port. It's used as the access VLAN ID.
-            type: str
+            type: int
         trunk:
           description:
           - Switchport mode trunk command to configure the interface as a Layer 2 trunk.
             Note The encapsulation is always set to dot1q.
           suboptions:
-            allowed_vlan:
-              description:
-              - List of allowed VLANs in a given trunk port. These are the only VLANs that will be
-                configured on the trunk.
-              type: list
             native_vlan:
               description:
               - Native VLAN to be configured in trunk port. It's used as the trunk native VLAN ID.
               type: str
+            allowed_vlans:
+              description:
+              - List of allowed VLANs in a given trunk port. These are the only VLANs that will be
+                configured on the trunk. If C(mode=trunk), these are the only VLANs that will be
+                configured on the trunk, i.e. "2-10,15".
+              type: list
             encapsulation:
               description:
               - Trunking encapsulation when interface is in trunking mode.
               choices: ['dot1q','isl','negotiate']
               type: str
-            pruning_vlan:
+            pruning_vlans:
               description:
               - Pruning VLAN to be configured in trunk port. It's used as the trunk pruning VLAN ID.
               type: list
@@ -313,7 +314,8 @@ commands:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.ios.config.l2_interfaces.l2_interfaces import L2_Interfaces
+from ansible.module_utils.network.ios.argspec.l2_interfaces.l2_interfaces import L2_InterfacesArgs
+from ansible.module_utils.network.ios.config.l2_interfaces.l2_interfaces import L2_Interfaces
 
 
 def main():
@@ -322,7 +324,7 @@ def main():
 
     :returns: the result form module invocation
     """
-    module = AnsibleModule(argument_spec=L2_Interfaces.argument_spec,
+    module = AnsibleModule(argument_spec=L2_InterfacesArgs.argument_spec,
                            supports_check_mode=True)
 
     result = L2_Interfaces(module).execute_module()
