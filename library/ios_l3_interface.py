@@ -30,15 +30,11 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-GENERATOR_VERSION = '1.0'
 
 ANSIBLE_METADATA = {'metadata_version': '1.1',
                     'status': ['preview'],
                     'supported_by': 'network'}
 
-NETWORK_OS = "ios"
-RESOURCE = "l3_interfaces"
-COPYRIGHT = "Copyright 2019 Red Hat"
 
 DOCUMENTATION = """
 ---
@@ -80,6 +76,7 @@ DOCUMENTATION = """
               - Configures and specifies client-id to use over DHCP ip.
                 Note, This option shall work only when dhcp is configured
                 as IP.
+              - GigabitEthernet interface number
               type: str
             dhcp_hostname:
               description:
@@ -314,11 +311,10 @@ EXAMPLES = """
 #  encapsulation dot1Q 20
 #  ip address 192.168.0.2 255.255.255.0
 
-- name: Delete attributes of given interfaces (Note: This won't delete the interface itself)
+- name: Delete attributes of given interfaces (NOTE: This won't delete the interface itself)
   ios_l3_interfaces:
     config:
       - name: GigabitEthernet0/2
-      - name: GigabitEthernet0/3
       - name: GigabitEthernet0/3.100
     operation: deleted
 
@@ -336,7 +332,57 @@ EXAMPLES = """
 #  no ip address
 # interface GigabitEthernet0/3
 #  description Configured by Ansible Network
+#  ip address 192.168.0.1 255.255.255.0
+#  shutdown
+#  duplex full
+#  speed 10
+#  ipv6 address FD5D:12C9:2201:1::1/64
+# interface GigabitEthernet0/3.100
+#  encapsulation dot1Q 20
+
+# Using Deleted without config
+#
+# Before state:
+# -------------
+#
+# vios#show running-config | section ^interface
+# interface GigabitEthernet0/1
+#  ip address 192.0.2.10 255.255.255.0
+#  shutdown
+#  duplex auto
+#  speed auto
+# interface GigabitEthernet0/2
+#  description Configured by Ansible Network
+#  ip address 192.168.1.0 255.255.255.0
+# interface GigabitEthernet0/3
+#  description Configured by Ansible Network
+#  ip address 192.168.0.1 255.255.255.0
+#  shutdown
+#  duplex full
+#  speed 10
+#  ipv6 address FD5D:12C9:2201:1::1/64
+# interface GigabitEthernet0/3.100
+#  encapsulation dot1Q 20
+#  ip address 192.168.0.2 255.255.255.0
+
+- name: "Delete L3 attributes of all interfaces together (NOTE: This won't delete the interface itself)"
+  ios_l3_interfaces:
+    operation: deleted
+
+# After state:
+# -------------
+#
+# vios#show running-config | section ^interface
+# interface GigabitEthernet0/1
 #  no ip address
+#  shutdown
+#  duplex auto
+#  speed auto
+# interface GigabitEthernet0/2
+#  description Configured by Ansible Network
+#  no ip address
+# interface GigabitEthernet0/3
+#  description Configured by Ansible Network
 #  shutdown
 #  duplex full
 #  speed 10
@@ -349,20 +395,23 @@ RETURN = """
 before:
   description: The configuration prior to the model invocation
   returned: always
+  type: list
   sample: The configuration returned will alwys be in the same format of the paramters above.
 after:
   description: The resulting configuration model invocation
   returned: when changed
+  type: list
   sample: The configuration returned will alwys be in the same format of the paramters above.
 commands:
   description: The set of commands pushed to the remote device
   returned: always
   type: list
-  sample: ['command 1', 'command 2', 'command 3']
+  sample: ['interface GigabitEthernet0/1', 'command 2', 'command 3']
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.ios.config.l3_interfaces.l3_interfaces import L3_Interfaces
+from ansible.module_utils.network.ios.argspec.l3_interfaces.l3_interfaces import L3_InterfacesArgs
+from ansible.module_utils.network.ios.config.l3_interfaces.l3_interfaces import L3_Interfaces
 
 
 def main():
@@ -370,7 +419,7 @@ def main():
     Main entry point for module execution
     :returns: the result form module invocation
     """
-    module = AnsibleModule(argument_spec=L3_Interfaces.argument_spec,
+    module = AnsibleModule(argument_spec=L3_InterfacesArgs.argument_spec,
                            supports_check_mode=True)
 
     result = L3_Interfaces(module).execute_module()
