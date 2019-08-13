@@ -1,0 +1,28 @@
+---
+- debug:
+      msg: "START iosxr_l3_interfaces Deleted integration tests on connection={{ ansible_connection }}"
+
+- include_tasks: reset_config.yaml
+
+- name: Delete attributes of given interfaces (Note: This won't delete the interface itself)
+  ios_l3_interfaces:
+    config:
+      - name: GigabitEthernet0/0/0/1
+      - name: GigabitEthernet0/0/0/2
+      - name: GigabitEthernet0/0/0/3
+    state: deleted
+
+- iosxr_facts:
+    gather_subset: net_configuration_interfaces
+
+- set_fact:
+    expected_output:
+      - name: GigabitEthernet0/0/0/1
+      - name: GigabitEthernet0/0/0/2
+      - name: GigabitEthernet0/0/0/3
+
+- assert:
+    that:
+      - "ansible_facts.net_configuration.l3_interfaces == expected_output"
+
+- include_tasks: reset_config.yaml
