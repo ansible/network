@@ -16,7 +16,7 @@ from ansible.module_utils.network.ios.facts.lag_interfaces.lag_interfaces import
 
 FACT_LEGACY_SUBSETS = {}
 FACT_RESOURCE_SUBSETS = dict(
-    interfaces=Lag_interfacesFacts,
+    lag_interfaces=Lag_interfacesFacts,
 )
 
 

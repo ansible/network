@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#
 # -*- coding: utf-8 -*-
 # Copyright 2019 Red Hat
 # GNU General Public License v3.0+
@@ -6,11 +6,118 @@
 
 # utils
 
-def search_obj_in_list(name, lst):
-    for o in lst:
-        if o['name'] == name:
-            return o
-    return None
+from __future__ import absolute_import, division, print_function
+__metaclass__ = type
+
+from ansible.module_utils.six import iteritems
+from ansible.module_utils.network.common.utils import is_masklen, to_netmask
+
+
+def remove_command_from_config_list(interface, cmd, commands):
+    # To delete the passed config
+    if interface not in commands:
+        commands.insert(0, interface)
+    commands.append('no %s' % cmd)
+    return commands
+
+
+def add_command_to_config_list(interface, cmd, commands):
+    # To set the passed config
+    if interface not in commands:
+        commands.insert(0, interface)
+    commands.append(cmd)
+
+
+def dict_to_set(sample_dict):
+    # Generate a set with passed dictionary for comparison
+    test_dict = {}
+    for k, v in iteritems(sample_dict):
+        if v is not None:
+            if isinstance(v, list) and v:
+                if isinstance(v[0], dict):
+                    li = []
+                    for each in v:
+                        for key, value in iteritems(each):
+                            if isinstance(value, list):
+                                each[key] = tuple(value)
+                        li.append(tuple(each.items()))
+                    v = tuple(li)
+                else:
+                    v = tuple(v)
+            elif isinstance(v, dict):
+                li = []
+                for key, value in iteritems(v):
+                    if isinstance(value, list):
+                        v[key] = tuple(value)
+                li.extend(tuple(v.items()))
+                v = tuple(li)
+            elif isinstance(v, list):
+                v = tuple(v)
+            test_dict.update({k: v})
+    return_set = set(tuple(test_dict.items()))
+    return return_set
+
+
+def filter_dict_having_none_value(want, have):
+    # Generate dict with have dict value which is None in want dict
+    test_dict = dict()
+    test_key_dict = dict()
+    test_dict['name'] = want.get('name')
+    for k, v in iteritems(want):
+        if isinstance(v, dict):
+            for key, value in iteritems(v):
+                if value is None:
+                    dict_val = have.get(k).get(key)
+                    test_key_dict.update({key: dict_val})
+                test_dict.update({k: test_key_dict})
+        if v is None:
+            val = have.get(k)
+            test_dict.update({k: val})
+    return test_dict
+
+
+def remove_duplicate_interface(commands):
+    # Remove duplicate interface from commands
+    set_cmd = []
+    for each in commands:
+        if 'interface' in each:
+            if each not in set_cmd:
+                set_cmd.append(each)
+        else:
+            set_cmd.append(each)
+
+    return set_cmd
+
+
+def validate_ipv4(value, module):
+    if value:
+        address = value.split('/')
+        if len(address) != 2:
+            module.fail_json(msg='address format is <ipv4 address>/<mask>, got invalid format {0}'.format(value))
+
+        if not is_masklen(address[1]):
+            module.fail_json(msg='invalid value for mask: {0}, mask should be in range 0-32'.format(address[1]))
+
+
+def validate_ipv6(value, module):
+    if value:
+        address = value.split('/')
+        if len(address) != 2:
+            module.fail_json(msg='address format is <ipv6 address>/<mask>, got invalid format {0}'.format(value))
+        else:
+            if not 0 <= int(address[1]) <= 128:
+                module.fail_json(msg='invalid value for mask: {0}, mask should be in range 0-128'.format(address[1]))
+
+
+def validate_n_expand_ipv4(module, want):
+    # Check if input IPV4 is valid IP and expand IPV4 with its subnet mask
+    ip_addr_want = want.get('address')
+    validate_ipv4(ip_addr_want, module)
+    ip = ip_addr_want.split('/')
+    if len(ip) == 2:
+        ip_addr_want = '{0} {1}'.format(ip[0], to_netmask(ip[1]))
+
+    return ip_addr_want
 
 
 def normalize_interface(name):
@@ -97,4 +204,3 @@ def get_interface_type(interface):
         return 'HundredGigE'
     else:
         return 'unknown'
-

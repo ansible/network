@@ -7,6 +7,9 @@
 The arg spec for the ios facts module.
 """
 
+from __future__ import absolute_import, division, print_function
+__metaclass__ = type
+
 
 class FactsArgs(object):
     """ The arg spec for the ios facts module
@@ -17,7 +20,8 @@ class FactsArgs(object):
 
     choices = [
         'all',
-        'interfaces',
+        'lag_interfaces',
+        '!lag_interfaces'
     ]
 
     argument_spec = {

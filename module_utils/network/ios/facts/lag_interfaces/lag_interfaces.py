@@ -15,7 +15,7 @@ from copy import deepcopy
 from ansible.module_utils.network.common import utils
 from ansible.module_utils.network.ios.utils.utils import get_interface_type, normalize_interface
 from ansible.module_utils.network.ios.argspec.lag_interfaces.lag_interfaces import Lag_interfacesArgs
-
+import q
 
 class Lag_interfacesFacts(object):
     """ The ios_lag_interfaces fact class
@@ -59,6 +59,13 @@ class Lag_interfacesFacts(object):
                     if not obj.get('members'):
                         obj.update({'members': []})
                     objs.append(obj)
+
+        # for appending members configured with same channel-group
+        for each in range(len(objs)):
+            if each < (len(objs) - 1):
+                if objs[each]['name'] == objs[each + 1]['name']:
+                    objs[each]['members'].append(objs[each + 1]['members'][0])
+                    del objs[each + 1]
         facts = {}
 
         if objs:
@@ -66,7 +73,7 @@ class Lag_interfacesFacts(object):
             params = utils.validate_config(self.argument_spec, {'config': objs})
 
             for cfg in params['config']:
-                facts['lag_interfaces'].append(cfg)
+                facts['lag_interfaces'].append(utils.remove_empties(cfg))
         ansible_facts['ansible_network_resources'].update(facts)
 
         return ansible_facts

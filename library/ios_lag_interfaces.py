@@ -42,59 +42,61 @@ COPYRIGHT = "Copyright 2019 Red Hat"
 
 DOCUMENTATION = """
 ---
-  module: ios_lag_interfaces
-  version_added: 2.9
-  short_description: Manage Link Aggregation on Cisco IOS devices.
-  description: This module manages properties of Link Aggregation Group on Cisco IOS devices.
-  author: Sumit Jaiswal (@justjais)
-  notes:
+module: ios_lag_interfaces
+version_added: 2.9
+short_description: Manage Link Aggregation on Cisco IOS devices.
+description: This module manages properties of Link Aggregation Group on Cisco IOS devices.
+author: Sumit Jaiswal (@justjais)
+notes:
   - Tested against Cisco IOSv Version 15.2 on VIRL
-  options:
-    config:
-      description: A list of link aggregation group configurations.
-      type: list
-      elements: dict
-      suboptions:
-        name:
-          description:
-          - ID of Ethernet Channel of interfaces. Note, Port-channel group number must be in
-            between 1-48.
-          type: int
-          required: True
-        members:
-          description:
-          - Interface options for the link aggregation group.
-          suboptions:
-            member:
-              description:
-              - Interface member of the link aggregation group.
-              type: str
-            mode:
-              description:
-              - Etherchannel Mode of the interface for link aggregation.
-              type: str
-              choices:
-              - auto
-              - on
-              - desirable
-              - active
-              - passive
-            link:
-              description:
-              - Assign a link identifier used for load-balancing. Channel group load-balancing link
-                identifier with range between 1-4. Note, parameter only supported on Cisco IOS XE
-                platform.
-              type: int
-    state:
+  - This module works with connection C(network_cli).
+    See L(IOS Platform Options,../network/user_guide/platform_ios.html).
+options:
+config:
+  description: A list of link aggregation group configurations.
+  type: list
+  elements: dict
+  suboptions:
+    name:
       description:
-      - The state the configuration should be left in
-      type: str
-      choices:
-      - merged
-      - replaced
-      - overridden
-      - deleted
-      default: merged
+      - ID of Ethernet Channel of interfaces.
+      - Refer to vendor documentation for valid port values.
+      type: int
+      required: True
+    members:
+      description:
+      - Interface options for the link aggregation group.
+      suboptions:
+        member:
+          description:
+          - Interface member of the link aggregation group.
+          type: str
+        mode:
+          description:
+          - Etherchannel Mode of the interface for link aggregation.
+          type: str
+          choices:
+          - auto
+          - on
+          - desirable
+          - active
+          - passive
+        link:
+          description:
+          - Assign a link identifier used for load-balancing. 
+          - Refer to vendor documentation for valid values.
+          - NOTE, parameter only supported on Cisco IOS XE platform.
+          type: int
+  state:
+    description:
+    - The state the configuration should be left in
+    type: str
+    choices:
+    - merged
+    - replaced
+    - overridden
+    - deleted
+    default: merged
 """
 
 EXAMPLES = """
@@ -279,7 +281,7 @@ EXAMPLES = """
 #  shutdown
 #  channel-group 30 mode active
 
-- name: Delete LAG attributes of given interfaces (Note: This won't delete the interface itself)
+- name: "Delete LAG attributes of given interfaces (Note: This won't delete the interface itself)"
   ios_lag_interfaces:
     config:
       - name: 10
@@ -303,7 +305,9 @@ EXAMPLES = """
 #  shutdown
 #  channel-group 30 mode active
 
-# Using Deleted
+# Using Deleted without any config passed
+#"(NOTE: This will delete all of configured LLDP module attributes)"
+
 #
 # Before state:
 # -------------
@@ -325,7 +329,7 @@ EXAMPLES = """
 #  shutdown
 #  channel-group 30 mode active
 
-- name: Delete all configured LAG attributes for interfaces (Note: This won't delete the interface itself)
+- name: "Delete all configured LAG attributes for interfaces (Note: This won't delete the interface itself)"
   ios_lag_interfaces:
     state: deleted
 
@@ -350,10 +354,12 @@ RETURN = """
 before:
   description: The configuration prior to the model invocation
   returned: always
+  type: list
   sample: The configuration returned will alwys be in the same format of the paramters above.
 after:
   description: The resulting configuration model invocation
   returned: when changed
+  type: list
   sample: The configuration returned will alwys be in the same format of the paramters above.
 commands:
   description: The set of commands pushed to the remote device

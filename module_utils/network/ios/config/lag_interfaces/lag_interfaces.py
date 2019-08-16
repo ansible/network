@@ -11,13 +11,18 @@ necessary to bring the current configuration to it's desired end-state is
 created
 """
 
-import re
-from ansible.module_utils.six import iteritems
+from __future__ import absolute_import, division, print_function
+__metaclass__ = type
 
+
+import re
+from ansible.module_utils.network.common import utils
 from ansible.module_utils.network.common.cfg.base import ConfigBase
 from ansible.module_utils.network.common.utils import to_list
 from ansible.module_utils.network.ios.facts.facts import Facts
-
+from ansible.module_utils.network.ios.utils.utils import dict_to_set
+from ansible.module_utils.network.ios.utils.utils import filter_dict_having_none_value, remove_duplicate_interface
+import q
 
 class Lag_interfaces(ConfigBase):
     """
@@ -30,7 +35,7 @@ class Lag_interfaces(ConfigBase):
     ]
 
     gather_network_resources = [
-        'interfaces',
+        'lag_interfaces',
     ]
 
     def __init__(self, module):
@@ -101,21 +106,16 @@ class Lag_interfaces(ConfigBase):
         state = self._module.params['state']
         module = self._module
         if state == 'overridden':
-            kwargs = {'want': want, 'have': have, 'module': module}
-            commands = self._state_overridden(**kwargs)
+            commands = self._state_overridden(want, have, module)
         elif state == 'deleted':
-            kwargs = {'want': want, 'have': have, 'state': state}
-            commands = self._state_deleted(**kwargs)
+            commands = self._state_deleted(want, have)
         elif state == 'merged':
-            kwargs = {'want': want, 'have': have, 'module': module}
-            commands = self._state_merged(**kwargs)
+            commands = self._state_merged(want, have, module)
         elif state == 'replaced':
-            kwargs = {'want': want, 'have': have, 'module': module}
-            commands = self._state_replaced(**kwargs)
+            commands = self._state_replaced(want, have, module)
         return commands
 
-    @staticmethod
-    def _state_replaced(**kwargs):
+    def _state_replaced(self, want, have, module):
         """ The command generator when state is replaced
 
         :rtype: A list
@@ -123,29 +123,35 @@ class Lag_interfaces(ConfigBase):
                   to the desired configuration
         """
         commands = []
-        want = kwargs['want']
-        have = kwargs['have']
-        module = kwargs['module']
-
+        q(want, have)
         for interface in want:
             for each_interface in interface.get('members'):
                 for each in have:
-                    if each['members']:
-                        if each['members'][0]['member'] == each_interface['member']:
-                            break
-                else:
-                    continue
-                kwargs = {'want': interface, 'have': each}
-                commands.extend(Lag_interfaces.clear_interface(**kwargs))
-                kwargs = {'want': interface, 'have': each, 'module': module}
-                commands.extend(Lag_interfaces.set_interface(**kwargs))
-        # Remove the duplicate interface call
-        commands = Lag_interfaces._remove_duplicate_interface(commands)
+                    if each.get('members'):
+                        for every in each.get('members'):
+                            match = False
+                            if every['member'] == each_interface['member']:
+                                match = True
+                                break
+                            else:
+                                continue
+                        if match:
+                            have_dict = filter_dict_having_none_value(interface, each)
+                            commands.extend(self._clear_config(dict(), have_dict))
+                            commands.extend(self._set_config(interface, each, module))
+                    elif each.get('name') == each_interface['member']:
+                        have_dict = filter_dict_having_none_value(interface, each)
+                        commands.extend(self._clear_config(dict(), have_dict))
+                        commands.extend(self._set_config(interface, each, module))
+                        break
 
+        # Remove the duplicate interface call
+        commands = remove_duplicate_interface(commands)
+        q(commands)
+        commands = []
         return commands
 
-    @staticmethod
-    def _state_overridden(**kwargs):
+    def _state_overridden(self, want, have, module):
         """ The command generator when state is overridden
 
         :rtype: A list
@@ -153,37 +159,34 @@ class Lag_interfaces(ConfigBase):
                   to the desired configuration
         """
         commands = []
-        want = kwargs['want']
-        have = kwargs['have']
-        module = kwargs['module']
 
         for interface in want:
             for each_interface in interface.get('members'):
                 for each in have:
-                    if each['members']:
-                        if each['members'][0]['member'] == each_interface['member']:
-                            break
-                        else:
-                            kwargs = {'want': interface, 'have': each}
-                            commands.extend(Lag_interfaces.clear_interface(**kwargs))
-                            continue
-                    else:
-                        # We didn't find a matching desired state, which means we can
-                        # pretend we recieved an empty desired state.
-                        kwargs = {'want': interface, 'have': each}
-                        commands.extend(Lag_interfaces.clear_interface(**kwargs))
-                        continue
-                kwargs = {'want': interface, 'have': each}
-                commands.extend(Lag_interfaces.clear_interface(**kwargs))
-                kwargs = {'want': interface, 'have': each, 'commands': commands, 'module': module}
-                commands.extend(Lag_interfaces.set_interface(**kwargs))
+                    if each.get('members'):
+                        for every in each.get('members'):
+                            match = False
+                            if every['member'] == each_interface['member']:
+                                match = True
+                                break
+                            else:
+                                commands.extend(self._clear_config(interface, each))
+                                continue
+                        if match:
+                            have_dict = filter_dict_having_none_value(interface, each)
+                            commands.extend(self._clear_config(dict(), have_dict))
+                            commands.extend(self._set_config(interface, each, module))
+                    elif each.get('name') == each_interface['member']:
+                        have_dict = filter_dict_having_none_value(interface, each)
+                        commands.extend(self._clear_config(dict(), have_dict))
+                        commands.extend(self._set_config(interface, each, module))
+                        break
         # Remove the duplicate interface call
-        commands = Lag_interfaces._remove_duplicate_interface(commands)
+        commands = remove_duplicate_interface(commands)
 
         return commands
 
-    @staticmethod
-    def _state_merged(**kwargs):
+    def _state_merged(self, want, have, module):
         """ The command generator when state is merged
 
         :rtype: A list
@@ -191,28 +194,23 @@ class Lag_interfaces(ConfigBase):
                   the current configuration
         """
         commands = []
-        want = kwargs['want']
-        have = kwargs['have']
-        module = kwargs['module']
 
         for interface in want:
             for each_interface in interface.get('members'):
                 for each in have:
-                    if each['members']:
-                        if each['members'][0]['member'] == each_interface['member']:
-                            break
-                    else:
-                        if each.get('name') == each_interface['member']:
-                            break
+                    if each.get('members'):
+                        for every in each.get('members'):
+                            if every['member'] == each_interface['member']:
+                                break
+                    elif each.get('name') == each_interface['member']:
+                        break
                 else:
                     continue
-                kwargs = {'want': interface, 'have': each, 'module': module}
-                commands.extend(Lag_interfaces.set_interface(**kwargs))
+                commands.extend(self._set_config(interface, each, module))
 
         return commands
 
-    @staticmethod
-    def _state_deleted(**kwargs):
+    def _state_deleted(self, want, have):
         """ The command generator when state is deleted
 
         :rtype: A list
@@ -220,9 +218,6 @@ class Lag_interfaces(ConfigBase):
                   of the provided objects
         """
         commands = []
-        want = kwargs['want']
-        have = kwargs['have']
-        state = kwargs['state']
 
         if want:
             for interface in want:
@@ -231,127 +226,75 @@ class Lag_interfaces(ConfigBase):
                         break
                 else:
                     continue
-                kwargs = {'want': interface, 'have': each, 'state': state}
-                commands.extend(Lag_interfaces.clear_interface(**kwargs))
+                commands.extend(self._clear_config(interface, each))
         else:
             for each in have:
-                kwargs = {'want': {}, 'have': each, 'state': state}
-                commands.extend(Lag_interfaces.clear_interface(**kwargs))
+                commands.extend(self._clear_config(dict(), each))
 
         return commands
 
-    @staticmethod
-    def _remove_command_from_interface(interface, cmd, commands):
+    def remove_command_from_config_list(self, interface, cmd, commands):
+        # To delete the passed config
         if interface not in commands:
-            commands.insert(0, interface)
+            commands.append(interface)
         commands.append('no %s' % cmd)
         return commands
 
-    @staticmethod
-    def _add_command_to_interface(interface, cmd, commands):
+    def add_command_to_config_list(self, interface, cmd, commands):
+        # To set the passed config
         if interface not in commands:
-            commands.insert(0, interface)
-        if cmd not in commands:
-            commands.append(cmd)
+            commands.append(interface)
+        commands.append(cmd)
+        return commands
 
-    @staticmethod
-    def _remove_duplicate_interface(commands):
-        # Remove duplicate interface from commands
-        set_cmd = []
-        for each in commands:
-            if 'interface' in each:
-                interface = each
-                if interface not in set_cmd:
-                    set_cmd.append(each)
-            else:
-                set_cmd.append(each)
-
-        return set_cmd
-
-
-    @staticmethod
-    def set_interface(**kwargs):
+    def _set_config(self, want, have, module):
         # Set the interface config based on the want and have config
         commands = []
-        channel_name_diff = False
-        want = kwargs['want']
-        have = kwargs['have']
-        module = kwargs['module']
-        if have['members']:
-            interface = 'interface ' + have['members'][0]['member']
-        else:
-            interface = 'interface ' + have['name']
-        member_diff = {}
-        want_each_member = {}
 
-        # To check if channel-group differs in want n have
-        if have.get('name') != want.get('name'):
-            channel_name_diff = True
+        # To remove keys with None values from want dict
+        want = utils.remove_empties(want)
 
-        # Create Set for want and have field for diff comparison
-        want_members = set(tuple({k: v for k, v in iteritems(member) if v is not None}.items())
-                           for member in want.get("members") or [])
-        if have['members']:
-            have_member = set(tuple({k:v for k, v in iteritems(have['members'][0]) if v is not None}.items()))
-        else:
-            have_member = set(tuple({k:v for k, v in iteritems(have) if v}.items()))
-
-        # Get the diff between want and have members
-        for each_member in want_members:
-            if dict(each_member)['member'] == dict(have_member).get('member'):
-                want_each_member = each_member
-                if have_member:
-                    member_diff = dict(set(each_member) - have_member)
-                    break
-                else:
-                    member_diff = dict(set(each_member))
-                    break
-            elif dict(each_member)['member'] == dict(have_member).get('name'):
-                want_each_member = each_member
-        # To get the diff channel mode n link config from computed diff
-        mode = dict(member_diff).get('mode')
-        link = dict(member_diff).get('link')
-        # To get the channel-group ID from the interface Port-Channel
+        # Get the diff b/w want and have
+        want_dict = dict_to_set(want)
+        have_dict = dict_to_set(have)
+        diff = want_dict - have_dict
+        q(want_dict, have_dict, diff)
+        # To get the channel-id from lag port-channel name
+        lag_config = dict(diff).get('members')
         channel_name = re.search('(\d+)', want.get('name'))
         if channel_name:
             channel_id = channel_name.group()
         else:
             module.fail_json(msg="Lag Interface Name is not correct!")
-        # Compare the value and set the commands
-        if mode:
-            cmd = 'channel-group {} mode {}'.format(channel_id, mode)
-            Lag_interfaces._add_command_to_interface(interface, cmd, commands)
-        elif link:
-            cmd = 'channel-group {} link {}'.format(channel_id, link)
-            Lag_interfaces._add_command_to_interface(interface, cmd, commands)
-        elif channel_name_diff and not member_diff:
-            # In Merge case if want n have channel ID differs and channel mode config is kept same
-            if want_each_member:
-                final_dict = dict(want_each_member)
-            else:
-                final_dict = dict(have_member)
-            mode = final_dict.get('mode')
-            link = final_dict.get('link')
-            if mode:
-                cmd = 'channel-group {} mode {}'.format(channel_id, mode)
-                Lag_interfaces._add_command_to_interface(interface, cmd, commands)
-            elif link:
-                cmd = 'channel-group {} link {}'.format(channel_id, link)
-                Lag_interfaces._add_command_to_interface(interface, cmd, commands)
+        if lag_config:
+            for each in lag_config:
+                each = dict(each)
+                each_interface = 'interface {0}'.format(each.get('member'))
+                if have.get('name') == want['members'][0]['member'] or have.get('name').lower().startswith('po'):
+                    if each.get('mode'):
+                        cmd = 'channel-group {0} mode {1}'.format(channel_id, each.get('mode'))
+                        self.add_command_to_config_list(each_interface, cmd, commands)
+                    elif each.get('link'):
+                        cmd = 'channel-group {0} link {1}'.format(channel_id, each.get('link'))
+                        self.add_command_to_config_list(each_interface, cmd, commands)
 
         return commands
 
-    @staticmethod
-    def clear_interface(**kwargs):
+    def _clear_config(self, want, have):
         # Delete the interface config based on the want and have config
         commands = []
-        want = kwargs['want']
-        have = kwargs['have']
-        state = kwargs['state'] if kwargs.get('state') else ''
+        q(want, have)
 
-        if have['members']:
-            interface = 'interface ' + have['members'][0]['member']
-            if have.get('name') and (have.get('name') != want.get('name') or state == 'deleted'):
-                Lag_interfaces._remove_command_from_interface(interface, 'channel-group', commands)
+        if have.get('members'):
+            for each in have['members']:
+                interface = 'interface ' + each['member']
+                if want.get('members'):
+                    for every in want.get('members'):
+                        if each.get('member') and each.get('member') != every['member']:
+                            q(interface)
+                            self.remove_command_from_config_list(interface, 'channel-group', commands)
+                else:
+                    if each.get('member') and want.get('members') is None:
+                        self.remove_command_from_config_list(interface, 'channel-group', commands)
 
         return commands
