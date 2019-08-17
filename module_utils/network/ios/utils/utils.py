@@ -7,11 +7,86 @@
 # utils
 
 
-def search_obj_in_list(name, lst):
-    for o in lst:
-        if o['name'] == name:
-            return o
-    return None
+from __future__ import absolute_import, division, print_function
+__metaclass__ = type
+
+from ansible.module_utils.six import iteritems
+
+
+def remove_command_from_config_list(interface, cmd, commands):
+    # To delete the passed config
+    if interface not in commands:
+        commands.insert(0, interface)
+    commands.append('no %s' % cmd)
+    return commands
+
+
+def add_command_to_config_list(interface, cmd, commands):
+    # To set the passed config
+    if interface not in commands:
+        commands.insert(0, interface)
+    commands.append(cmd)
+
+
+def dict_to_set(sample_dict):
+    # Generate a set with passed dictionary for comparison
+    test_dict = {}
+    for k, v in iteritems(sample_dict):
+        if v is not None:
+            if isinstance(v, list) and v:
+                if isinstance(v[0], dict):
+                    li = []
+                    for each in v:
+                        for key, value in iteritems(each):
+                            if isinstance(value, list):
+                                each[key] = tuple(value)
+                        li.append(tuple(each.items()))
+                    v = tuple(li)
+                else:
+                    v = tuple(v)
+            elif isinstance(v, dict):
+                li = []
+                for key, value in iteritems(v):
+                    if isinstance(value, list):
+                        v[key] = tuple(value)
+                li.extend(tuple(v.items()))
+                v = tuple(li)
+            elif isinstance(v, list):
+                v = tuple(v)
+            test_dict.update({k: v})
+    return_set = set(tuple(test_dict.items()))
+    return return_set
+
+
+def filter_dict_having_none_value(want, have):
+    # Generate dict with have dict value which is None in want dict
+    test_dict = dict()
+    test_key_dict = dict()
+    test_dict['name'] = want.get('name')
+    for k, v in iteritems(want):
+        if isinstance(v, dict):
+            for key, value in iteritems(v):
+                if value is None:
+                    dict_val = have.get(k).get(key)
+                    test_key_dict.update({key: dict_val})
+                test_dict.update({k: test_key_dict})
+        if v is None:
+            val = have.get(k)
+            test_dict.update({k: val})
+    return test_dict
+
+
+def remove_duplicate_interface(commands):
+    # Remove duplicate interface from commands
+    set_cmd = []
+    for each in commands:
+        if 'interface' in each:
+            if each not in set_cmd:
+                set_cmd.append(each)
+        else:
+            set_cmd.append(each)
+
+    return set_cmd
 
 
 def normalize_interface(name):
