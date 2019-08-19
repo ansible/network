@@ -18,6 +18,8 @@ class FactsArgs(object):
     choices = [
         'all',
         'interfaces',
+        'lacp_interfaces',
+        '!lacp_interfaces',
     ]
 
     argument_spec = {

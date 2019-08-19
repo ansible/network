@@ -16,7 +16,7 @@ from ansible.module_utils.network.ios.facts.lacp_interfaces.lacp_interfaces impo
 
 FACT_LEGACY_SUBSETS = {}
 FACT_RESOURCE_SUBSETS = dict(
-    interfaces=Lacp_InterfacesFacts,
+    lacp_interfaces=Lacp_InterfacesFacts,
 )
 
 

@@ -36,7 +36,9 @@ class Lacp_InterfacesArgs(object):
 
     argument_spec = {'config': {'elements': 'dict',
                                 'options': {'name': {'required': True, 'type': 'str'},
-                                            'port_priority': {'type': 'str'}},
+                                            'port_priority': {'type': 'str'},
+                                            'fast_switchover': {'type': 'bool'},
+                                            'max_bundle': {'type': 'int'}},
                                 'type': 'list'},
                      'state': {'choices': ['merged', 'replaced', 'overridden', 'deleted'],
                                'default': 'merged',
