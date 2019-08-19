@@ -43,7 +43,7 @@ short_description: Configure and manage Link Layer Discovery Protocol(LLDP) attr
 description: This module configures and manages the Link Layer Discovery Protocol(LLDP) attributes on Extreme Networks EXOS platforms. 
 author: Ujwal Komarla (@ujwalkomarla)
 notes:
-- Tested against EXOS 30.2.1.8.
+- Tested against Extreme Networks EXOS version 30.2.1.8 on x460g2.
 - This module works with connection C(httpapi).
   See L(EXOS Platform Options,../network/user_guide/platform_exos.html)
 options: 
@@ -55,6 +55,7 @@ options:
         description:
           - Frequency at which LLDP advertisements are sent (in seconds). By default - 30 seconds.
         type: int
+        default: 30
       tlv_select:
         description:
           - This attribute can be used to specify the TLVs that need to be sent in the LLDP packets. By default, only system name and system description is sent.
@@ -76,10 +77,12 @@ options:
             description:
               - Used to specify the system description TLV
             type: bool
+            default: true
           system_name:
             description:
               - Used to specify the system name TLV
             type: bool
+            default: true
 
   state:
     description:
@@ -151,7 +154,7 @@ EXAMPLES = """
 #         },
 #        "method": "PATCH",
 #        "path": "/rest/restconf/data/openconfig_lldp:lldp/config"
-#      }
+#     }
 # ]
 #
 # "after": [
@@ -248,7 +251,7 @@ EXAMPLES = """
 #         },
 #        "method": "PATCH",
 #        "path": "/rest/restconf/data/openconfig_lldp:lldp/config"
-#      }
+#     }
 # ]
 #
 # "after": [
@@ -342,7 +345,7 @@ EXAMPLES = """
 #         },
 #        "method": "PATCH",
 #        "path": "/rest/restconf/data/openconfig_lldp:lldp/config"
-#      }
+#     }
 # ]
 #
 # "after": [
@@ -393,11 +396,11 @@ after:
   sample: >
     The configuration returned will always be in the same format
      of the parameters above.
-commands:
-  description: The set of commands pushed to the remote device.
+requests:
+  description: The set of requests pushed to the remote device.
   returned: always
   type: list
-  sample: ['command 1', 'command 2', 'command 3']
+  sample: [{"data": "...", "method": "...", "path": "..."}, {"data": "...", "method": "...", "path": "..."}, {"data": "...", "method": "...", "path": "..."}]
 """
 
 
