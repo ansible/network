@@ -20,7 +20,7 @@ DOCUMENTATION = """
 ---
 module: exos_facts
 version_added: 2.9
-short_description: Get facts about exos devices.
+short_description: Get facts about Extreme Networks EXOS devices.
 description:
   - Collects facts from network devices running the exos operating
     system. This module places the facts gathered in the fact tree keyed by the
@@ -28,6 +28,8 @@ description:
     base set of facts from the device and can enable or disable
     collection of additional facts.
 author: Ujwal Komarla (@ujwalkomarla)
+notes:
+  - Tested against Extreme Networks EXOS version 30.2.1.8 on x460g2.
 options:
   gather_subset:
     description:
@@ -89,7 +91,6 @@ from ansible.module_utils.network.exos.facts.facts import Facts
 def main():
     """
     Main entry point for module execution
-
     :returns: ansible_facts
     """
     module = AnsibleModule(argument_spec=FactsArgs.argument_spec,
