@@ -60,12 +60,33 @@ def filter_dict_having_none_value(want, have):
     test_dict = dict()
     test_key_dict = dict()
     test_dict['name'] = want.get('name')
-    for k, v in iteritems(want):
+    diff_ip = False
+    want_ip = ''
+    for k, v in want.items():
         if isinstance(v, dict):
-            for key, value in iteritems(v):
+            for key, value in v.items():
                 if value is None:
                     dict_val = have.get(k).get(key)
                     test_key_dict.update({key: dict_val})
+                test_dict.update({k: test_key_dict})
+        if isinstance(v, list):
+            for key, value in v[0].items():
+                if value is None:
+                    dict_val = have.get(k).get(key)
+                    test_key_dict.update({key: dict_val})
+                # below conditions are added to check if secondary
+                # IP is configured, if yes then delete the already
+                # configured IP if want and have IP is different
+                # else if it's same no need to delete
+                if isinstance(value, str):
+                    want_ip = value.split('/')
+                have_ip = have.get('ipv4')
+                if len(want_ip) > 1 and have_ip:
+                    have_ip = have_ip[0]['address'].split(' ')[0]
+                    if have_ip != want_ip[0]:
+                        diff_ip = True
+                if key == 'secondary' and value == True and diff_ip == True:
+                    test_key_dict.update({key: value})
                 test_dict.update({k: test_key_dict})
         if v is None:
             val = have.get(k)

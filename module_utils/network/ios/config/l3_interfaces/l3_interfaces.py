@@ -125,11 +125,13 @@ class L3_Interfaces(ConfigBase):
                     commands.extend(self._set_config(interface, each, module))
                 continue
             have_dict = filter_dict_having_none_value(interface, each)
+            q(have_dict)
             commands.extend(self._clear_config(dict(), have_dict))
             commands.extend(self._set_config(interface, each, module))
         # Remove the duplicate interface call
         commands = remove_duplicate_interface(commands)
-
+        q(commands)
+        commands=[]
         return commands
 
     def _state_overridden(self, want, have, module):
