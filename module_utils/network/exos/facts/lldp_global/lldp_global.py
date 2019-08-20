@@ -20,6 +20,13 @@ class Lldp_globalFacts(object):
     """ The exos lldp_global fact class
     """
 
+    TLV_SELECT_OPTIONS = [
+        "SYSTEM_NAME",
+        "SYSTEM_DESCRIPTION",
+        "SYSTEM_CAPABILITIES",
+        "MANAGEMENT_ADDRESS",
+        "PORT_DESCRIPTION"]
+        
     def __init__(self, module, subspec='config', options='options'):
         self._module = module
         self.argument_spec = Lldp_globalArgs.argument_spec
@@ -42,41 +49,24 @@ class Lldp_globalFacts(object):
         :rtype: dictionary
         :returns: facts
         """
-        if connection:  # just for linting purposes, remove
-            pass
-
         if not data:
-            # typically data is populated from the current device configuration
-            # data = connection.get('show running-config | section ^interface')
-            # using mock data instead
-            data = ("resource rsrc_a\n"
-                    "  a_bool true\n"
-                    "  a_string choice_a\n"
-                    "  resource here\n"
-                    "resource rscrc_b\n"
-                    "  key is property01 value is value end\n"
-                    "  an_int 10\n")
+            request = [{
+                "path": "/rest/restconf/data/openconfig-lldp:lldp/config/",
+                "method": "GET",
+            }]
+            data = connection.send_requests(requests=request)
 
-        # split the config into instances of the resource
-        resource_delim = 'resource'
-        find_pattern = r'(?:^|\n)%s.*?(?=(?:^|\n)%s|$)' % (resource_delim,
-                                                           resource_delim)
-        resources = [p.strip() for p in re.findall(find_pattern,
-                                                   data,
-                                                   re.DOTALL)]
-
-        objs = []
-        for resource in resources:
-            if resource:
-                obj = self.render_config(self.generated_spec, resource)
-                if obj:
-                    objs.append(obj)
+        obj = {}
+        if data:
+            lldp_obj = self.render_config(self.generated_spec, data)
+            if lldp_obj:
+                obj = lldp_obj
 
         ansible_facts['ansible_network_resources'].pop('lldp_global', None)
         facts = {}
-        if objs:
-            params = utils.validate_config(self.argument_spec, {'config': objs})
-            facts['lldp_global'] = params['config']
+
+        params = utils.validate_config(self.argument_spec, {'config': obj})
+        facts['lldp_global'] = params['config']
 
         ansible_facts['ansible_network_resources'].update(facts)
         return ansible_facts
@@ -92,24 +82,12 @@ class Lldp_globalFacts(object):
         :returns: The generated config
         """
         config = deepcopy(spec)
-        config['name'] = utils.parse_conf_arg(conf, 'resource')
-        config['some_string'] = utils.parse_conf_arg(conf, 'a_string')
 
-        match = re.match(r'.*key is property01 (\S+)',
-                         conf, re.MULTILINE | re.DOTALL)
-        if match:
-            config['some_dict']['property_01'] = match.groups()[0]
+        config['interval'] = conf["opeconfig-lldp:config"]["hello-timer"]
 
-        a_bool = utils.parse_conf_arg(conf, 'a_bool')
-        if a_bool == 'true':
-            config['some_bool'] = True
-        elif a_bool == 'false':
-            config['some_bool'] = False
-        else:
-            config['some_bool'] = None
+        for item in self.TLV_SELECT_OPTIONS:
+            config["tlv_select"][item.lower()] = (
+                False if item in conf["opeconfig-lldp:config"]["suppress-tlv-advertisement"]
+                else True)
 
-        try:
-            config['some_int'] = int(utils.parse_conf_arg(conf, 'an_int'))
-        except TypeError:
-            config['some_int'] = None
         return utils.remove_empties(config)
