@@ -34,14 +34,20 @@ class Lldp_globalArgs(object):  # pylint: disable=R0903
     def __init__(self, **kwargs):
         pass
 
-    argument_spec = {'config': {'options': {'interval': {'type': 'int'},
-                        'tlv_select': {'options': {'management_address': {'type': 'bool'},
-                                                   'port_description': {'type': 'bool'},
-                                                   'system_capabilities': {'type': 'bool'},
-                                                   'system_description': {'type': 'bool'},
-                                                   'system_name': {'type': 'bool'}},
-                                       'type': 'dict'}},
+    argument_spec = {
+        'config': {
+            'options': {
+                'interval': {'default': 30, 'type': 'int'},
+                'tlv_select': {
+                    'options': {
+                        'management_address': {'type': 'bool'},
+                        'port_description': {'type': 'bool'},
+                        'system_capabilities': {'type': 'bool'},
+                        'system_description': {'default': True, 'type': 'bool'},
+                        'system_name': {'default': True, 'type': 'bool'}},
+                    'type': 'dict'}},
             'type': 'dict'},
- 'state': {'choices': ['merged', 'replaced', 'deleted'],
-           'default': 'merged',
-           'type': 'str'}}  # pylint: disable=C0301
+        'state': {
+            'choices': ['merged', 'replaced', 'deleted'],
+            'default': 'merged',
+            'type': 'str'}}  # pylint: disable=C0301
