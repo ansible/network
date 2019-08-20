@@ -29,6 +29,9 @@ class Lldp_global(ConfigBase):
         'lldp_global',
     ]
 
+    LLDP_DEFAULT_INTERVAL = 30
+    LLDP_DEFAULT_TLV_SUPPRESSED = ['SYSTEM_CAPABILITIES', 'PORT_DESCRIPTION', 'MANAGEMENT_ADDRESS']
+
     def __init__(self, module):
         super(Lldp_global, self).__init__(module)
 
@@ -41,7 +44,7 @@ class Lldp_global(ConfigBase):
         facts, _warnings = Facts(self._module).get_facts(self.gather_subset, self.gather_network_resources)
         lldp_global_facts = facts['ansible_network_resources'].get('lldp_global')
         if not lldp_global_facts:
-            return []
+            return {}
         return lldp_global_facts
 
     def execute_module(self):
@@ -52,15 +55,15 @@ class Lldp_global(ConfigBase):
         """
         result = {'changed': False}
         warnings = list()
-        commands = list()
+        requests = list()
 
         existing_lldp_global_facts = self.get_lldp_global_facts()
-        commands.extend(self.set_config(existing_lldp_global_facts))
-        if commands:
+        requests.extend(self.set_config(existing_lldp_global_facts))
+        if requests:
             if not self._module.check_mode:
-                self._connection.edit_config(commands)
+                self._connection.send_requests(requests)
             result['changed'] = True
-        result['commands'] = commands
+        result['requests'] = requests
 
         changed_lldp_global_facts = self.get_lldp_global_facts()
 
@@ -76,7 +79,7 @@ class Lldp_global(ConfigBase):
             collect the current configuration (as a dict from facts)
 
         :rtype: A list
-        :returns: the commands necessary to migrate the current configuration
+        :returns: the requests necessary to migrate the current configuration
                   to the desired configuration
         """
         want = self._module.params['config']
@@ -90,63 +93,66 @@ class Lldp_global(ConfigBase):
         :param want: the desired configuration as a dictionary
         :param have: the current configuration as a dictionary
         :rtype: A list
-        :returns: the commands necessary to migrate the current configuration
+        :returns: the requests necessary to migrate the current configuration
                   to the desired configuration
         """
         state = self._module.params['state']
-        if state == 'overridden':
-            kwargs = {}
-            commands = self._state_overridden(**kwargs)
-        elif state == 'deleted':
-            kwargs = {}
-            commands = self._state_deleted(**kwargs)
+
+        if state == 'deleted':
+            requests = self._state_deleted(want, have)
         elif state == 'merged':
-            kwargs = {}
-            commands = self._state_merged(**kwargs)
+            requests = self._state_merged(want, have)
         elif state == 'replaced':
-            kwargs = {}
-            commands = self._state_replaced(**kwargs)
-        return commands
-    @staticmethod
-    def _state_replaced(**kwargs):
-        """ The command generator when state is replaced
+            requests = self._state_replaced(want, have)
+
+        return requests
+
+    def _state_replaced(self, want, have):
+        """ The request generator when state is replaced
 
         :rtype: A list
-        :returns: the commands necessary to migrate the current configuration
+        :returns: the requests necessary to migrate the current configuration
                   to the desired configuration
         """
-        commands = []
-        return commands
+        requests = []
+        requests.extend(self._state_deleted(want, have))
+        requests.extend(self._state_merged(want, have))
+        return requests
 
-    @staticmethod
-    def _state_overridden(**kwargs):
-        """ The command generator when state is overridden
-
-        :rtype: A list
-        :returns: the commands necessary to migrate the current configuration
-                  to the desired configuration
-        """
-        commands = []
-        return commands
-
-    @staticmethod
-    def _state_merged(**kwargs):
-        """ The command generator when state is merged
+    def _state_merged(self, want, have):
+        """ The request generator when state is merged
 
         :rtype: A list
-        :returns: the commands necessary to merge the provided into
+        :returns: the requests necessary to merge the provided into
                   the current configuration
         """
-        commands = []
-        return commands
+        request = {
+            'body': {"openconfig_lldp:config": {}},
+            'method': 'PATCH',
+            'path': '/rest/restconf/data/openconfig-lldp:lldp/config'
+        }
+        if want.get('interval'):
+            if want['interval'] != have['interval']:
+                request['body']['openconfig_lldp:config']['hello-timer'] = want['interval']
+        if want.get('tlv-select'):
+            if want['tlv-select'] != have['tlv-select']:
+                request['body']['openconfig_lldp:config']['suppress-tlv-advertisement'] = [
+                    tlv.key().upper() for tlv in want['tlv-select'] if tlv.value() is False]
+        return request
 
-    @staticmethod
-    def _state_deleted(**kwargs):
-        """ The command generator when state is deleted
+    def _state_deleted(self, want, have):
+        """ The request generator when state is deleted
 
         :rtype: A list
-        :returns: the commands necessary to remove the current configuration
+        :returns: the requests necessary to remove the current configuration
                   of the provided objects
         """
-        commands = []
-        return commands
+        request = {
+            'body': {"openconfig_lldp:config": {}},
+            'method': 'PUT',
+            'path': '/rest/restconf/data/openconfig-lldp:lldp/config'
+        }
+        request['body']['openconfig_lldp:config']['hello-timer'] = self.LLDP_DEFAULT_INTERVAL
+        request['body']['openconfig_lldp:config']['suppress-tlv-advertisement'] = [
+            tlv for tlv in self.LLDP_DEFAULT_TLV_SUPPRESSED]
+        return request
